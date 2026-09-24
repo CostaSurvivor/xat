@@ -1,13 +1,26 @@
 import "server-only";
 import { createHash, randomBytes } from "node:crypto";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { db } from "@/lib/db";
 import { sha256 } from "@/server/auth";
 import { siteUrl } from "@/server/mail";
 
 /** Login com Google fica desligado até GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET existirem. */
 export const googleEnabled = () => !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
-export const googleRedirectUri = () => `${siteUrl()}/api/auth/google/callback`;
+/**
+ * Origem pública do site para o OAuth. Usa PUBLIC_URL; sem ela, o host da requisição
+ * (um host forjado só produziria um redirect_uri que o Google recusa). Os e-mails
+ * NÃO usam isto: links de e-mail exigem PUBLIC_URL (evita envenenamento de Host).
+ */
+export async function publicOrigin() {
+  if (process.env.PUBLIC_URL) return siteUrl();
+  const h = await headers();
+  const host = (h.get("x-forwarded-host") || h.get("host") || "").split(",")[0].trim();
+  if (!/^[a-z0-9.-]+(:\d+)?$/i.test(host)) return siteUrl();
+  const proto = (h.get("x-forwarded-proto") || "").split(",")[0].trim() || (host.startsWith("localhost") ? "http" : "https");
+  return `${proto === "http" ? "http" : "https"}://${host}`;
+}
+export const googleRedirectUri = async () => `${await publicOrigin()}/api/auth/google/callback`;
 
 const FLOW_COOKIE = "g_oauth";
 const PENDING_COOKIE = "oap";
@@ -21,7 +34,7 @@ export async function startFlow(next: string, mode: Flow["mode"]) {
   const challenge = createHash("sha256").update(flow.verifier).digest("base64url");
   const q = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID!,
-    redirect_uri: googleRedirectUri(),
+    redirect_uri: await googleRedirectUri(),
     response_type: "code",
     scope: "openid email profile",
     state: flow.state,
@@ -59,7 +72,7 @@ export async function exchangeCode(code: string, verifier: string): Promise<stri
       code,
       client_id: process.env.GOOGLE_CLIENT_ID!,
       client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-      redirect_uri: googleRedirectUri(),
+      redirect_uri: await googleRedirectUri(),
       grant_type: "authorization_code",
       code_verifier: verifier,
     }),
