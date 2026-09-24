@@ -13,6 +13,7 @@ export default function Privacidade() {
         <li>Cadastro: e-mail, nick, datas de nascimento, cidade/UF, senha (armazenada apenas como hash argon2).</li>
         <li><b className="text-fg">Dados sensíveis</b> (art. 11): tipo de perfil, preferências e fotos, tratados somente com seu consentimento específico.</li>
         <li>Login com Google (opcional): recebemos do Google apenas seu e-mail e um identificador da conta. Não publicamos nada no seu Google nem acessamos contatos ou outros dados. Você pode desvincular em Conta.</li>
+        <li>Localização: calculamos distâncias pela cidade do perfil. Se você ativar “localização aproximada”, guardamos só uma posição arredondada (~1 km), nunca a exata. Para outras pessoas aparece apenas uma faixa (ex.: “~15 km”), e você pode sair da busca por proximidade em Meu perfil.</li>
         <li>Selfie de verificação: usada apenas para confirmar maioridade e autenticidade; acesso restrito à moderação.</li>
         <li>Registros de acesso (IP, porta, data e hora): guardados por 6 meses, conforme o art. 15 do Marco Civil da Internet.</li>
       </ul>

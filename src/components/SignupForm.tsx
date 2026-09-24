@@ -3,7 +3,8 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { completeGoogleSignup, signup } from "@/app/actions/auth";
-import { PROFILE_TYPES, UFS, type ProfileTypeKey } from "@/lib/config";
+import { PROFILE_TYPES, type ProfileTypeKey } from "@/lib/config";
+import { CityFields } from "./CityFields";
 
 export function SignupForm({ google }: { google?: { email: string } }) {
   const [state, action, pending] = useActionState(google ? completeGoogleSignup : signup, undefined);
@@ -52,16 +53,7 @@ export function SignupForm({ google }: { google?: { email: string } }) {
             </div>
           </>
         )}
-        <div className="grid grid-cols-[80px_1fr] gap-2">
-          <div>
-            <label className="label">UF</label>
-            <select name="state" className="input" defaultValue="SP">{UFS.map((u) => <option key={u}>{u}</option>)}</select>
-          </div>
-          <div>
-            <label className="label">Cidade</label>
-            <input name="city" required className="input" />
-          </div>
-        </div>
+        <CityFields required />
       </div>
       <div className="space-y-2 text-sm text-mute">
         <label className="flex gap-2"><input type="checkbox" name="adult" required /> Declaro que todas as pessoas deste perfil têm 18 anos ou mais e que vou comprovar por verificação de selfie.</label>

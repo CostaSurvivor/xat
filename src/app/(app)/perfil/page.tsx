@@ -1,8 +1,9 @@
 import Link from "next/link";
+import { CityFields } from "@/components/CityFields";
 import { PasswordForm } from "@/components/PasswordForm";
 import { hasPassword } from "@/lib/oauth";
 import { db } from "@/lib/db";
-import { LIKE_GROUPS, PERSON_FIELDS, UFS } from "@/lib/config";
+import { LIKE_GROUPS, PERSON_FIELDS } from "@/lib/config";
 import { ageOn } from "@/lib/age";
 import { isVerified, requireUser } from "@/server/auth";
 import { deleteMedia, setAlbumAccess, updatePersons, updateProfile, uploadPhoto } from "@/app/actions/profile";
@@ -63,16 +64,7 @@ export default async function MeuPerfil() {
             <label className="label">Sobre vocês</label>
             <textarea name="bio" maxLength={1500} defaultValue={user.bio ?? ""} className="input h-28" placeholder="Casal liberal de SP, curtimos…" />
           </div>
-          <div className="grid grid-cols-[80px_1fr] gap-2">
-            <div>
-              <label className="label">UF</label>
-              <select name="state" defaultValue={user.state ?? "SP"} className="input">{UFS.map((u) => <option key={u}>{u}</option>)}</select>
-            </div>
-            <div>
-              <label className="label">Cidade</label>
-              <input name="city" defaultValue={user.city ?? ""} className="input" />
-            </div>
-          </div>
+          <CityFields defaultState={user.state ?? "SP"} defaultCity={user.city ?? ""} />
           <div className="space-y-3">
             <span className="label">O que curtem</span>
             {LIKE_GROUPS.map((g) => (
@@ -110,6 +102,7 @@ export default async function MeuPerfil() {
           <div className="space-y-2 text-sm text-mute">
             <label className="flex gap-2"><input type="checkbox" name="acceptPmPhotos" defaultChecked={user.acceptPmPhotos} /> Aceito receber fotos no PV (chegam borradas até eu abrir)</label>
             <label className="flex gap-2"><input type="checkbox" name="hideCity" defaultChecked={user.hideCity} /> Esconder minha cidade</label>
+            <label className="flex gap-2"><input type="checkbox" name="showDistance" defaultChecked={user.showDistance} /> Aparecer na busca por proximidade (mostra só a distância aproximada, ex.: “~15 km”; nunca o endereço)</label>
             <label className="flex gap-2"><input type="checkbox" name="hideFromUnverified" defaultChecked={user.hideFromUnverified} /> Esconder meu perfil e fotos de quem não é verificado</label>
           </div>
           <button className="btn-gold">Salvar</button>

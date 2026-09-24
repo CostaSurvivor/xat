@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { allAdults, parseBirthDate } from "@/lib/age";
+import { coordsForProfile } from "@/lib/geo";
 import { PROFILE_TYPES, TERMS_VERSION, UFS, type ProfileTypeKey } from "@/lib/config";
 import { limiter } from "@/lib/ratelimit";
 import { clientInfo, createSession, destroySession, hashPassword, isFingerprintBanned, verifyPassword, logAccess } from "@/server/auth";
@@ -69,6 +70,7 @@ export async function signup(_: FormState, formData: FormData): Promise<FormStat
       profileType: d.profileType,
       city: d.city,
       state: d.state,
+      ...coordsForProfile(d.city, d.state, { geoSource: null }),
       role: isAdmin ? "ADMIN" : "USER",
       ageVerification: isAdmin ? "APPROVED" : "NONE",
       ageVerifiedAt: isAdmin ? new Date() : null,
@@ -116,6 +118,7 @@ export async function completeGoogleSignup(_: FormState, formData: FormData): Pr
       profileType: d.profileType,
       city: d.city,
       state: d.state,
+      ...coordsForProfile(d.city, d.state, { geoSource: null }),
       persons: { create: labels.map((label, i) => ({ label, birthDate: births[i]! })) },
       consents: { create: ["TERMS", "PRIVACY", "SENSITIVE_DATA", "AGE_18"].map((kind) => ({ kind, version: TERMS_VERSION, ip })) },
       wallet: { create: { kind: "USER" } },

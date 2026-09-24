@@ -20,7 +20,9 @@ export async function GET() {
     db.media.findMany({ where: { ownerId: u.id }, select: { id: true, kind: true, createdAt: true, status: true } }),
     db.accessLog.findMany({ where: { userId: u.id }, orderBy: { createdAt: "desc" }, take: 1000 }),
   ]);
-  const { passwordHash, ...profile } = u;
+  // segredos de login não saem no arquivo (se vazar, não compromete a conta)
+  const { passwordHash, twoFactorSecret, ...profile } = u;
+  void passwordHash; void twoFactorSecret;
   void passwordHash;
   const [liveStreams, liveMessages] = await Promise.all([
     db.liveStream.findMany({ where: { hostId: u.id }, select: { id: true, title: true, startedAt: true, endedAt: true, tipTotal: true, peakViewers: true } }),

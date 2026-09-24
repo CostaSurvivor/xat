@@ -52,7 +52,7 @@ export async function deleteAccount(_: { error?: string } | undefined, formData:
     db.session.deleteMany({ where: { userId: user.id } }),
     db.user.update({
       where: { id: user.id },
-      data: { status: "DELETED", email: `${anon}@deleted.invalid`, nick: anon, bio: null, city: null, likes: [], avatarId: null, passwordHash: "!" },
+      data: { status: "DELETED", email: `${anon}@deleted.invalid`, nick: anon, bio: null, city: null, likes: [], avatarId: null, passwordHash: "!", statusText: null, lat: null, lng: null, geoSource: null, googleSub: null, twoFactorSecret: null, twoFactorEnabled: false },
     }),
   ]);
   await audit(user.id, "account.delete", "User", user.id);

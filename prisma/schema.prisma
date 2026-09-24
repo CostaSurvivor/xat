@@ -228,6 +228,10 @@ model User {
   twoFactorSecret    String?            @db.VarChar(64) // TOTP (base32); ativo quando twoFactorEnabled
   twoFactorEnabled   Boolean            @default(false)
   googleSub          String?            @db.VarChar(64) // login com Google (unicidade garantida no código)
+  lat                Float? // coordenadas aproximadas (cidade ou aparelho, 2 casas ~1 km)
+  lng                Float?
+  geoSource          String?            @db.VarChar(5) // CITY | GPS
+  showDistance       Boolean            @default(true) // aparece nas buscas por raio
   lastSeenAt         DateTime?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
@@ -266,6 +270,7 @@ model User {
   @@index([state, city])
   @@index([createdAt])
   @@index([googleSub])
+  @@index([lat, lng])
 }
 
 // 1 pessoa (solteiro) ou 2 (casal). Todas 18+.
