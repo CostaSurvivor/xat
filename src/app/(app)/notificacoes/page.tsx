@@ -13,6 +13,7 @@ export const metadata = { title: "Avisos" };
 export const dynamic = "force-dynamic";
 
 const ICON: Record<string, string> = {
+  TESTIMONIAL: "📝",
   LIVE: "🔴",
   EVENT: "🎉",
   TICKET: "🎫",
@@ -51,6 +52,7 @@ export default async function Notificacoes({ searchParams }: { searchParams: Pro
     if (n.kind === "MENTION" && n.refId) return `/${n.refId}`;
     if (n.kind === "TRADE" && n.refId) return `/trocas/${n.refId}`;
     if (n.kind === "LIVE" && n.refId) return `/ao-vivo/${n.refId}`;
+    if (n.kind === "TESTIMONIAL") return n.refId ? `/u/${n.refId}` : "/depoimentos";
     if (n.kind === "EVENT" && n.refId) return `/eventos/${n.refId}`;
     return nick ? `/u/${nick}` : "#";
   };
