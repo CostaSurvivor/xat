@@ -7,6 +7,7 @@ import { compileStyle, serializeStyle } from "@/lib/items";
 import { CURRENCY_ICON } from "@/lib/config";
 import { Nick } from "./Nick";
 import { Avatar } from "./Avatar";
+import { RoleIcon } from "./RoleIcon";
 
 type Item = { id: string; name: string; description: string | null; category: string; rarity: string; config: unknown; powerScore: number; price7: number | null; price30: number | null; pricePerm: number | null; soldOut: boolean; left: number | null };
 
@@ -36,7 +37,9 @@ export function ShopItem({ item, nick, avatarId, canBuy }: { item: Item; nick: s
     <div className="card flex flex-col p-4">
       <div className="mb-3 flex h-20 items-center justify-center gap-3 rounded-xl bg-ink/70">
         {item.category === "AVATAR_FRAME" && <Avatar mediaId={avatarId} nick={nick} size={48} style={style} />}
-        {item.category === "TEXT_COLOR" ? (
+        {item.category === "DOLL" ? (
+          <span className="flex items-center gap-2"><RoleIcon role="MEMBER" size={56} accessory={cfg.accessory} /><Nick nick={nick} link={false} /></span>
+        ) : item.category === "TEXT_COLOR" ? (
           <span><Nick nick={nick} link={false} />: <span style={style.text}>Oi, tudo bem? 😘</span></span>
         ) : item.category === "POWER" ? (
           <span className="px-2 text-center text-sm">{POWER_PT[cfg.power]}</span>

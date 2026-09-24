@@ -7,8 +7,13 @@ import { adminUserAction } from "@/app/actions/admin";
 export const dynamic = "force-dynamic";
 
 export default async function Usuarios({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const { q = "" } = await searchParams;
+  // senha temporária gerada no último "Resetar senha" (mostrada uma vez, por 10 min)
+  const tmpRow = await db.platformSetting.findUnique({ where: { key: `tmppw:${admin.id}` } });
+  const tmp = tmpRow?.value as { userId: string; temp: string; at: number } | undefined;
+  if (tmpRow) await db.platformSetting.delete({ where: { key: `tmppw:${admin.id}` } });
+  const tmpUser = tmp && Date.now() - tmp.at < 10 * 60_000 ? await db.user.findUnique({ where: { id: tmp.userId }, select: { nick: true } }) : null;
   const users = await db.user.findMany({
     where: q ? { OR: [{ nick: { contains: q } }, { email: { contains: q } }] } : {},
     orderBy: { createdAt: "desc" },
@@ -18,6 +23,11 @@ export default async function Usuarios({ searchParams }: { searchParams: Promise
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-bold">Usuários</h1>
+      {tmp && tmpUser && (
+        <p className="rounded-xl border border-gold/50 bg-gold/10 p-3 text-sm">
+          🔑 Senha temporária de <b>@{tmpUser.nick}</b>: <code className="rounded bg-ink px-2 py-0.5 text-gold2">{tmp.temp}</code> · envie para a pessoa e peça para trocar em Meu perfil → Trocar senha. (Só aparece agora.)
+        </p>
+      )}
       <form><input name="q" defaultValue={q} placeholder="nick ou e-mail" className="input max-w-sm" /></form>
       <div className="card divide-y divide-line">
         {users.map((u) => (
@@ -48,6 +58,8 @@ export default async function Usuarios({ searchParams }: { searchParams: Promise
                 <button className="btn-ghost py-1 text-xs">+VIP</button>
               </form>
               {u.ageVerification !== "APPROVED" && <form action={adminUserAction.bind(null, u.id)}><input type="hidden" name="op" value="verify" /><button className="btn-ghost py-1 text-xs">Verificar</button></form>}
+              <form action={adminUserAction.bind(null, u.id)}><input type="hidden" name="op" value="resetpw" /><button className="btn-ghost py-1 text-xs">Resetar senha</button></form>
+              <Link href={`/admin/usuarios/${u.id}`} className="btn-ghost py-1 text-xs">Histórico</Link>
               {u.status === "ACTIVE" ? (
                 <>
                   <form action={adminUserAction.bind(null, u.id)}><input type="hidden" name="op" value="suspend" /><button className="btn-ghost py-1 text-xs">Suspender</button></form>

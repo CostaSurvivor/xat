@@ -15,6 +15,18 @@ export async function approvePayment(paymentId: string) {
   const p = await creditPayment(paymentId, admin.id);
   await notify(p.userId, "COINS_CREDITED", p.kind === "VIP" ? `⭐ Assinatura ativada (${p.vipDays} dias)! Agora você assiste aos vídeos.` : `✅ Pix ${p.code} aprovado: +${p.coins} ${CURRENCY_NAME}!`);
   await audit(admin.id, "payment.approve", "Payment", paymentId);
+  const buyer = await db.user.findUnique({ where: { id: p.userId }, select: { email: true, nick: true } });
+  if (buyer) {
+    const { sendMail } = await import("@/server/mail");
+    const brl = (p.amountCents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    await sendMail(buyer.email, `Recibo ${p.code}`, [
+      `Olá, ${buyer.nick}! Seu pagamento foi confirmado.`,
+      `Pedido: ${p.code}`,
+      `Item: ${p.kind === "VIP" ? `Assinatura ${p.packageName} (${p.vipDays} dias)` : `${p.packageName} (${p.coins} ${CURRENCY_NAME})`}`,
+      `Valor: ${brl} · Pix`,
+      `Data: ${new Date().toLocaleString("pt-BR")}`,
+    ]);
+  }
   revalidatePath("/admin/pagamentos");
 }
 
@@ -45,9 +57,14 @@ async function banUser(userId: string, actorId: string, reason: string, days: nu
   await db.session.deleteMany({ where: { userId } });
   if (!days) {
     const ips = await db.accessLog.findMany({ where: { userId }, distinct: ["ip"], select: { ip: true }, take: 10 });
+    const devices = await db.accessLog.findMany({ where: { userId, deviceId: { not: null } }, distinct: ["deviceId"], select: { deviceId: true }, take: 10 });
     const expiresAt = null;
     await db.banFingerprint.createMany({
-      data: [{ kind: "EMAIL", valueHash: sha256(u.email), reason, expiresAt }, ...ips.map((i) => ({ kind: "IP", valueHash: sha256(i.ip), reason, expiresAt: new Date(Date.now() + 90 * 86400_000) }))],
+      data: [
+        { kind: "EMAIL", valueHash: sha256(u.email), reason, expiresAt },
+        ...ips.map((i) => ({ kind: "IP", valueHash: sha256(i.ip), reason, expiresAt: new Date(Date.now() + 90 * 86400_000) })),
+        ...devices.map((d) => ({ kind: "DEVICE", valueHash: sha256(d.deviceId!), reason, expiresAt })),
+      ],
       skipDuplicates: true,
     });
   }
@@ -131,6 +148,14 @@ export async function adminUserAction(userId: string, formData: FormData) {
   } else if (op === "verify") {
     await db.user.update({ where: { id: userId }, data: { ageVerification: "APPROVED", ageVerifiedAt: new Date() } });
     await audit(admin.id, "user.verify", "User", userId);
+  } else if (op === "resetpw") {
+    const { randomBytes } = await import("node:crypto");
+    const { hashPassword } = await import("@/server/auth");
+    const temp = "Tmp-" + randomBytes(5).toString("hex");
+    await db.user.update({ where: { id: userId }, data: { passwordHash: await hashPassword(temp) } });
+    await db.session.deleteMany({ where: { userId } });
+    await db.platformSetting.upsert({ where: { key: `tmppw:${admin.id}` }, create: { key: `tmppw:${admin.id}`, value: { userId, temp, at: Date.now() } }, update: { value: { userId, temp, at: Date.now() } } });
+    await audit(admin.id, "user.reset_password", "User", userId);
   } else if (op === "vip") {
     const days = Number(formData.get("days") || 30);
     if (!Number.isInteger(days) || days < 1 || days > 3650) return;
@@ -316,4 +341,17 @@ export async function saveHeroImage(_: { ok?: boolean; error?: string } | undefi
   await audit(admin.id, "settings.hero");
   revalidatePath("/", "layout");
   return { ok: true };
+}
+
+export async function saveCoupon(formData: FormData) {
+  const admin = await requireAdmin();
+  const code = String(formData.get("code") || "").trim().toUpperCase();
+  if (!/^[A-Z0-9_-]{3,30}$/.test(code)) return;
+  const bonusPercent = Math.max(1, Math.min(200, Number(formData.get("bonusPercent") || 0)));
+  const maxUses = Number(formData.get("maxUses") || 0) || null;
+  const days = Number(formData.get("days") || 0);
+  const data = { bonusPercent, maxUses, active: formData.get("active") === "on", expiresAt: days > 0 ? new Date(Date.now() + days * 86400_000) : null };
+  await db.coupon.upsert({ where: { code }, create: { code, ...data }, update: data });
+  await audit(admin.id, "coupon.save", "Coupon", code);
+  revalidatePath("/admin/loja");
 }

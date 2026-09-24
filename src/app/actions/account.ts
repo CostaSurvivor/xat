@@ -71,3 +71,36 @@ export async function changePassword(_: { ok?: boolean; error?: string } | undef
   await audit(user.id, "account.password", "User", user.id);
   return { ok: true };
 }
+
+// ---------------- 2FA (TOTP) ----------------
+export async function start2fa() {
+  const user = await requireUser();
+  if (user.twoFactorEnabled) return;
+  const { newSecret } = await import("@/server/totp");
+  await db.user.update({ where: { id: user.id }, data: { twoFactorSecret: newSecret() } });
+  const { revalidatePath } = await import("next/cache");
+  revalidatePath("/conta");
+}
+
+export async function confirm2fa(_: { ok?: boolean; error?: string } | undefined, formData: FormData) {
+  const user = await requireUser();
+  if (!user.twoFactorSecret) return { error: "Comece a configuração de novo" };
+  const { verifyTotp } = await import("@/server/totp");
+  if (!verifyTotp(user.twoFactorSecret, String(formData.get("code") || ""))) return { error: "Código inválido. Confira a hora do celular." };
+  await db.user.update({ where: { id: user.id }, data: { twoFactorEnabled: true } });
+  await audit(user.id, "account.2fa_on", "User", user.id);
+  const { revalidatePath } = await import("next/cache");
+  revalidatePath("/conta");
+  return { ok: true };
+}
+
+export async function disable2fa(_: { ok?: boolean; error?: string } | undefined, formData: FormData) {
+  const user = await requireUser();
+  const { verifyTotp } = await import("@/server/totp");
+  if (!user.twoFactorSecret || !verifyTotp(user.twoFactorSecret, String(formData.get("code") || ""))) return { error: "Código inválido" };
+  await db.user.update({ where: { id: user.id }, data: { twoFactorEnabled: false, twoFactorSecret: null } });
+  await audit(user.id, "account.2fa_off", "User", user.id);
+  const { revalidatePath } = await import("next/cache");
+  revalidatePath("/conta");
+  return { ok: true };
+}

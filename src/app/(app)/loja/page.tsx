@@ -8,7 +8,8 @@ import { ShopItem } from "@/components/ShopItem";
 export const metadata = { title: "Loja" };
 
 const CATS: [string, string][] = [
-  ["GLOW", "✨ Glow no nick"],
+  ["DOLL", "🤠 Acessórios do boneco"],
+  ["GLOW", "✨ Glow neon no nick"],
   ["NICK_COLOR", "🎨 Cor do nick"],
   ["BADGE", "👑 Ícones"],
   ["AVATAR_FRAME", "🖼️ Molduras"],

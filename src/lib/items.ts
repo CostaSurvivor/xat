@@ -7,11 +7,13 @@ import type { CSSProperties } from "react";
  * Nada de CSS vindo de input livre — protege contra XSS/CSS injection.
  */
 const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/);
-const anim = z.enum(["none", "pulse", "rainbow", "shift", "flicker"]);
+const anim = z.enum(["none", "pulse", "rainbow", "shift", "flicker", "neon"]);
+export const DOLL_KINDS = ["cowboy", "horns", "cuckqueen", "wand", "tophat", "halo", "devil", "bunny", "mask", "whip", "champagne"] as const;
 
 export const BADGE_EMOJIS = ["👑", "🔥", "💎", "⛓️", "🎭", "🌶️", "💋", "🍑", "🍒", "😈", "⭐", "🦋", "🐍", "🍾", "🗝️", "💜"] as const;
 
 export const itemConfigSchemas = {
+  DOLL: z.object({ accessory: z.enum(DOLL_KINDS) }),
   GLOW: z.object({ colors: z.array(hex).min(1).max(4), animation: anim.default("none") }),
   NICK_COLOR: z.object({ colors: z.array(hex).min(1).max(3) }),
   TEXT_COLOR: z.object({ color: hex }),
@@ -40,6 +42,8 @@ export type NickStyle = {
   powers: Set<string>;
   power: number;
   founder?: boolean;
+  vip?: boolean;
+  doll?: string;
 };
 
 const ANIM_CLASS: Record<string, string> = {
@@ -48,6 +52,7 @@ const ANIM_CLASS: Record<string, string> = {
   rainbow: "fx-rainbow",
   shift: "fx-shift",
   flicker: "fx-flicker",
+  neon: "fx-neon",
 };
 
 /** Compila os itens ativos do usuário em estilos React seguros. */
@@ -62,11 +67,24 @@ export function compileStyle(items: ActiveItem[]): NickStyle {
     const c = r.data as Record<string, any>;
     switch (cat) {
       case "GLOW": {
+        // neon em camadas (estilo xat): núcleo claro + halos crescentes na(s) cor(es)
         const cols: string[] = c.colors;
-        s.nick.textShadow = cols.map((col, i) => `0 0 ${4 + i * 4}px ${col}`).join(", ");
+        const main = cols[0];
+        const second = cols[cols.length - 1];
+        s.nick.textShadow = [
+          `0 0 1px #fff`,
+          `0 0 3px ${main}`,
+          `0 0 6px ${main}`,
+          `0 0 10px ${second}`,
+          `0 0 18px ${second}`,
+          ...(cols.length > 2 ? [`0 0 26px ${cols[1]}`] : []),
+        ].join(", ");
         s.nickClass += " " + ANIM_CLASS[c.animation];
         break;
       }
+      case "DOLL":
+        s.doll = c.accessory;
+        break;
       case "NICK_COLOR": {
         const cols: string[] = c.colors;
         if (cols.length === 1) s.nick.color = cols[0];

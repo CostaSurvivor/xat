@@ -29,6 +29,7 @@ export default async function Pagamentos() {
             <span className="font-semibold">{brl(p.amountCents)}</span>
             <span>{p.kind === "VIP" ? `⭐ VIP ${p.vipDays}d` : `${CURRENCY_ICON}${p.coins}`}</span>
             {p.payerName && <span className="text-mute">pagador: {p.payerName}</span>}
+            {p.couponCode && <span className="text-xs text-gold2">🎟️ {p.couponCode}</span>}
             <span className={p.status === "CLAIMED" ? "text-gold2" : "text-mute"}>{p.status === "CLAIMED" ? "disse que pagou" : "aguardando"}</span>
             <span className="text-xs text-mute">{p.createdAt.toLocaleString("pt-BR")}</span>
             <div className="ml-auto flex gap-2">

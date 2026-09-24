@@ -101,6 +101,7 @@ enum MessageKind {
 }
 
 enum ItemCategory {
+  DOLL
   GLOW
   NICK_COLOR
   TEXT_COLOR
@@ -214,6 +215,8 @@ model User {
   albumVisibility  String             @default("FRIENDS") @db.VarChar(10) // PRIVATE | FRIENDS | FOLLOWERS
   avatarId         String?
   vipUntil         DateTime? // assinante até (cache de Subscription)
+  twoFactorSecret  String?   @db.VarChar(64) // TOTP (base32); ativo quando twoFactorEnabled
+  twoFactorEnabled Boolean   @default(false)
   lastSeenAt       DateTime?
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
@@ -280,6 +283,17 @@ model Session {
   createdAt DateTime @default(now())
   expiresAt DateTime
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model PasswordReset {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique @db.VarChar(64)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
 
   @@index([userId])
 }
@@ -711,6 +725,7 @@ model Payment {
   amountCents Int
   coins       Int
   packageName String        @db.VarChar(60)
+  couponCode  String?       @db.VarChar(30)
   payerName   String?       @db.VarChar(120)
   reviewedById String?
   reviewedAt  DateTime?
@@ -720,6 +735,17 @@ model Payment {
 
   @@index([status, createdAt])
   @@index([userId, createdAt])
+}
+
+// Cupom de bônus em recargas (ex.: BEMVINDO = +20% de moedas)
+model Coupon {
+  code         String    @id @db.VarChar(30) // maiúsculas
+  bonusPercent Int       @default(0)
+  maxUses      Int? // total na plataforma
+  usedCount    Int       @default(0)
+  expiresAt    DateTime?
+  active       Boolean   @default(true)
+  createdAt    DateTime  @default(now())
 }
 
 // Assinatura (perfil assinante: assiste vídeos, selo VIP, bônus de moedas)
@@ -789,6 +815,7 @@ model AccessLog {
   event     String   @db.VarChar(32)
   ip        String   @db.VarChar(64)
   port      Int?
+  deviceId  String?  @db.VarChar(64)
   userAgent String?  @db.VarChar(255)
   createdAt DateTime @default(now())
 

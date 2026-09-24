@@ -28,12 +28,14 @@ export async function clientInfo() {
   const fwd = h.get("x-forwarded-for")?.split(",")[0]?.trim();
   const ip = fwd || h.get("x-real-ip") || "0.0.0.0";
   const port = Number(h.get("x-forwarded-port") || h.get("x-real-port") || 0) || null;
-  return { ip, port, userAgent: h.get("user-agent")?.slice(0, 255) ?? null };
+  const deviceId = (await cookies()).get("did")?.value?.slice(0, 64) ?? null;
+  return { ip, port, deviceId, userAgent: h.get("user-agent")?.slice(0, 255) ?? null };
 }
 
 export async function logAccess(userId: string | null, event: string) {
-  const { ip, port, userAgent } = await clientInfo();
-  await db.accessLog.create({ data: { userId, event, ip, port, userAgent } });
+  const { ip, port, userAgent, deviceId } = await clientInfo();
+  await db.accessLog.create({ data: { userId, event, ip, port, userAgent, deviceId } });
+  maybeMaintenance();
 }
 
 export async function createSession(userId: string) {
@@ -121,4 +123,32 @@ export async function assertSameOrigin(req: Request) {
   } catch {
     return false;
   }
+}
+
+/** Algum identificador (e-mail, IP ou dispositivo) está banido? */
+export async function isFingerprintBanned(parts: { email?: string; ip?: string; deviceId?: string | null }) {
+  const or = [
+    parts.email ? { kind: "EMAIL", valueHash: sha256(parts.email) } : null,
+    parts.ip ? { kind: "IP", valueHash: sha256(parts.ip) } : null,
+    parts.deviceId ? { kind: "DEVICE", valueHash: sha256(parts.deviceId) } : null,
+  ].filter(Boolean) as { kind: string; valueHash: string }[];
+  if (!or.length) return false;
+  return (await db.banFingerprint.count({ where: { OR: or, AND: [{ OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] }] } })) > 0;
+}
+
+// Manutenção leve (sem cron na hospedagem compartilhada): no máximo 1x a cada 6h por processo.
+const g = globalThis as unknown as { __maint?: number };
+export function maybeMaintenance() {
+  if (g.__maint && Date.now() - g.__maint < 6 * 3600_000) return;
+  g.__maint = Date.now();
+  const sixMonths = new Date(Date.now() - 183 * 86400_000);
+  Promise.all([
+    // Marco Civil art. 15: registros de acesso guardados por 6 meses
+    db.accessLog.deleteMany({ where: { createdAt: { lt: sixMonths } } }),
+    // pedidos Pix abandonados
+    db.payment.updateMany({ where: { status: "PENDING", createdAt: { lt: new Date(Date.now() - 3 * 86400_000) } }, data: { status: "EXPIRED" } }),
+    // presença antiga nas salas e sessões vencidas
+    db.roomPresence.deleteMany({ where: { lastSeenAt: { lt: new Date(Date.now() - 86400_000) } } }),
+    db.session.deleteMany({ where: { expiresAt: { lt: new Date() } } }),
+  ]).catch(() => {});
 }

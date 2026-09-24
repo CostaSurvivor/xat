@@ -193,7 +193,7 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
               <div key={m.id} className="group flex items-start gap-2 rounded-lg px-1 py-0.5 hover:bg-white/[0.03]">
                 <Avatar mediaId={m.author.avatarId} nick={m.author.nick} size={28} style={m.author.style} />
                 <div className="min-w-0 flex-1 text-[15px] leading-snug">
-                  <span className="mr-1 inline-block align-[-2px]"><RoleIcon role={m.author.chatRole as ChatRole} size={15} /></span>
+                  <span className="mr-1 inline-block align-[-5px]"><RoleIcon role={m.author.chatRole as ChatRole} size={22} vip={m.author.style?.vip} accessory={m.author.style?.doll} /></span>
                   <Nick nick={m.author.nick} style={m.author.style} />
                   <span className="text-mute">: </span>
                   <span className="break-words" style={m.author.style?.text}>{renderBody(m.body, me.nick)}</span>
@@ -264,7 +264,7 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
             {online.map((u) => (
               <li key={u.id}>
                 <button onClick={() => setSelected(u)} className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-white/5 ${u.highlight ? "bg-gradient-to-r from-gold/20 to-transparent" : ""}`}>
-                  <RoleIcon role={u.chatRole as ChatRole} size={18} />
+                  <RoleIcon role={u.chatRole as ChatRole} size={28} vip={u.style?.vip} accessory={u.style?.doll} />
                   <Avatar mediaId={u.avatarId} nick={u.nick} size={24} style={u.style} />
                   <span className="min-w-0 flex-1 truncate"><Nick nick={u.nick} style={u.style} link={false} /></span>
                   {u.invisible && <span title="Invisível">👻</span>}
@@ -274,8 +274,9 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
           </ul>
           <div className="grid grid-cols-2 gap-x-2 gap-y-1 border-t border-line px-3 py-2 text-[11px] text-mute">
             {(Object.keys(CHAT_ROLES) as ChatRole[]).map((r) => (
-              <span key={r} className="flex items-center gap-1"><RoleIcon role={r} size={13} />{CHAT_ROLES[r].label}</span>
+              <span key={r} className="flex items-center gap-1"><RoleIcon role={r} size={14} />{CHAT_ROLES[r].label}</span>
             ))}
+            <span className="flex items-center gap-1"><RoleIcon role="GUEST" vip size={14} />Assinante</span>
           </div>
         </div>
       </aside>
@@ -287,7 +288,7 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
               <Avatar mediaId={selected.avatarId} nick={selected.nick} size={48} style={selected.style} />
               <div>
                 <Nick nick={selected.nick} style={selected.style} />
-                <div className="flex items-center gap-1 text-xs text-mute"><RoleIcon role={selected.chatRole as ChatRole} size={13} />{CHAT_ROLES[selected.chatRole as ChatRole].label}</div>
+                <div className="flex items-center gap-1 text-xs text-mute"><RoleIcon role={selected.chatRole as ChatRole} size={16} vip={selected.style?.vip} accessory={selected.style?.doll} />{CHAT_ROLES[selected.chatRole as ChatRole].label}{selected.style?.vip ? " · Assinante" : ""}</div>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2">

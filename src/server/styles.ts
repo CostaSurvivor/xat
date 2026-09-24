@@ -15,10 +15,13 @@ export async function stylesFor(userIds: string[]): Promise<Record<string, NickS
   });
   const by: Record<string, typeof inv> = {};
   for (const i of inv) (by[i.userId] ??= []).push(i);
-  const founders = new Set((await db.user.findMany({ where: { id: { in: ids }, email: { in: FOUNDER_EMAILS } }, select: { id: true } })).map((u) => u.id));
+  const infos = await db.user.findMany({ where: { id: { in: ids } }, select: { id: true, email: true, vipUntil: true } });
+  const founders = new Set(infos.filter((u) => FOUNDER_EMAILS.includes(u.email)).map((u) => u.id));
+  const vips = new Set(infos.filter((u) => u.vipUntil && u.vipUntil > new Date()).map((u) => u.id));
   const out: Record<string, NickStyleJSON> = {};
   for (const id of ids) {
     const st = serializeStyle(compileStyle((by[id] ?? []).map((i) => i.item)));
+    if (vips.has(id)) st.vip = true;
     if (founders.has(id)) {
       // fundador: visual exclusivo por cima dos itens (ninguém consegue comprar igual)
       st.founder = true;

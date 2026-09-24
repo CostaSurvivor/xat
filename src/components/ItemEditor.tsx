@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { saveItem } from "@/app/actions/admin";
 
 const EXAMPLES: Record<string, string> = {
+  DOLL: '{"accessory":"cowboy"}',
   GLOW: '{"colors":["#d4af37","#f1d77a"],"animation":"pulse"}',
   NICK_COLOR: '{"colors":["#ff512f","#f09819"]}',
   TEXT_COLOR: '{"color":"#f1d77a"}',

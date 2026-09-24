@@ -21,6 +21,25 @@ const OFFICIAL = [
 type ItemSeed = { slug: string; name: string; category: ItemCategory; rarity?: ItemRarity; config: object; powerScore?: number; price7?: number; price30?: number; pricePerm?: number; limitedQty?: number; description?: string };
 
 const ITEMS: ItemSeed[] = [
+  // Glow neon (estilo xat)
+  { slug: "neon-rosa", name: "Neon Rosa", category: "GLOW", rarity: "RARE", config: { colors: ["#ff2fa3", "#ff7ad0"], animation: "neon" }, price7: 70, price30: 190, pricePerm: 950, powerScore: 10 },
+  { slug: "neon-azul", name: "Neon Azul", category: "GLOW", rarity: "RARE", config: { colors: ["#28d7ff", "#2f6bff"], animation: "neon" }, price7: 70, price30: 190, pricePerm: 950, powerScore: 10 },
+  { slug: "neon-verde", name: "Neon Verde", category: "GLOW", rarity: "RARE", config: { colors: ["#39ff88", "#10b35a"], animation: "neon" }, price7: 70, price30: 190, pricePerm: 950, powerScore: 10 },
+  { slug: "neon-roxo", name: "Neon Roxo", category: "GLOW", rarity: "EPIC", config: { colors: ["#b36bff", "#7a2cff", "#ff4fd8"], animation: "neon" }, price7: 90, price30: 240, pricePerm: 1200, powerScore: 12 },
+  { slug: "neon-dourado", name: "Neon Dourado", category: "GLOW", rarity: "EPIC", config: { colors: ["#fff3c4", "#d4af37"], animation: "neon" }, price7: 100, price30: 280, pricePerm: 1400, powerScore: 14 },
+  { slug: "neon-arco-iris", name: "Neon Arco-íris", category: "GLOW", rarity: "LEGENDARY", config: { colors: ["#ff3b6b", "#ffd23b", "#3bffb4"], animation: "rainbow" }, price7: 150, price30: 400, pricePerm: 2200, powerScore: 20 },
+  // Acessórios do boneco
+  { slug: "boneco-cowboy", name: "Chapéu de cowboy", category: "DOLL", config: { accessory: "cowboy" }, price30: 80, pricePerm: 400, powerScore: 4 },
+  { slug: "boneco-chifre", name: "Chifre de boi (Cuckold)", category: "DOLL", rarity: "RARE", config: { accessory: "horns" }, price30: 90, pricePerm: 450, powerScore: 5 },
+  { slug: "boneco-cuckqueen", name: "Tiara com chifrinhos (Cuckqueen)", category: "DOLL", rarity: "RARE", config: { accessory: "cuckqueen" }, price30: 90, pricePerm: 450, powerScore: 5 },
+  { slug: "boneco-varinha", name: "Varinha mágica", category: "DOLL", rarity: "EPIC", config: { accessory: "wand" }, price30: 120, pricePerm: 600, powerScore: 6 },
+  { slug: "boneco-cartola", name: "Cartola", category: "DOLL", config: { accessory: "tophat" }, price30: 70, pricePerm: 350, powerScore: 3 },
+  { slug: "boneco-aureola", name: "Auréola de anjo", category: "DOLL", config: { accessory: "halo" }, price30: 70, pricePerm: 350, powerScore: 3 },
+  { slug: "boneco-diabinha", name: "Chifres de diabinha", category: "DOLL", config: { accessory: "devil" }, price30: 70, pricePerm: 350, powerScore: 3 },
+  { slug: "boneco-coelhinha", name: "Orelhas de coelhinha", category: "DOLL", rarity: "RARE", config: { accessory: "bunny" }, price30: 90, pricePerm: 450, powerScore: 5 },
+  { slug: "boneco-mascara", name: "Máscara de baile", category: "DOLL", rarity: "RARE", config: { accessory: "mask" }, price30: 90, pricePerm: 450, powerScore: 5 },
+  { slug: "boneco-chicote", name: "Chicote", category: "DOLL", rarity: "EPIC", config: { accessory: "whip" }, price30: 110, pricePerm: 550, powerScore: 6 },
+  { slug: "boneco-champanhe", name: "Taça de champanhe", category: "DOLL", config: { accessory: "champagne" }, price30: 60, pricePerm: 300, powerScore: 3 },
   { slug: "glow-vinho", name: "Glow Vinho", category: "GLOW", config: { colors: ["#a01c43"], animation: "none" }, price7: 40, price30: 120, pricePerm: 600, powerScore: 5 },
   { slug: "glow-ouro", name: "Glow Dourado", category: "GLOW", rarity: "RARE", config: { colors: ["#d4af37", "#f1d77a"], animation: "pulse" }, price7: 80, price30: 220, pricePerm: 1100, powerScore: 10 },
   { slug: "glow-arco-iris", name: "Glow Arco-íris", category: "GLOW", rarity: "EPIC", config: { colors: ["#ff3b6b", "#ffd23b", "#3bffb4"], animation: "rainbow" }, price7: 120, price30: 350, pricePerm: 1800, powerScore: 15 },
@@ -61,11 +80,11 @@ async function main() {
       await db.room.create({ data: { slug, name, description, isOfficial: true, theme: slug === "lobby" ? "vinho" : "noir" } });
     }
   }
-  if (firstRun) {
-    for (const it of ITEMS) {
-      const { slug, ...data } = it;
-      await db.item.upsert({ where: { slug }, create: { slug, ...data }, update: {} });
-    }
+  // Itens novos do catálogo entram a cada deploy; os existentes NÃO são alterados
+  // (preço/ativação editados pelo admin são preservados).
+  for (const it of ITEMS) {
+    const { slug, ...data } = it;
+    await db.item.upsert({ where: { slug }, create: { slug, ...data }, update: {} });
   }
   if ((await db.coinPackage.count()) === 0) await db.coinPackage.createMany({ data: PACKAGES });
   if ((await db.vipPlan.count()) === 0)

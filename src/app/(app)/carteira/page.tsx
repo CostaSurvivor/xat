@@ -4,7 +4,9 @@ import { CURRENCY_ICON, CURRENCY_NAME } from "@/lib/config";
 import { getPixConfig } from "@/server/settings";
 import { isVerified, requireUser } from "@/server/auth";
 import { balanceOf } from "@/server/ledger";
-import { createPixPayment } from "@/app/actions/wallet";
+import { applyCoupon, createPixPayment } from "@/app/actions/wallet";
+import { ActionForm } from "@/components/Forms";
+import { cookies } from "next/headers";
 
 export const metadata = { title: "Carteira" };
 
@@ -18,6 +20,8 @@ export default async function Carteira({ searchParams }: { searchParams: Promise
   const user = await requireUser();
   const { erro } = await searchParams;
   const pix = await getPixConfig();
+  const cupom = (await cookies()).get("cupom")?.value;
+  const coupon = cupom ? await db.coupon.findUnique({ where: { code: cupom } }) : null;
   const wallet = await db.wallet.findUnique({ where: { userId: user.id } });
   const [balance, packages, payments, entries] = await Promise.all([
     balanceOf(user.id),
@@ -36,6 +40,11 @@ export default async function Carteira({ searchParams }: { searchParams: Promise
       {erro === "limite" && <p className="rounded-xl bg-wine/40 p-3 text-sm">Muitos pedidos seguidos. Aguarde um pouco.</p>}
       <section>
         <h2 className="mb-2 font-semibold text-gold">Recarregar via Pix</h2>
+        <ActionForm action={applyCoupon} className="mb-3 flex flex-wrap items-center gap-2" okText={coupon ? `Cupom ${coupon.code} aplicado: +${coupon.bonusPercent}% de ${CURRENCY_NAME}!` : "Cupom removido."}>
+          <input name="code" defaultValue={cupom ?? ""} placeholder="Tem cupom?" className="input w-40 py-1.5 uppercase" />
+          <button className="btn-ghost py-1.5 text-xs">Aplicar</button>
+          {coupon && <span className="text-xs text-green-300">🎟️ {coupon.code}: +{coupon.bonusPercent}% nas próximas recargas</span>}
+        </ActionForm>
         {!isVerified(user) ? (
           <p className="text-sm text-mute">🔒 <Link href="/verificacao" className="text-gold underline">Verifique seu perfil</Link> para recarregar.</p>
         ) : (
@@ -45,6 +54,7 @@ export default async function Carteira({ searchParams }: { searchParams: Promise
                 <p className="text-sm text-mute">{p.name}</p>
                 <p className="text-2xl font-bold">{CURRENCY_ICON} {p.coins}</p>
                 {p.bonusCoins > 0 && <p className="text-xs text-green-300">+{p.bonusCoins} bônus</p>}
+                {coupon && <p className="text-xs text-gold2">+{Math.floor((p.coins * coupon.bonusPercent) / 100)} do cupom</p>}
                 <button className="btn-gold mt-3 w-full" disabled={!pix.key}>{brl(p.priceCents)}</button>
               </form>
             ))}
