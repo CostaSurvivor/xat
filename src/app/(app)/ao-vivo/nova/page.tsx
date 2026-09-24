@@ -21,8 +21,8 @@ export default async function NovaLive() {
       <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold">🎥 Transmitir ao vivo</h1>
       {denied ? (
         <div className="card p-5">
-          <p>{denied}</p>
-          <Link href="/verificacao" className="btn-gold mt-3">Verificar agora</Link>
+          <p>{denied.message}</p>
+          <Link href={denied.href} className="btn-gold mt-3">{denied.cta}</Link>
         </div>
       ) : (
         <ActionForm action={startLiveAction} className="card space-y-4 p-5">

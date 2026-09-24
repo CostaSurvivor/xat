@@ -88,3 +88,15 @@ const hasDb = !!process.env.DATABASE_URL;
     expect(await L.balanceOf(fan.id)).toBe(200);
   });
 });
+
+describe("ao vivo: quem pode transmitir", async () => {
+  const { canBroadcast } = await import("@/server/live");
+  const u = (o: object) => ({ role: "USER", vipUntil: null, ageVerification: "APPROVED", ...o }) as never;
+  it("só assinantes verificados (staff conta como assinante)", () => {
+    expect(canBroadcast(u({}))?.href).toBe("/assinar");
+    expect(canBroadcast(u({ vipUntil: new Date(Date.now() - 1000) }))?.href).toBe("/assinar"); // venceu
+    expect(canBroadcast(u({ vipUntil: new Date(Date.now() + 86400_000), ageVerification: "PENDING" }))?.href).toBe("/verificacao");
+    expect(canBroadcast(u({ vipUntil: new Date(Date.now() + 86400_000) }))).toBeNull();
+    expect(canBroadcast(u({ role: "ADMIN" }))).toBeNull();
+  });
+});

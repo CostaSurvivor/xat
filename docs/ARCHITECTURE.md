@@ -18,7 +18,7 @@ Por decisão do dono, a primeira versão roda em **hospedagem Node.js da Hosting
 
 ### Ao vivo (`/ao-vivo`)
 
-- **Quem transmite:** perfis verificados (ou só assinantes com `LIVE_REQUIRE_SUBSCRIBER=1`). Uma transmissão por vez. Quem transmite aceita as regras: 18+, consentimento e nada de local público.
+- **Quem transmite:** só **assinantes verificados** (admin e staff também podem). Se a assinatura vence durante a live, ela é encerrada. Uma transmissão por vez. Quem transmite aceita as regras: 18+, consentimento e nada de local público.
 - **Quem assiste:** todos os membros logados, ou só assinantes, conforme a escolha de quem transmite. Bloqueios e remoções são respeitados.
 - **Vídeo:** usa `getUserMedia` com resolução até 960×540 a 24 fps e ~700 kbps por espectador. Quem transmite envia uma cópia para cada espectador, então o limite depende do upload dessa pessoa (padrão 10). Quem passa do limite continua no chat e recebe o vídeo quando abre vaga. O espectador vê uma marca d'água com o próprio nick passeando pelo vídeo.
 - **Rede:** STUN público por padrão. Em redes móveis com CGNAT, parte das conexões só funciona com **TURN**: configure `LIVE_TURN_URLS`, `LIVE_TURN_USERNAME` e `LIVE_TURN_CREDENTIAL`.

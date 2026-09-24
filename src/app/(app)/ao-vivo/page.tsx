@@ -23,7 +23,7 @@ export default async function AoVivo() {
         {mine ? (
           <Link href={`/ao-vivo/${mine.id}`} className="btn-wine">Voltar para sua transmissão</Link>
         ) : denied ? (
-          <Link href="/verificacao" className="btn-ghost" title={denied}>🎥 Verifique-se para transmitir</Link>
+          <Link href={denied.href} className="btn-ghost" title={denied.message}>{denied.cta}</Link>
         ) : (
           <Link href="/ao-vivo/nova" className="btn-gold">🎥 Transmitir agora</Link>
         )}

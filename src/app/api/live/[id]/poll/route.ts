@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { isStale } from "@/lib/live";
+import { isSubscriber } from "@/server/auth";
 import { endLive, liveCtx, liveMessages, sweepLive, topTippers, touchLive, viewersOf } from "@/server/live";
 
 /** Polling do Ao vivo: chat, gorjetas, espectadores e sinais WebRTC endereçados a mim. */
@@ -12,6 +13,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   await sweepLive();
   if (live.status === "LIVE" && !isHost && isStale(live.lastBeatAt)) {
     await endLive(live.id, "Conexão de quem transmitia caiu");
+    live = { ...live, status: "ENDED" };
+  }
+  if (live.status === "LIVE" && isHost && !isSubscriber(user)) {
+    await endLive(live.id, "A assinatura de quem transmitia venceu.");
     live = { ...live, status: "ENDED" };
   }
   if (live.status === "LIVE") await touchLive(live, user.id);
