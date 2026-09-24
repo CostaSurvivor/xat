@@ -14,3 +14,10 @@ export async function getPixConfig(): Promise<PixConfig> {
     merchantCity: v.merchantCity || PIX.merchantCity,
   };
 }
+
+/** Imagem de fundo da tela inicial (enviada em Admin → Configurações). */
+export async function getHeroImage(): Promise<{ key: string; v: string } | null> {
+  const row = await db.platformSetting.findUnique({ where: { key: "hero" } });
+  const v = row?.value as { key?: string; v?: string } | undefined;
+  return v?.key ? { key: v.key, v: v.v ?? "1" } : null;
+}

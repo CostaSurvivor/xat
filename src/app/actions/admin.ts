@@ -286,3 +286,34 @@ export async function savePixConfig(_: { ok?: boolean; error?: string } | undefi
   revalidatePath("/admin/config");
   return { ok: true };
 }
+
+export async function saveHeroImage(_: { ok?: boolean; error?: string } | undefined, formData: FormData) {
+  const admin = await requireAdmin();
+  const { default: sharp } = await import("sharp");
+  const { storage } = await import("@/server/storage");
+  const { randomBytes } = await import("node:crypto");
+  if (formData.get("remove") === "1") {
+    await db.platformSetting.deleteMany({ where: { key: "hero" } });
+    revalidatePath("/", "layout");
+    return { ok: true };
+  }
+  const file = formData.get("hero");
+  if (!(file instanceof File) || !file.size) return { error: "Escolha uma imagem" };
+  if (file.size > 15 * 1024 * 1024) return { error: "Imagem muito grande (máx. 15 MB)" };
+  let out: Buffer;
+  try {
+    out = await sharp(Buffer.from(await file.arrayBuffer()), { limitInputPixels: 80_000_000 })
+      .rotate()
+      .resize(2200, 2200, { fit: "inside", withoutEnlargement: true })
+      .webp({ quality: 78 })
+      .toBuffer();
+  } catch {
+    return { error: "Arquivo não é uma imagem válida" };
+  }
+  const key = `site/hero-${randomBytes(6).toString("hex")}.webp`;
+  await storage.put(key, out);
+  await db.platformSetting.upsert({ where: { key: "hero" }, create: { key: "hero", value: { key, v: Date.now().toString(36) } }, update: { value: { key, v: Date.now().toString(36) } } });
+  await audit(admin.id, "settings.hero");
+  revalidatePath("/", "layout");
+  return { ok: true };
+}

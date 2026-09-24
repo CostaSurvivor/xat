@@ -127,7 +127,7 @@ export default async function MeuPerfil() {
         <div className="flex flex-wrap gap-2">
           <Link href="/loja/inventario" className="btn-ghost">🎒 Meus itens</Link>
           <Link href="/carteira" className="btn-ghost">🌶️ Carteira</Link>
-          <Link href="/conta" className="btn-ghost">🛡️ Meus dados (LGPD)</Link>
+          <Link href="/conta" className="btn-ghost">🔑 Senha e dados (LGPD)</Link>
         </div>
       </section>
     </div>

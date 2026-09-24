@@ -54,3 +54,20 @@ export async function deleteAccount(_: { error?: string } | undefined, formData:
   await destroySession();
   redirect("/entrada");
 }
+
+export async function changePassword(_: { ok?: boolean; error?: string } | undefined, formData: FormData) {
+  const user = await requireUser();
+  const current = String(formData.get("current") || "");
+  const next = String(formData.get("next") || "");
+  if (!(await verifyPassword(user.passwordHash, current))) return { error: "Senha atual incorreta" };
+  if (next.length < 8) return { error: "A nova senha precisa ter 8+ caracteres" };
+  if (next !== String(formData.get("confirm") || "")) return { error: "As senhas não conferem" };
+  const { hashPassword, sha256 } = await import("@/server/auth");
+  const { cookies } = await import("next/headers");
+  await db.user.update({ where: { id: user.id }, data: { passwordHash: await hashPassword(next) } });
+  // encerra as outras sessões (mantém a atual)
+  const token = (await cookies()).get("sid")?.value;
+  await db.session.deleteMany({ where: { userId: user.id, NOT: { tokenHash: token ? sha256(token) : "" } } });
+  await audit(user.id, "account.password", "User", user.id);
+  return { ok: true };
+}

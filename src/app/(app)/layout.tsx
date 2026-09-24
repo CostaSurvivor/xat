@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { isSubscriber, requireUser } from "@/server/auth";
 import { balanceOf } from "@/server/ledger";
-import { CURRENCY_ICON, SITE_NAME } from "@/lib/config";
+import { CURRENCY_ICON } from "@/lib/config";
+import { Logo } from "@/components/Logo";
 import { AppNav } from "@/components/AppNav";
 import { Avatar } from "@/components/Avatar";
 import { db } from "@/lib/db";
@@ -16,7 +17,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="min-h-dvh pb-20 md:pb-0">
       <header className="sticky top-0 z-30 border-b border-line bg-ink/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5">
-          <Link href="/feed" className="font-[family-name:var(--font-display)] text-xl font-extrabold gold-text">{SITE_NAME}</Link>
+          <Link href="/feed" aria-label="Feed"><Logo size={28} /></Link>
           <div className="flex-1"><AppNav variant="top" /></div>
           {!isSubscriber(user) && <Link href="/assinar" className="hidden rounded-full bg-gradient-to-r from-gold to-gold2 px-3 py-1 text-xs font-bold text-ink sm:inline">⭐ Assine</Link>}
           <Link href="/loja" className="rounded-full border border-gold/40 px-3 py-1 text-sm text-gold hover:bg-gold/10">{CURRENCY_ICON} {balance.toLocaleString("pt-BR")}</Link>

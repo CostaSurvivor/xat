@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 /** Age gate: nada é exibido antes do aceite 18+ (cookie). */
-const OPEN = ["/entrada", "/termos", "/privacidade", "/_next", "/favicon", "/robots.txt"];
+const OPEN = ["/entrada", "/termos", "/privacidade", "/_next", "/favicon", "/robots.txt", "/api/public", "/hero", "/logo", "/icon"];
 
 export function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
