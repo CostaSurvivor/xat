@@ -16,7 +16,7 @@ const profileSchema = z.object({
   bio: z.string().max(1500).optional(),
   city: z.string().trim().max(80).optional(),
   state: z.enum(UFS as [string, ...string[]]),
-  pmPolicy: z.enum(["EVERYONE", "FOLLOWING", "COUPLES", "NOBODY"]),
+  pmPolicy: z.enum(["EVERYONE", "FRIENDS", "FOLLOWING", "COUPLES", "NOBODY"]),
 });
 
 export async function updateProfile(_: R, formData: FormData): Promise<R> {
@@ -90,6 +90,7 @@ export async function toggleBlock(targetId: string) {
   else {
     await db.block.create({ data: { blockerId: user.id, blockedId: targetId } });
     await db.follow.deleteMany({ where: { OR: [{ followerId: user.id, followeeId: targetId }, { followerId: targetId, followeeId: user.id }] } });
+    await db.friendship.deleteMany({ where: { OR: [{ requesterId: user.id, addresseeId: targetId }, { requesterId: targetId, addresseeId: user.id }] } });
   }
   revalidatePath("/u/[nick]", "page");
 }
@@ -164,4 +165,55 @@ export async function updatePersons(_: R, formData: FormData): Promise<R> {
   }
   revalidatePath("/perfil");
   return { ok: true };
+}
+
+// ---------------- Amizades ----------------
+export async function sendFriendRequest(targetId: string) {
+  const user = await requireUser();
+  if (targetId === user.id) return;
+  if (!limiter("friend", 30, 30 / 3600).take(user.id)) return;
+  const { isBlockedBetween } = await import("@/server/access");
+  if (await isBlockedBetween(user.id, targetId)) return;
+  const reverse = await db.friendship.findUnique({ where: { requesterId_addresseeId: { requesterId: targetId, addresseeId: user.id } } });
+  if (reverse) {
+    // a outra pessoa já tinha pedido: aceita direto
+    if (reverse.status !== "ACCEPTED") {
+      await db.friendship.update({ where: { requesterId_addresseeId: { requesterId: targetId, addresseeId: user.id } }, data: { status: "ACCEPTED", acceptedAt: new Date() } });
+      await notify(targetId, "FRIEND_ACCEPTED", `@${user.nick} aceitou seu pedido de amizade 🤝`, user.id);
+    }
+  } else {
+    const created = await db.friendship.upsert({
+      where: { requesterId_addresseeId: { requesterId: user.id, addresseeId: targetId } },
+      create: { requesterId: user.id, addresseeId: targetId },
+      update: {},
+    });
+    if (created.status === "PENDING") await notify(targetId, "FRIEND_REQUEST", `@${user.nick} quer ser seu amigo`, user.id, user.id);
+  }
+  revalidatePath("/u/[nick]", "page");
+  revalidatePath("/notificacoes");
+}
+
+export async function respondFriendRequest(requesterId: string, accept: boolean) {
+  const user = await requireUser();
+  const key = { requesterId_addresseeId: { requesterId, addresseeId: user.id } };
+  const f = await db.friendship.findUnique({ where: key });
+  if (!f || f.status !== "PENDING") return;
+  if (accept) {
+    await db.friendship.update({ where: key, data: { status: "ACCEPTED", acceptedAt: new Date() } });
+    await notify(requesterId, "FRIEND_ACCEPTED", `@${user.nick} aceitou seu pedido de amizade 🤝`, user.id);
+  } else {
+    await db.friendship.delete({ where: key });
+  }
+  revalidatePath("/notificacoes");
+  revalidatePath("/u/[nick]", "page");
+}
+
+/** Cancela pedido enviado ou desfaz amizade. */
+export async function removeFriend(otherId: string) {
+  const user = await requireUser();
+  await db.friendship.deleteMany({
+    where: { OR: [{ requesterId: user.id, addresseeId: otherId }, { requesterId: otherId, addresseeId: user.id }] },
+  });
+  revalidatePath("/u/[nick]", "page");
+  revalidatePath("/amigos");
 }

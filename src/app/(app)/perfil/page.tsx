@@ -77,6 +77,7 @@ export default async function MeuPerfil() {
             <label className="label">Quem pode me chamar no PV</label>
             <select name="pmPolicy" defaultValue={user.pmPolicy} className="input">
               <option value="EVERYONE">Todos</option>
+              <option value="FRIENDS">Só amigos</option>
               <option value="FOLLOWING">Só quem eu sigo</option>
               <option value="COUPLES">Só casais</option>
               <option value="NOBODY">Ninguém</option>

@@ -51,7 +51,7 @@ export function PmThread({ nick, initial, canPhoto, blockedReason }: { nick: str
   }
 
   return (
-    <div className="card flex h-[calc(100dvh-210px)] min-h-[400px] flex-col">
+    <div className="flex min-h-0 flex-1 flex-col bg-[radial-gradient(ellipse_at_top,_rgba(122,19,48,.12),_transparent_60%)]">
       <div ref={box} className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
         {msgs.length === 0 && <p className="mt-10 text-center text-sm text-mute">Diga oi! 👋 Seja gentil: respeito é a regra número um.</p>}
         {msgs.map((m) => (

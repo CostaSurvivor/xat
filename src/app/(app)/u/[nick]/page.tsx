@@ -7,7 +7,8 @@ import { isSubscriber, isVerified, requireUser } from "@/server/auth";
 import { isBlockedBetween } from "@/server/access";
 import { getFeed } from "@/server/feed";
 import { stylesFor } from "@/server/styles";
-import { requestAlbum, toggleBlock, toggleFollow } from "@/app/actions/profile";
+import { removeFriend, requestAlbum, respondFriendRequest, sendFriendRequest, toggleBlock, toggleFollow } from "@/app/actions/profile";
+import { friendIds, friendStatus } from "@/server/friends";
 import { Avatar } from "@/components/Avatar";
 import { Nick } from "@/components/Nick";
 import { PostCard } from "@/components/PostCard";
@@ -28,6 +29,7 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
   const iBlocked = await db.block.findUnique({ where: { blockerId_blockedId: { blockerId: viewer.id, blockedId: u.id } } });
   if (!me && !iBlocked && (await isBlockedBetween(viewer.id, u.id))) notFound();
 
+  const [fStatus, friends] = await Promise.all([friendStatus(viewer.id, u.id), friendIds(u.id)]);
   const [followers, following, isFollowing, album, access, posts, styles] = await Promise.all([
     db.follow.count({ where: { followeeId: u.id } }),
     db.follow.count({ where: { followerId: u.id } }),
@@ -53,11 +55,20 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
               {PROFILE_TYPES[u.profileType].label} · {agesLabel(u.persons.map((p) => ({ label: p.label, age: ageOn(p.birthDate) })))}
               {!u.hideCity && u.city ? ` · ${u.city}/${u.state}` : u.state ? ` · ${u.state}` : ""}
             </p>
-            <p className="mt-1 text-xs text-mute"><b className="text-white">{followers}</b> seguidores · <b className="text-white">{following}</b> seguindo</p>
+            <p className="mt-1 text-xs text-mute"><b className="text-white">{friends.length}</b> amigos · <b className="text-white">{followers}</b> seguidores · <b className="text-white">{following}</b> seguindo</p>
             {!me && (
               <div className="mt-3 flex flex-wrap gap-2">
-                {!iBlocked && <form action={toggleFollow.bind(null, u.id)}><button className={isFollowing ? "btn-ghost" : "btn-gold"}>{isFollowing ? "Seguindo ✓" : "Seguir"}</button></form>}
-                {!iBlocked && <Link href={`/mensagens/${u.nick}`} className="btn-wine">✉️ PV</Link>}
+                {!iBlocked && fStatus === "none" && <form action={sendFriendRequest.bind(null, u.id)}><button className="btn-gold">🤝 Adicionar amigo</button></form>}
+                {!iBlocked && fStatus === "sent" && <form action={removeFriend.bind(null, u.id)}><button className="btn-ghost" title="Cancelar pedido">Pedido enviado ✓</button></form>}
+                {!iBlocked && fStatus === "received" && (
+                  <>
+                    <form action={respondFriendRequest.bind(null, u.id, true)}><button className="btn-gold">Aceitar amizade</button></form>
+                    <form action={respondFriendRequest.bind(null, u.id, false)}><button className="btn-ghost">Recusar</button></form>
+                  </>
+                )}
+                {!iBlocked && fStatus === "friends" && <form action={removeFriend.bind(null, u.id)}><button className="btn-ghost" title="Desfazer amizade">Amigos 🤝</button></form>}
+                {!iBlocked && <form action={toggleFollow.bind(null, u.id)}><button className={isFollowing ? "btn-ghost" : "btn-wine"}>{isFollowing ? "Seguindo ✓" : "Seguir"}</button></form>}
+                {!iBlocked && <Link href={`/mensagens/${u.nick}`} className="btn-ghost">✉️ PV</Link>}
                 {!iBlocked && <GiftButton toId={u.id} toNick={u.nick} />}
                 <form action={toggleBlock.bind(null, u.id)}><button className="btn-ghost text-xs">{iBlocked ? "Desbloquear" : "Bloquear"}</button></form>
                 <ReportButton targetType="USER" targetId={u.id} />

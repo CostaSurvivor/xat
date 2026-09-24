@@ -67,7 +67,7 @@ export async function reactToPost(postId: string, emoji: string) {
 
 const commentSchema = z.string().trim().min(1).max(1000);
 
-export async function commentOnPost(postId: string, raw: string): Promise<R> {
+export async function commentOnPost(postId: string, raw: string, parentId?: string): Promise<R> {
   const user = await requireUser();
   if (!limiter("comment", 20, 20 / 600).take(user.id)) return { ok: false, error: "Calma! Muitos comentários seguidos." };
   const body = commentSchema.safeParse(raw);
@@ -76,8 +76,15 @@ export async function commentOnPost(postId: string, raw: string): Promise<R> {
   const post = await db.post.findUnique({ where: { id: postId } });
   if (!post || post.deletedAt) return { ok: false, error: "Post não encontrado" };
   if (await isBlockedBetween(user.id, post.authorId)) return { ok: false, error: "Indisponível" };
-  await db.postComment.create({ data: { postId, authorId: user.id, body: body.data } });
-  await notify(post.authorId, "POST_COMMENT", `@${user.nick} comentou: ${body.data.slice(0, 80)}`, user.id, postId);
+  // resposta: sempre presa ao comentário raiz (1 nível, como no Instagram)
+  let parent = parentId ? await db.postComment.findUnique({ where: { id: parentId } }) : null;
+  if (parent && parent.postId !== postId) return { ok: false, error: "Comentário inválido" };
+  if (parent?.parentId) parent = await db.postComment.findUnique({ where: { id: parent.parentId } });
+  if (parent && (await isBlockedBetween(user.id, parent.authorId))) return { ok: false, error: "Indisponível" };
+  await db.postComment.create({ data: { postId, authorId: user.id, body: body.data, parentId: parent?.id ?? null } });
+  if (parent) await notify(parent.authorId, "COMMENT_REPLY", `@${user.nick} respondeu seu comentário: ${body.data.slice(0, 80)}`, user.id, postId);
+  if (!parent || parent.authorId !== post.authorId)
+    await notify(post.authorId, "POST_COMMENT", `@${user.nick} comentou: ${body.data.slice(0, 80)}`, user.id, postId);
   return { ok: true };
 }
 
@@ -93,4 +100,19 @@ export async function loadComments(postId: string) {
   const user = await requireUser();
   const { getComments } = await import("@/server/feed");
   return getComments(user.id, postId);
+}
+
+export async function reactToComment(commentId: string, emoji: string) {
+  const user = await requireUser();
+  if (!(REACTIONS as readonly string[]).includes(emoji)) return;
+  if (!limiter("react", 60, 1).take(user.id)) return;
+  const c = await db.postComment.findUnique({ where: { id: commentId } });
+  if (!c || c.deletedAt || (await isBlockedBetween(user.id, c.authorId))) return;
+  const key = { commentId_userId: { commentId, userId: user.id } };
+  const existing = await db.commentReaction.findUnique({ where: key });
+  if (existing?.emoji === emoji) await db.commentReaction.delete({ where: key });
+  else {
+    await db.commentReaction.upsert({ where: key, create: { commentId, userId: user.id, emoji }, update: { emoji } });
+    if (!existing) await notify(c.authorId, "COMMENT_REACTION", `@${user.nick} reagiu ${emoji} ao seu comentário`, user.id, c.postId);
+  }
 }

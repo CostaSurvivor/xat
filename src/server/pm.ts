@@ -23,6 +23,10 @@ export async function canMessage(sender: CurrentUser, recipient: { id: string; p
   switch (recipient.pmPolicy) {
     case "NOBODY":
       return "Este perfil não está aceitando PV.";
+    case "FRIENDS": {
+      const { areFriends } = await import("./friends");
+      return (await areFriends(sender.id, recipient.id)) ? null : "Este perfil só aceita PV de amigos.";
+    }
     case "FOLLOWING": {
       const f = await db.follow.findUnique({ where: { followerId_followeeId: { followerId: recipient.id, followeeId: sender.id } } });
       return f ? null : "Este perfil só aceita PV de quem ele segue.";
@@ -65,6 +69,8 @@ export async function markRead(convId: string, userId: string) {
   await db.conversation.update({ where: { id: convId }, data: c.userAId === userId ? { aReadAt: new Date() } : { bReadAt: new Date() } });
 }
 
+export type InboxItem = Awaited<ReturnType<typeof inbox>>[number];
+
 export async function inbox(user: CurrentUser) {
   const convs = await db.conversation.findMany({
     where: { OR: [{ userAId: user.id }, { userBId: user.id }] },
@@ -74,7 +80,7 @@ export async function inbox(user: CurrentUser) {
   });
   const otherIds = convs.map((c) => (c.userAId === user.id ? c.userBId : c.userAId));
   const [users, styles] = await Promise.all([
-    db.user.findMany({ where: { id: { in: otherIds } }, select: { id: true, nick: true, avatarId: true, status: true } }),
+    db.user.findMany({ where: { id: { in: otherIds } }, select: { id: true, nick: true, avatarId: true, status: true, lastSeenAt: true } }),
     stylesFor(otherIds),
   ]);
   const byId = new Map(users.map((u) => [u.id, u]));
@@ -87,8 +93,9 @@ export async function inbox(user: CurrentUser) {
       return other && other.status === "ACTIVE"
         ? {
             id: c.id,
-            other: { ...other, style: styles[otherId] },
+            other: { id: other.id, nick: other.nick, avatarId: other.avatarId, style: styles[otherId], online: !!other.lastSeenAt && Date.now() - other.lastSeenAt.getTime() < 5 * 60_000 },
             last: last ? (last.mediaId ? "📷 Foto" : last.body ?? "") : "",
+            lastMine: last?.senderId === user.id,
             lastAt: c.lastMessageAt.toISOString(),
             unread: !!c.lastSenderId && c.lastSenderId !== user.id && (!read || read < c.lastMessageAt),
             priority: styles[otherId]?.powers.includes("PRIORITY_PM") ?? false,

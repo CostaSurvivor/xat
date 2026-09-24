@@ -60,15 +60,24 @@ export async function getComments(viewerId: string, postId: string) {
   const rows = await db.postComment.findMany({
     where: { postId, deletedAt: null, authorId: { notIn: blocked } },
     orderBy: { createdAt: "asc" },
-    take: 100,
+    take: 300,
     include: { author: { select: { id: true, nick: true, avatarId: true } }, post: { select: { authorId: true } } },
   });
-  const styles = await stylesFor(rows.map((r) => r.authorId));
-  return rows.map((c) => ({
+  const ids = rows.map((r) => r.id);
+  const [styles, reactions, mine] = await Promise.all([
+    stylesFor(rows.map((r) => r.authorId)),
+    db.commentReaction.groupBy({ by: ["commentId", "emoji"], where: { commentId: { in: ids } }, _count: true }),
+    db.commentReaction.findMany({ where: { commentId: { in: ids }, userId: viewerId } }),
+  ]);
+  const view = (c: (typeof rows)[number]) => ({
     id: c.id,
     body: c.body,
     createdAt: c.createdAt.toISOString(),
     author: { ...c.author, style: styles[c.authorId] },
     canDelete: c.authorId === viewerId || c.post.authorId === viewerId,
-  }));
+    reactions: Object.fromEntries(reactions.filter((r) => r.commentId === c.id).map((r) => [r.emoji, r._count])) as Record<string, number>,
+    myReaction: mine.find((m) => m.commentId === c.id)?.emoji ?? null,
+  });
+  const roots = rows.filter((r) => !r.parentId || !rows.some((x) => x.id === r.parentId));
+  return roots.map((r) => ({ ...view(r), replies: rows.filter((x) => x.parentId === r.id).map(view) }));
 }

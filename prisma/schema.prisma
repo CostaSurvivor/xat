@@ -40,6 +40,7 @@ enum ProfileType {
 
 enum PmPolicy {
   EVERYONE
+  FRIENDS
   FOLLOWING
   COUPLES
   NOBODY
@@ -169,6 +170,10 @@ enum ReportStatus {
 
 enum NotificationKind {
   FOLLOW
+  FRIEND_REQUEST
+  FRIEND_ACCEPTED
+  COMMENT_REPLY
+  COMMENT_REACTION
   POST_REACTION
   POST_COMMENT
   MENTION
@@ -233,6 +238,8 @@ model User {
   reportsFiled    Report[]           @relation("Reporter")
   notifications   Notification[]     @relation("NotifUser")
   albumOwned      AlbumAccess[]      @relation("AlbumOwner")
+  friendsSent     Friendship[]       @relation("FriendRequester")
+  friendsReceived Friendship[]       @relation("FriendAddressee")
   albumViewing    AlbumAccess[]      @relation("AlbumViewer")
 
   @@index([state, city])
@@ -411,13 +418,40 @@ model PostComment {
   id        String    @id @default(cuid())
   postId    String
   authorId  String
+  parentId  String? // resposta a outro comentário (1 nível)
   body      String    @db.VarChar(1000)
   createdAt DateTime  @default(now())
   deletedAt DateTime?
   post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
   author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  reactions CommentReaction[]
 
   @@index([postId, createdAt])
+  @@index([parentId])
+}
+
+model CommentReaction {
+  commentId String
+  userId    String
+  emoji     String      @db.VarChar(8)
+  createdAt DateTime    @default(now())
+  comment   PostComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@id([commentId, userId])
+}
+
+// Amizade: pedido (PENDING) -> aceito (ACCEPTED). Um registro por par.
+model Friendship {
+  requesterId String
+  addresseeId String
+  status      String   @default("PENDING") @db.VarChar(10) // PENDING | ACCEPTED
+  createdAt   DateTime @default(now())
+  acceptedAt  DateTime?
+  requester   User     @relation("FriendRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  addressee   User     @relation("FriendAddressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+
+  @@id([requesterId, addresseeId])
+  @@index([addresseeId, status])
 }
 
 model Notification {

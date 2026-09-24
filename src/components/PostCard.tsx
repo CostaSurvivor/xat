@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { commentOnPost, deleteComment, deletePost, loadComments, reactToPost } from "@/app/actions/posts";
+import { commentOnPost, deleteComment, deletePost, loadComments, reactToComment, reactToPost } from "@/app/actions/posts";
 import { PROFILE_TYPES, REACTIONS } from "@/lib/config";
 import { timeAgo } from "@/lib/time";
 import type { FeedPost } from "@/server/feed";
@@ -14,6 +14,45 @@ import { ReportButton } from "./ReportButton";
 import { VideoPlayer } from "./VideoPlayer";
 
 type Comment = Awaited<ReturnType<typeof loadComments>>[number];
+type CommentView = Omit<Comment, "replies">;
+
+function CommentItem({ c, onReply, onDelete, small = false }: { c: CommentView; onReply: () => void; onDelete: () => void; small?: boolean }) {
+  const [reactions, setReactions] = useState(c.reactions);
+  const [mine, setMine] = useState(c.myReaction);
+  const [picker, setPicker] = useState(false);
+  const react = (e: string) => {
+    const next = { ...reactions };
+    if (mine) next[mine] = Math.max(0, (next[mine] ?? 1) - 1);
+    if (mine !== e) next[e] = (next[e] ?? 0) + 1;
+    setReactions(next);
+    setMine(mine === e ? null : e);
+    setPicker(false);
+    reactToComment(c.id, e);
+  };
+  const total = Object.entries(reactions).filter(([, n]) => n > 0);
+  return (
+    <div className="flex gap-2 text-sm">
+      <Avatar mediaId={c.author.avatarId} nick={c.author.nick} size={small ? 22 : 26} style={c.author.style} />
+      <div className="min-w-0 flex-1">
+        <div className="inline-block max-w-full rounded-2xl bg-panel2 px-3 py-1.5">
+          <Nick nick={c.author.nick} style={c.author.style} /> <span className="break-words">{c.body}</span>
+        </div>
+        <div className="relative mt-0.5 flex flex-wrap items-center gap-3 pl-2 text-[11px] text-mute">
+          <span>{timeAgo(c.createdAt)}</span>
+          <button onClick={() => setPicker((v) => !v)} className={mine ? "font-semibold text-gold" : "hover:text-white"}>{mine ? `${mine} Reagiu` : "Reagir"}</button>
+          <button onClick={onReply} className="hover:text-white">Responder</button>
+          {c.canDelete ? <button className="hover:text-red-300" onClick={onDelete}>apagar</button> : <ReportButton targetType="COMMENT" targetId={c.id} label="" />}
+          {total.length > 0 && <span className="rounded-full bg-panel2 px-1.5">{total.map(([e]) => e).join("")} {total.reduce((s, [, n]) => s + n, 0)}</span>}
+          {picker && (
+            <div className="absolute -top-9 left-8 z-10 flex gap-1 rounded-full border border-line bg-panel px-2 py-1 shadow-xl">
+              {REACTIONS.map((e) => <button key={e} onClick={() => react(e)} className="text-lg transition hover:scale-125">{e}</button>)}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function PostCard({ post, viewer }: { post: FeedPost; viewer: { nick: string; subscriber: boolean } }) {
   const router = useRouter();
@@ -22,6 +61,7 @@ export function PostCard({ post, viewer }: { post: FeedPost; viewer: { nick: str
   const [comments, setComments] = useState<Comment[] | null>(null);
   const [count, setCount] = useState(post.comments);
   const [text, setText] = useState("");
+  const [replyTo, setReplyTo] = useState<{ id: string; nick: string } | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [idx, setIdx] = useState(0);
   const [pending, start] = useTransition();
@@ -89,38 +129,48 @@ export function PostCard({ post, viewer }: { post: FeedPost; viewer: { nick: str
           <button onClick={openComments} className="text-sm text-mute hover:text-white">💬 {count}</button>
         </div>
         {comments && (
-          <div className="space-y-2 border-t border-line pt-2">
+          <div className="space-y-3 border-t border-line pt-3">
             {comments.map((c) => (
-              <div key={c.id} className="flex gap-2 text-sm">
-                <Avatar mediaId={c.author.avatarId} nick={c.author.nick} size={26} style={c.author.style} />
-                <div className="min-w-0 flex-1">
-                  <Nick nick={c.author.nick} style={c.author.style} /> <span className="break-words">{c.body}</span>
-                  <div className="text-[11px] text-mute">
-                    {timeAgo(c.createdAt)}
-                    {c.canDelete ? (
-                      <button className="ml-2 hover:text-red-300" onClick={async () => { await deleteComment(c.id); setComments(comments.filter((x) => x.id !== c.id)); setCount((n) => n - 1); }}>apagar</button>
-                    ) : (
-                      <ReportButton targetType="COMMENT" targetId={c.id} label="" className="ml-2" />
-                    )}
+              <div key={c.id} className="space-y-2">
+                <CommentItem
+                  c={c}
+                  onReply={() => { setReplyTo({ id: c.id, nick: c.author.nick }); setText(`@${c.author.nick} `); }}
+                  onDelete={async () => { await deleteComment(c.id); await openComments(); setCount((n) => n - 1); }}
+                />
+                {c.replies.length > 0 && (
+                  <div className="ml-8 space-y-2 border-l border-line pl-3">
+                    {c.replies.map((r) => (
+                      <CommentItem
+                        key={r.id}
+                        c={r}
+                        small
+                        onReply={() => { setReplyTo({ id: c.id, nick: r.author.nick }); setText(`@${r.author.nick} `); }}
+                        onDelete={async () => { await deleteComment(r.id); await openComments(); setCount((n) => n - 1); }}
+                      />
+                    ))}
                   </div>
-                </div>
+                )}
               </div>
             ))}
+            {replyTo && (
+              <p className="text-xs text-mute">Respondendo @{replyTo.nick} · <button onClick={() => { setReplyTo(null); setText(""); }} className="underline">cancelar</button></p>
+            )}
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 start(async () => {
-                  const r = await commentOnPost(post.id, text);
+                  const r = await commentOnPost(post.id, text, replyTo?.id);
                   if (!r.ok) return setErr(r.error ?? "Erro");
                   setErr(null);
                   setText("");
+                  setReplyTo(null);
                   setCount((n) => n + 1);
                   await openComments();
                 });
               }}
               className="flex gap-2"
             >
-              <input value={text} onChange={(e) => setText(e.target.value)} maxLength={1000} placeholder="Comentar…" className="input py-1.5" />
+              <input value={text} onChange={(e) => setText(e.target.value)} maxLength={1000} placeholder={replyTo ? "Sua resposta…" : "Comentar…"} className="input py-1.5" />
               <button disabled={pending || !text.trim()} className="btn-wine py-1.5">Enviar</button>
             </form>
             {err && <p className="text-xs text-red-300">{err}</p>}
