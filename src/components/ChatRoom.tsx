@@ -14,7 +14,7 @@ import { startTrade } from "@/app/actions/trade";
 import { CURRENCY_ICON, CURRENCY_NAME, PROFILE_TYPES, REACTIONS } from "@/lib/config";
 
 type Me = { id: string; nick: string };
-type PollMe = { role: string; platformRole: string; mutedUntil: string | null };
+type PollMe = { role: string; platformRole: string; mutedUntil: string | null; canPinOwn?: boolean };
 type ListUser = (OnlineUser | OfflineUser) & { offline?: boolean };
 
 const EMOJIS = ["😈", "🔥", "😍", "😘", "😏", "🍑", "🍆", "💦", "👅", "💋", "🥂", "😂", "❤️", "👀", "🙈", "👏", "🤤", "🥵", "😜", "🍷", "🌶️", "💃", "🕺", "🤫"];
@@ -285,6 +285,13 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
     poll();
   }
 
+  async function pinOwn(messageId: string) {
+    const r = await fetch(`/api/rooms/${slug}/pin`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messageId }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) setError(j.error || "Não foi possível fixar");
+    poll();
+  }
+
   async function react(messageId: string, emoji: string) {
     setPickerFor(null);
     setReactions((prev) => {
@@ -387,6 +394,9 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
                     </div>
                   );
                 }
+                if (m.kind === "SYSTEM" && m.body.startsWith("pin:")) {
+                  return m.author ? <div key={m.id} className="py-0.5 text-center text-xs text-gold">📌 <Nick nick={m.author.nick} style={m.author.style} /> fixou uma mensagem no topo</div> : null;
+                }
                 if (m.kind === "GIFT" && m.author) {
                   const [amount, toNick] = m.body.split("|");
                   return (
@@ -428,7 +438,7 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
                       <span>{hhmm(m.createdAt)}</span>
                       <button onClick={() => setPickerFor(pickerFor === m.id ? null : m.id)}>reagir</button>
                       <button onClick={() => setText((t) => `${t}@${m.author!.nick} `)}>responder</button>
-                      {isMod && <button onClick={() => mod("pin", { messageId: m.id })}>fixar</button>}
+                      {isMod ? <button onClick={() => mod("pin", { messageId: m.id })}>fixar</button> : mine && pollMe?.canPinOwn && <button onClick={() => pinOwn(m.id)} title="Poder: fixar mensagem">📌 fixar</button>}
                       {isMod && <button onClick={() => mod("delete_message", { messageId: m.id })} className="hover:text-red-300">apagar</button>}
                       {!mine && <ReportButton targetType="ROOM_MESSAGE" targetId={m.id} label="" />}
                     </div>

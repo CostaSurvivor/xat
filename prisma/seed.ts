@@ -61,6 +61,7 @@ const ITEMS: ItemSeed[] = [
   { slug: "poder-invisivel", name: "Invisível", category: "POWER", rarity: "EPIC", description: "Some da lista de online das salas.", config: { power: "INVISIBLE" }, price7: 100, price30: 300, powerScore: 0 },
   { slug: "poder-nick-grande", name: "Nick Maior", category: "POWER", rarity: "RARE", config: { power: "BIG_NICK" }, price7: 60, price30: 180, powerScore: 10 },
   { slug: "poder-destaque", name: "Destaque na Lista", category: "POWER", rarity: "RARE", description: "Fundo dourado na lista de online.", config: { power: "HIGHLIGHT_ONLINE" }, price7: 80, price30: 220, powerScore: 30 },
+  { slug: "poder-fixar", name: "Fixar Mensagem", category: "POWER", rarity: "EPIC", description: "Fixe uma mensagem sua no topo da sala por 10 minutos (1 a cada 15 min, se não houver outra fixada).", config: { power: "PIN_MESSAGE" }, price7: 120, price30: 350, powerScore: 15 },
   { slug: "poder-pv-prioritario", name: "PV Prioritário", category: "POWER", rarity: "EPIC", description: "Suas mensagens aparecem no topo da caixa de quem recebe.", config: { power: "PRIORITY_PM" }, price7: 90, price30: 260, powerScore: 5 },
 ];
 
@@ -99,7 +100,7 @@ async function main() {
     if (!(await db.wallet.findFirst({ where: { kind } }))) await db.wallet.create({ data: { kind } });
   }
   await db.platformSetting.upsert({ where: { key: "seeded" }, create: { key: "seeded", value: { at: new Date().toISOString() } }, update: {} });
-  console.log(firstRun ? "Seed base ok (primeira instalação)" : "Seed: nada a fazer (já instalado)");
+  console.log(firstRun ? "Seed base ok (primeira instalação)" : "Seed: itens novos do catálogo conferidos (já instalado)");
   if (process.env.SEED_DEMO === "1") await demo();
 }
 

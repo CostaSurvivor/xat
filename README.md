@@ -17,7 +17,7 @@ Comunidade liberal 18+ (casais, solteiras e solteiros): **salas de chat estilo x
 | Salas (estilo xat) | Só **admin e assinantes** criam (a sala fica inativa se a assinatura vencer). Visual estilo xat: bonequinho por cargo (cores do xat) + acessórios, frase de status, lista Online/Offline, mini-perfil com ações, **PC em abas dentro da sala**, glow neon, fundador exclusivo, moderação completa, reações, presentes animados, @menções com aviso, **só texto** (fotos ficam no feed e no perfil), fundo personalizado, som de entrada, histórico |
 | Ao vivo | **Só assinantes transmitem**. Transmissão da câmera direto do navegador (WebRTC, sem servidor de mídia), chat ao vivo, **gorjetas em Pimentas** com animação, meta com barra de progresso, ranking de quem mais apoiou, só assinantes (opcional), remover espectador, encerramento pela moderação, marca d'água com o nick de quem assiste, aviso para seguidores e amigos |
 | PV | Estilo WhatsApp (lista + conversa), exige verificação, só amigos por padrão; foto só se os dois aceitarem, chega **borrada** até clicar |
-| Economia | Pimentas com **ledger de partidas dobradas**, loja com abas, busca, raridade, destaques e prévia ao vivo (glow, neon, cores, ícones, molduras, entradas, poderes, **acessórios do boneco**), presentes, cupons |
+| Economia | Pimentas com **ledger de partidas dobradas**, loja com abas, busca, raridade, destaques e prévia ao vivo (glow, neon, cores, ícones, molduras, entradas, poderes como invisível, nick maior, destaque, PV prioritário e **fixar mensagem**, **acessórios do boneco**), presentes, cupons |
 | Trocas (estilo xat) | Troca segura de Pimentas, **itens permanentes** e dias de assinatura: oferta dos dois lados, mudança zera aceites + trava de 5 s, aceite duplo e **confirmação com senha**, execução atômica |
 | Pagamento | **Pix manual** com QR Code gerado da chave cadastrada no admin; o usuário clica "Já paguei" e o admin aprova. Recibo por e-mail |
 | Suporte | Tickets (troca de nick, tipo de perfil, pagamento…) com conversa e aprovação no admin |
@@ -41,7 +41,7 @@ Cadastre-se com um e-mail listado em `ADMIN_EMAILS`: essa conta vira admin já v
 ## Testes
 
 ```bash
-npm test      # 52 testes: age gate, ao vivo (gorjetas, sinalização), permissões de sala, salas inativas, rate-limit/flood, ledger (concorrência e idempotência), trocas, webhook de pagamento, CSAM, Pix, itens (anti-XSS), vídeo
+npm test      # 54 testes (+2 de S3 com S3_TEST_ENDPOINT): age gate, ao vivo (gorjetas, sinalização), permissões de sala, salas inativas, rate-limit/flood, ledger (concorrência e idempotência), trocas, webhook de pagamento, CSAM, Pix, itens (anti-XSS), vídeo
 npm run lint  # checagem de tipos
 ```
 
@@ -55,6 +55,17 @@ Os testes do ledger usam o banco do `.env`.
 ## Pagamentos plugáveis
 
 `src/server/payments/`: a interface `PaymentProvider` (`createCharge` + `parseWebhook`) tem o Pix manual ativo e um **modelo de gateway** (`exampleGateway.ts`, com webhook assinado por HMAC). O webhook `POST /api/webhooks/{provider}` grava cada evento antes de processar e é **idempotente**: reentregas não creditam duas vezes, e isso tem teste. Para ligar um gateway, copie o modelo, ajuste para a API escolhida e defina `PAYMENT_PROVIDER`.
+
+## Fotos e vídeos em S3 / Cloudflare R2 (opcional)
+
+Por padrão as mídias ficam no disco (`UPLOAD_DIR`). Para usar um bucket S3 compatível (R2, AWS, B2, Wasabi):
+
+1. Crie um bucket **privado** e uma chave de acesso.
+2. Preencha `S3_BUCKET`, `S3_ENDPOINT`, `S3_ACCESS_KEY_ID` e `S3_SECRET_ACCESS_KEY` (veja `.env.example`).
+3. Rode `npm run storage:to-s3` para copiar o que já existe. Pode repetir: só envia o que falta.
+4. Defina `STORAGE_DRIVER=s3` e faça o redeploy.
+
+As fotos continuam passando por `/api/media`, então marca d'água, borrado e regras de acesso seguem valendo.
 
 ## Proteção contra CSAM
 
