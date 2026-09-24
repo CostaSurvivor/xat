@@ -19,7 +19,7 @@ export default async function Assinar({ searchParams }: { searchParams: Promise<
       <div className="card bg-gradient-to-br from-wine/60 via-panel to-panel p-6 text-center">
         <p className="text-4xl">⭐</p>
         <h1 className="font-[family-name:var(--font-display)] text-3xl font-bold">Assinante {SITE_NAME}</h1>
-        <p className="mt-2 text-mute">Todo mundo pode postar fotos e vídeos. <b className="text-white">Assistir aos vídeos</b> é exclusivo de quem assina.</p>
+        <p className="mt-2 text-mute">Todo mundo pode postar fotos e vídeos. <b className="text-fg">Assistir aos vídeos</b> é exclusivo de quem assina.</p>
         {sub && <p className="mt-3 rounded-xl bg-gold/15 p-2 text-gold2">Você é assinante até <b>{sub.toLocaleDateString("pt-BR")}</b>. Renovar soma mais dias.</p>}
       </div>
       <ul className="grid gap-2 text-sm sm:grid-cols-2">
@@ -34,7 +34,7 @@ export default async function Assinar({ searchParams }: { searchParams: Promise<
         <div className="grid gap-3 sm:grid-cols-3">
           {plans.map((p, i) => (
             <form key={p.id} action={createVipPayment.bind(null, p.id)} className={`card flex flex-col items-center p-5 text-center ${i === 1 ? "border-gold" : ""}`}>
-              {i === 1 && <span className="mb-1 rounded-full bg-gold px-2 text-[10px] font-bold text-ink">MAIS ESCOLHIDO</span>}
+              {i === 1 && <span className="mb-1 rounded-full bg-gold px-2 text-[10px] font-bold text-white">MAIS ESCOLHIDO</span>}
               <p className="font-semibold">{p.name}</p>
               <p className="text-3xl font-bold text-gold">{brl(p.priceCents)}</p>
               <p className="text-xs text-mute">{p.days} dias{p.bonusCoins ? ` · +${p.bonusCoins} ${CURRENCY_ICON}` : ""}</p>

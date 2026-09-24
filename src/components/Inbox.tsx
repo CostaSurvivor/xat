@@ -49,7 +49,7 @@ export function Inbox({ initial }: { initial: InboxItem[] }) {
           <li key={c.id}>
             <Link
               href={`/mensagens/${encodeURIComponent(c.other.nick)}`}
-              className={`flex items-center gap-3 border-b border-line/60 px-3 py-2.5 hover:bg-white/5 ${c.other.nick === active ? "bg-wine/30" : ""} ${c.unread && c.priority ? "bg-gold/10" : ""}`}
+              className={`flex items-center gap-3 border-b border-line/60 px-3 py-2.5 hover:bg-black/5 ${c.other.nick === active ? "bg-pink-50" : ""} ${c.unread && c.priority ? "bg-gold/10" : ""}`}
             >
               <span className="relative">
                 <Avatar mediaId={c.other.avatarId} nick={c.other.nick} size={48} style={c.other.style} />
@@ -61,7 +61,7 @@ export function Inbox({ initial }: { initial: InboxItem[] }) {
                   <span className={`shrink-0 text-[11px] ${c.unread ? "text-gold" : "text-mute"}`}>{when(c.lastAt)}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <p className={`min-w-0 flex-1 truncate text-sm ${c.unread ? "font-semibold text-white" : "text-mute"}`}>
+                  <p className={`min-w-0 flex-1 truncate text-sm ${c.unread ? "font-semibold text-fg" : "text-mute"}`}>
                     {c.lastMine && <span className="text-mute">Você: </span>}
                     {c.priority && c.unread && "⚡ "}
                     {c.last}

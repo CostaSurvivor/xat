@@ -60,7 +60,7 @@ export default async function Notificacoes({ searchParams }: { searchParams: Pro
       <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold">Avisos</h1>
       <div className="flex flex-wrap gap-2">
         {tabs.map(([k, l]) => (
-          <Link key={k} href={`/notificacoes?aba=${k}`} className={`rounded-full px-3 py-1 text-sm ${aba === k ? "bg-wine text-white" : "border border-line text-mute hover:text-white"}`}>{l}</Link>
+          <Link key={k} href={`/notificacoes?aba=${k}`} className={`rounded-full px-3 py-1 text-sm ${aba === k ? "bg-wine text-white" : "border border-line text-mute hover:text-fg"}`}>{l}</Link>
         ))}
       </div>
 
@@ -107,7 +107,7 @@ export default async function Notificacoes({ searchParams }: { searchParams: Pro
           {list.map((n) => {
             const actor = n.actorId ? actorOf.get(n.actorId) : null;
             return (
-              <Link key={n.id} href={href(n)} className={`flex items-center gap-3 p-3 text-sm hover:bg-white/5 ${!n.readAt ? "bg-wine/15" : ""}`}>
+              <Link key={n.id} href={href(n)} className={`flex items-center gap-3 p-3 text-sm hover:bg-black/5 ${!n.readAt ? "bg-wine/15" : ""}`}>
                 <span className="relative">
                   {actor ? <Avatar mediaId={actor.avatarId} nick={actor.nick} size={38} style={styles[actor.id]} /> : <span className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-panel2 text-lg">{ICON[n.kind] ?? "🔔"}</span>}
                   {actor && <span className="absolute -bottom-1 -right-1 rounded-full bg-panel px-0.5 text-xs">{ICON[n.kind] ?? "🔔"}</span>}

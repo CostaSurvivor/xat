@@ -10,7 +10,7 @@ export default async function PublicLayout({ children }: { children: React.React
       {/* fundo: foto (Admin → Configurações) ou arte padrão, bem opaco atrás do conteúdo */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={bg} alt="" className={`h-full w-full object-cover ${hero ? "opacity-35" : "opacity-90"}`} />
+        <img src={bg} alt="" className={`h-full w-full object-cover ${hero ? "opacity-30" : "opacity-45"}`} />
         <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/80 to-ink/30" />
         <div className="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-ink/60" />
       </div>

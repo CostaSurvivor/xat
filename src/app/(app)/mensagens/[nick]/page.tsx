@@ -28,7 +28,7 @@ export default async function Thread({ params }: { params: Promise<{ nick: strin
         <Avatar mediaId={o.avatarId} nick={o.nick} size={40} style={st[o.id]} />
         <div className="min-w-0 flex-1 leading-tight">
           <Nick nick={o.nick} style={st[o.id]} />
-          <p className="text-xs text-mute">{online ? <span className="text-green-400">online</span> : PROFILE_TYPES[o.profileType].label}</p>
+          <p className="text-xs text-mute">{online ? <span className="text-green-600">online</span> : PROFILE_TYPES[o.profileType].label}</p>
         </div>
         <Link href={`/u/${o.nick}`} className="btn-ghost py-1 text-xs">Ver perfil</Link>
       </header>

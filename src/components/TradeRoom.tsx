@@ -53,7 +53,7 @@ export function TradeRoom({ initial, myItems, myBalance, myVipDays }: { initial:
           <p className="font-semibold">{title}</p>
           <p className="text-xs text-mute">@{s.user.nick}</p>
         </div>
-        <span className={`ml-auto rounded-full px-2 py-0.5 text-xs ${s.confirmed ? "bg-green-900/60 text-green-300" : s.accepted ? "bg-gold/20 text-gold2" : "bg-panel2 text-mute"}`}>
+        <span className={`ml-auto rounded-full px-2 py-0.5 text-xs ${s.confirmed ? "bg-green-100 text-green-700" : s.accepted ? "bg-gold/20 text-gold2" : "bg-panel2 text-mute"}`}>
           {s.confirmed ? "Confirmou ✔✔" : s.accepted ? "Aceitou ✔" : "Montando oferta"}
         </span>
       </div>
@@ -71,7 +71,7 @@ export function TradeRoom({ initial, myItems, myBalance, myVipDays }: { initial:
         {open && <button onClick={() => run(() => cancelTradeAction(t.id), "Troca cancelada.")} className="btn-ghost text-xs">Cancelar troca</button>}
       </div>
       {!open && (
-        <p className={`rounded-xl p-3 text-center ${t.status === "COMPLETED" ? "bg-green-900/40 text-green-200" : "bg-panel2 text-mute"}`}>
+        <p className={`rounded-xl p-3 text-center ${t.status === "COMPLETED" ? "bg-green-100 text-green-700" : "bg-panel2 text-mute"}`}>
           {t.status === "COMPLETED" ? "✅ Troca concluída! Os itens já estão nos inventários." : t.status === "CANCELLED" ? "Troca cancelada." : "Troca expirada."}
         </p>
       )}
@@ -117,8 +117,8 @@ export function TradeRoom({ initial, myItems, myBalance, myVipDays }: { initial:
             <h2 className="font-semibold text-gold">Fechar negócio</h2>
             <ol className="list-decimal space-y-1 pl-5 text-xs text-mute">
               <li>Confira as duas ofertas com calma.</li>
-              <li>Os dois clicam em <b className="text-white">Aceitar</b>. Qualquer mudança na oferta zera os aceites e trava por 5 s.</li>
-              <li>Os dois <b className="text-white">confirmam com a senha</b>. A troca acontece na hora, sem volta.</li>
+              <li>Os dois clicam em <b className="text-fg">Aceitar</b>. Qualquer mudança na oferta zera os aceites e trava por 5 s.</li>
+              <li>Os dois <b className="text-fg">confirmam com a senha</b>. A troca acontece na hora, sem volta.</li>
             </ol>
             {dirty && <p className="text-xs text-gold2">Você alterou sua oferta: clique em “Atualizar minha oferta” antes de aceitar.</p>}
             {!mine.accepted ? (
@@ -133,7 +133,7 @@ export function TradeRoom({ initial, myItems, myBalance, myVipDays }: { initial:
                 <button disabled={pending || !pw} onClick={() => run(() => confirmTradeAction(t.id, t.version, pw), "Confirmado!")} className="btn-gold w-full">✔✔ Confirmar troca</button>
               </div>
             ) : (
-              <p className="rounded-xl bg-green-900/40 p-3 text-center text-sm text-green-200">Você confirmou. Esperando @{theirs.user.nick} confirmar…</p>
+              <p className="rounded-xl bg-green-100 p-3 text-center text-sm text-green-700">Você confirmou. Esperando @{theirs.user.nick} confirmar…</p>
             )}
             {msg && <p className="text-sm text-gold">{msg}</p>}
             <p className="text-[11px] text-mute">⚠️ Nunca troque fora do sistema. A equipe do SexPapo nunca pede sua senha.</p>

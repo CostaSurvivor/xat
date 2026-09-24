@@ -21,13 +21,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <Link href="/feed" aria-label="Feed"><Logo size={28} /></Link>
           <div className="flex-1"><AppNav variant="top" /></div>
           <InstallApp />
-          {!isSubscriber(user) && <Link href="/assinar" className="hidden rounded-full bg-gradient-to-r from-gold to-gold2 px-3 py-1 text-xs font-bold text-ink sm:inline">⭐ Assine</Link>}
+          {!isSubscriber(user) && <Link href="/assinar" className="hidden rounded-full bg-gradient-to-r from-gold to-gold2 px-3 py-1 text-xs font-bold text-white sm:inline">⭐ Assine</Link>}
           <Link href="/loja" className="rounded-full border border-gold/40 px-3 py-1 text-sm text-gold hover:bg-gold/10">{CURRENCY_ICON} {balance.toLocaleString("pt-BR")}</Link>
-          {(user.role === "ADMIN" || user.role === "MODERATOR") && <Link href="/admin" className="hidden rounded-full bg-wine px-3 py-1 text-xs font-bold sm:inline">ADMIN</Link>}
+          {(user.role === "ADMIN" || user.role === "MODERATOR") && <Link href="/admin" className="hidden rounded-full bg-wine px-3 py-1 text-xs font-bold text-white sm:inline">ADMIN</Link>}
           <Link href="/perfil" aria-label="Meu perfil"><Avatar mediaId={user.avatarId} nick={user.nick} size={34} /></Link>
         </div>
         {user.ageVerification !== "APPROVED" && (
-          <Link href="/verificacao" className="block bg-wine/60 px-4 py-1.5 text-center text-xs text-white">
+          <Link href="/verificacao" className="block bg-wine px-4 py-1.5 text-center text-xs text-white">
             {user.ageVerification === "PENDING" ? "⏳ Verificação em análise: logo você libera fotos, PV com fotos e a loja." : "🔒 Verifique seu perfil com uma selfie para liberar fotos, PV com fotos e a loja →"}
           </Link>
         )}

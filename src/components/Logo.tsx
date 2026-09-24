@@ -30,7 +30,7 @@ export function Logo({ size = 28, className = "" }: { size?: number; className?:
         {m ? (
           <>
             <span className="gold-text">{m[1]}</span>
-            <span className="text-white">{m[2]}</span>
+            <span className="text-fg">{m[2]}</span>
           </>
         ) : (
           <span className="gold-text">{SITE_NAME}</span>

@@ -22,7 +22,7 @@ export default async function PixPage({ params }: { params: Promise<{ id: string
   return (
     <div className="card mx-auto max-w-md space-y-4 p-6 text-center">
       <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold">Pagar com Pix</h1>
-      <p className="text-sm text-mute">{p.kind === "VIP" ? `⭐ Assinatura ${p.packageName} (${p.vipDays} dias)` : `${p.packageName}: ${CURRENCY_ICON} ${p.coins}`} por <b className="text-white">{brl}</b></p>
+      <p className="text-sm text-mute">{p.kind === "VIP" ? `⭐ Assinatura ${p.packageName} (${p.vipDays} dias)` : `${p.packageName}: ${CURRENCY_ICON} ${p.coins}`} por <b className="text-fg">{brl}</b></p>
       {p.status === "PENDING" && (
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -33,7 +33,7 @@ export default async function PixPage({ params }: { params: Promise<{ id: string
             <CopyButton text={code} />
           </div>
           <ol className="space-y-1 text-left text-sm text-mute">
-            <li>1. Pague <b className="text-white">exatamente {brl}</b> pelo app do seu banco.</li>
+            <li>1. Pague <b className="text-fg">exatamente {brl}</b> pelo app do seu banco.</li>
             <li>2. O identificador <b className="font-mono text-gold">{p.code}</b> já vai junto no Pix.</li>
             <li>3. Clique em “Já paguei”. A equipe do {SITE_NAME} confere e libera {p.kind === "VIP" ? "sua assinatura" : `suas ${CURRENCY_ICON}`} (normalmente em minutos).</li>
           </ol>
@@ -45,7 +45,7 @@ export default async function PixPage({ params }: { params: Promise<{ id: string
         </>
       )}
       {p.status === "CLAIMED" && <p className="rounded-xl bg-gold/10 p-4 text-gold2">⏳ Recebemos seu aviso! Estamos conferindo o Pix <b className="font-mono">{p.code}</b>. Você recebe uma notificação quando as {CURRENCY_ICON} forem liberadas.</p>}
-      {p.status === "PAID" && <p className="rounded-xl bg-green-900/40 p-4 text-green-200">✅ Pagamento aprovado! {p.kind === "VIP" ? "Sua assinatura está ativa." : `${CURRENCY_ICON} ${p.coins} creditadas!`}</p>}
+      {p.status === "PAID" && <p className="rounded-xl bg-green-100 p-4 text-green-700">✅ Pagamento aprovado! {p.kind === "VIP" ? "Sua assinatura está ativa." : `${CURRENCY_ICON} ${p.coins} creditadas!`}</p>}
       {(p.status === "REJECTED" || p.status === "EXPIRED") && <p className="rounded-xl bg-wine/40 p-4">Este pedido foi {p.status === "REJECTED" ? "recusado" : "cancelado"}.</p>}
     </div>
   );

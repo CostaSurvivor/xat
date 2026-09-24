@@ -187,17 +187,32 @@ export async function adminUserAction(userId: string, formData: FormData) {
 }
 
 // ---------------- Salas (admin) ----------------
-export async function adminRoomAction(roomId: string, formData: FormData) {
-  const admin = await requireAdmin();
+/** Equipe do site (admin ou moderador) nomeia/remove moderador de uma sala de estado. */
+export async function adminRoomModerator(roomId: string, _: { ok?: boolean; error?: string } | undefined, formData: FormData) {
+  const staff = await requireStaff();
+  const { STAFF_ONLY_ROOMS } = await import("@/lib/config");
+  const room = await db.room.findUnique({ where: { id: roomId } });
+  if (!room) return { error: "Sala não encontrada" };
+  if (STAFF_ONLY_ROOMS.has(room.slug)) return { error: "Esta sala é moderada só pela equipe do site." };
   const op = String(formData.get("op"));
-  if (op === "official") {
-    const r = await db.room.findUniqueOrThrow({ where: { id: roomId } });
-    await db.room.update({ where: { id: roomId }, data: { isOfficial: !r.isOfficial } });
-  } else if (op === "delete") {
-    await db.room.delete({ where: { id: roomId } });
-  }
-  await audit(admin.id, `room.admin.${op}`, "Room", roomId);
+  const nick = String(formData.get("nick") || "").trim().replace(/^@/, "");
+  const target = await db.user.findFirst({ where: { nick }, select: { id: true, nick: true, status: true, role: true } });
+  if (!target) return { error: "Nick não encontrado" };
+  if (op === "add") {
+    if (target.status !== "ACTIVE") return { error: "Usuário não está ativo" };
+    if (target.role !== "USER") return { error: "Admins e moderadores do site já moderam todas as salas." };
+    await db.roomMember.upsert({
+      where: { roomId_userId: { roomId: room.id, userId: target.id } },
+      create: { roomId: room.id, userId: target.id, role: "MODERATOR" },
+      update: { role: "MODERATOR" },
+    });
+    await notify(target.id, "SYSTEM", `🛡️ Você agora é moderador(a) da sala ${room.name} (/${room.slug}).`, staff.id, room.slug);
+  } else if (op === "remove") {
+    await db.roomMember.updateMany({ where: { roomId: room.id, userId: target.id, role: "MODERATOR" }, data: { role: "MEMBER" } });
+  } else return { error: "Ação inválida" };
+  await audit(staff.id, `room.moderator.${op}`, "Room", room.id, { nick: target.nick });
   revalidatePath("/admin/salas");
+  return { ok: true };
 }
 
 // ---------------- Loja (admin) ----------------

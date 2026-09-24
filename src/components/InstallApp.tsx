@@ -36,7 +36,7 @@ export function InstallApp() {
           if (evt) { await evt.prompt(); const r = await evt.userChoice; if (r.outcome === "accepted") setHidden(true); setEvt(null); }
           else if (ios) setOpen(true);
         }}
-        className="rounded-full border border-line px-3 py-1 text-xs text-mute hover:border-gold hover:text-white"
+        className="rounded-full border border-line px-3 py-1 text-xs text-mute hover:border-gold hover:text-fg"
         title="Instalar o app no celular"
       >
         📲 <span className="hidden sm:inline">Instalar app</span>
@@ -46,9 +46,9 @@ export function InstallApp() {
           <div className="card w-full max-w-sm space-y-3 p-5 text-sm" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-base font-semibold">Instalar no iPhone</h3>
             <ol className="list-decimal space-y-1 pl-5 text-mute">
-              <li>Abra este site no <b className="text-white">Safari</b>.</li>
-              <li>Toque em <b className="text-white">Compartilhar</b> (quadrado com seta ↑).</li>
-              <li>Escolha <b className="text-white">Adicionar à Tela de Início</b>.</li>
+              <li>Abra este site no <b className="text-fg">Safari</b>.</li>
+              <li>Toque em <b className="text-fg">Compartilhar</b> (quadrado com seta ↑).</li>
+              <li>Escolha <b className="text-fg">Adicionar à Tela de Início</b>.</li>
             </ol>
             <p className="text-xs text-mute">O ícone aparece na tela inicial e o site abre em tela cheia, como um app.</p>
             <div className="flex justify-end gap-2">

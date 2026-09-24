@@ -22,7 +22,7 @@ export default async function Suporte({ searchParams }: { searchParams: Promise<
         <section className="card divide-y divide-line">
           <h2 className="px-4 py-2 text-sm font-semibold text-gold">Meus chamados</h2>
           {tickets.map((t) => (
-            <Link key={t.id} href={`/suporte/${t.id}`} className="flex items-center gap-3 p-3 text-sm hover:bg-white/5">
+            <Link key={t.id} href={`/suporte/${t.id}`} className="flex items-center gap-3 p-3 text-sm hover:bg-black/5">
               <span className="min-w-0 flex-1 truncate">{t.subject}<span className="ml-2 text-xs text-mute">{TICKET_CATEGORIES[t.category]}</span></span>
               <span className={`rounded-full px-2 py-0.5 text-xs ${TICKET_STATUS[t.status].cls}`}>{TICKET_STATUS[t.status].label}</span>
             </Link>

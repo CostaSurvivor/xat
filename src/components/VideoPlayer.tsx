@@ -21,7 +21,7 @@ export function VideoPlayer({ id, canWatch, viewerNick, className = "" }: { id: 
       <div className={`relative overflow-hidden bg-black ${className}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={`/api/media/${id}?v=b`} alt="" draggable={false} className="protected-img h-full w-full object-cover opacity-70" />
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/40 p-4 text-center">
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/40 text-white p-4 text-center">
           <span className="text-4xl">🔒▶</span>
           <p className="font-semibold">Vídeo exclusivo para assinantes</p>
           <Link href="/assinar" className="btn-gold">⭐ Assinar e assistir</Link>
@@ -42,7 +42,7 @@ export function VideoPlayer({ id, canWatch, viewerNick, className = "" }: { id: 
         className="h-full w-full object-contain"
       />
       <span
-        className="pointer-events-none absolute select-none text-xs font-semibold text-white/35 transition-all duration-1000"
+        className="pointer-events-none absolute select-none text-xs font-semibold text-white/40 transition-all duration-1000"
         style={{ left: `${pos.x}%`, top: `${pos.y}%`, textShadow: "0 0 2px #000" }}
       >
         @{viewerNick}

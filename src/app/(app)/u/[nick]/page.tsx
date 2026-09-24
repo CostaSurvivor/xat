@@ -52,12 +52,12 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
         <div className="flex items-start gap-4">
           <Avatar mediaId={hidden ? null : u.avatarId} nick={u.nick} size={88} style={st} />
           <div className="min-w-0 flex-1">
-            <h1 className="text-xl"><Nick nick={u.nick} style={st} link={false} /> {u.ageVerification === "APPROVED" && <span title="Perfil verificado" className="text-sm text-gold">✔ verificado</span>} {u.vipUntil && u.vipUntil > new Date() && <span className="rounded bg-gold px-1.5 align-middle text-xs font-bold text-ink">VIP</span>}</h1>
+            <h1 className="text-xl"><Nick nick={u.nick} style={st} link={false} /> {u.ageVerification === "APPROVED" && <span title="Perfil verificado" className="text-sm text-gold">✔ verificado</span>} {u.vipUntil && u.vipUntil > new Date() && <span className="rounded bg-gold px-1.5 align-middle text-xs font-bold text-white">VIP</span>}</h1>
             <p className="text-sm text-mute">
               {PROFILE_TYPES[u.profileType].label} · {agesLabel(u.persons.map((p) => ({ label: p.label, age: ageOn(p.birthDate) })))}
               {!u.hideCity && u.city ? ` · ${u.city}/${u.state}` : u.state ? ` · ${u.state}` : ""}
             </p>
-            <p className="mt-1 text-xs text-mute"><b className="text-white">{friends.length}</b> amigos · <b className="text-white">{followers}</b> seguidores · <b className="text-white">{following}</b> seguindo</p>
+            <p className="mt-1 text-xs text-mute"><b className="text-fg">{friends.length}</b> amigos · <b className="text-fg">{followers}</b> seguidores · <b className="text-fg">{following}</b> seguindo</p>
             {!me && (
               <div className="mt-3 flex flex-wrap gap-2">
                 {!iBlocked && fStatus === "none" && <form action={sendFriendRequest.bind(null, u.id)}><button className="btn-gold">🤝 Adicionar amigo</button></form>}

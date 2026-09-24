@@ -41,10 +41,10 @@ export default async function AoVivo() {
             <Link key={l.id} href={`/ao-vivo/${l.id}`} className="card group overflow-hidden transition hover:border-gold/50">
               <div className="relative flex aspect-video items-center justify-center bg-gradient-to-br from-wine/60 via-ink to-black">
                 <Avatar mediaId={l.host.avatarId} nick={l.host.nick} size={72} />
-                <span className="live-dot absolute left-2 top-2 rounded bg-red-600 px-2 py-0.5 text-xs font-bold">● AO VIVO</span>
-                <span className="absolute right-2 top-2 rounded bg-black/60 px-2 py-0.5 text-xs">👁 {l.viewers}</span>
-                {l.audience === "VIP" && <span className="absolute bottom-2 left-2 rounded bg-fuchsia-700/80 px-2 py-0.5 text-xs">💎 assinantes</span>}
-                <span className="absolute bottom-2 right-2 rounded bg-black/60 px-2 py-0.5 text-xs">{fmtDuration(Date.now() - l.startedAt.getTime())}</span>
+                <span className="live-dot absolute left-2 top-2 rounded bg-red-600 text-white px-2 py-0.5 text-xs font-bold">● AO VIVO</span>
+                <span className="absolute right-2 top-2 rounded bg-black/60 text-white px-2 py-0.5 text-xs">👁 {l.viewers}</span>
+                {l.audience === "VIP" && <span className="absolute bottom-2 left-2 rounded bg-fuchsia-700/80 text-white px-2 py-0.5 text-xs">💎 assinantes</span>}
+                <span className="absolute bottom-2 right-2 rounded bg-black/60 text-white px-2 py-0.5 text-xs">{fmtDuration(Date.now() - l.startedAt.getTime())}</span>
               </div>
               <div className="p-3">
                 <h3 className="truncate font-semibold group-hover:text-gold2">{l.title}</h3>

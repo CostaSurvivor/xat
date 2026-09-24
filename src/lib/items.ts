@@ -58,9 +58,17 @@ const ANIM_CLASS: Record<string, string> = {
   neon: "fx-neon",
 };
 
+/** Escurece uma cor #rrggbb (já validada) para ficar legível no fundo branco. */
+export function darken(hex: string, amount = 0.45) {
+  const n = parseInt(hex.slice(1), 16);
+  const ch = (v: number) => Math.max(0, Math.round(v * (1 - amount))).toString(16).padStart(2, "0");
+  return `#${ch((n >> 16) & 255)}${ch((n >> 8) & 255)}${ch(n & 255)}`;
+}
+
 /** Compila os itens ativos do usuário em estilos React seguros. */
 export function compileStyle(items: ActiveItem[]): NickStyle {
   const s: NickStyle = { nick: {}, nickClass: "", badges: [], frameClass: "", powers: new Set(), power: 0 };
+  let glowColor: string | null = null;
   for (const it of items) {
     const cat = it.category as ItemCategoryKey;
     if (!(cat in itemConfigSchemas)) continue;
@@ -70,17 +78,16 @@ export function compileStyle(items: ActiveItem[]): NickStyle {
     const c = r.data as Record<string, any>;
     switch (cat) {
       case "GLOW": {
-        // neon em camadas (estilo xat): núcleo claro + halos crescentes na(s) cor(es)
+        // neon no fundo claro: texto na cor do brilho (escurecida, legível) + halos suaves
         const cols: string[] = c.colors;
         const main = cols[0];
         const second = cols[cols.length - 1];
+        glowColor = darken(main);
         s.nick.textShadow = [
-          `0 0 1px #fff`,
-          `0 0 3px ${main}`,
+          `0 0 2px ${main}99`,
           `0 0 6px ${main}`,
-          `0 0 10px ${second}`,
-          `0 0 18px ${second}`,
-          ...(cols.length > 2 ? [`0 0 26px ${cols[1]}`] : []),
+          `0 0 12px ${second}aa`,
+          ...(cols.length > 2 ? [`0 0 18px ${cols[1]}88`] : []),
         ].join(", ");
         s.nickClass += " " + ANIM_CLASS[c.animation];
         break;
@@ -121,6 +128,8 @@ export function compileStyle(items: ActiveItem[]): NickStyle {
         break;
     }
   }
+  // brilho sem cor de nick comprada: o nick assume a cor do brilho
+  if (glowColor && !s.nick.color && !s.nick.backgroundImage) s.nick.color = glowColor;
   s.nickClass = s.nickClass.trim();
   return s;
 }

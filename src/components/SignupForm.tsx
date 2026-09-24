@@ -15,7 +15,7 @@ export function SignupForm({ google }: { google?: { email: string } }) {
         <span className="label">Quem são vocês?</span>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {(Object.keys(PROFILE_TYPES) as ProfileTypeKey[]).map((k) => (
-            <label key={k} className={`cursor-pointer rounded-xl border px-3 py-2 text-center text-sm ${type === k ? "border-gold bg-wine/40 text-white" : "border-line text-mute"}`}>
+            <label key={k} className={`cursor-pointer rounded-xl border px-3 py-2 text-center text-sm ${type === k ? "border-gold bg-wine text-white" : "border-line text-mute"}`}>
               <input type="radio" name="profileType" value={k} checked={type === k} onChange={() => setType(k)} className="sr-only" />
               {PROFILE_TYPES[k].label}
             </label>
@@ -68,7 +68,7 @@ export function SignupForm({ google }: { google?: { email: string } }) {
         <label className="flex gap-2"><input type="checkbox" name="terms" required /> <span>Li e aceito os <Link href="/termos" target="_blank" className="text-gold underline">Termos de Uso</Link> e a <Link href="/privacidade" target="_blank" className="text-gold underline">Política de Privacidade</Link>.</span></label>
         <label className="flex gap-2"><input type="checkbox" name="sensitive" required /> Consinto com o tratamento de dados sensíveis sobre minha vida sexual (preferências e tipo de perfil), conforme o art. 11 da LGPD, para funcionamento da comunidade.</label>
       </div>
-      {state?.error && <p className="rounded-xl bg-wine/30 px-3 py-2 text-sm text-red-200">{state.error}</p>}
+      {state?.error && <p className="rounded-xl bg-wine/30 px-3 py-2 text-sm text-red-700">{state.error}</p>}
       <button disabled={pending} className="btn-gold w-full py-3">{pending ? "Criando…" : google ? "Concluir cadastro" : "Criar conta"}</button>
     </form>
   );

@@ -9,9 +9,9 @@ import { ReportButton } from "@/components/ReportButton";
 
 const THEMES: Record<string, string> = {
   noir: "from-ink to-ink",
-  vinho: "from-[#2a0712] to-ink",
-  ouro: "from-[#2a2107] to-ink",
-  neon: "from-[#1a0730] to-ink",
+  vinho: "from-[#fbe7ee] to-ink",
+  ouro: "from-[#fbf2dc] to-ink",
+  neon: "from-[#efe6fb] to-ink",
 };
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {

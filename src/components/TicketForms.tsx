@@ -51,7 +51,7 @@ export function NewTicketForm({ initialCategory }: { initialCategory?: string })
         </div>
       )}
       <textarea name="body" required maxLength={4000} className="input h-28" placeholder={cat === "NICK_CHANGE" ? "Conte o motivo da troca (opcional, mas ajuda)" : "Descreva o que aconteceu…"} />
-      {state?.error && <p className="text-sm text-red-300">{state.error}</p>}
+      {state?.error && <p className="text-sm text-red-700">{state.error}</p>}
       <button disabled={pending} className="btn-gold">Abrir chamado</button>
     </form>
   );
@@ -64,7 +64,7 @@ export function ReplyForm({ action }: { action: Act }) {
   return (
     <form ref={ref} action={formAction} className="space-y-2">
       <textarea name="body" required maxLength={4000} className="input h-24" placeholder="Escreva sua mensagem…" />
-      {state?.error && <p className="text-sm text-red-300">{state.error}</p>}
+      {state?.error && <p className="text-sm text-red-700">{state.error}</p>}
       <button disabled={pending} className="btn-gold">Enviar</button>
     </form>
   );

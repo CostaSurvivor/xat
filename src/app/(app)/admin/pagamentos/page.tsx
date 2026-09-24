@@ -18,7 +18,7 @@ export default async function Pagamentos() {
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-bold">Pix manual</h1>
-      {!pix.key && <p className="rounded-xl bg-red-900/50 p-3 text-sm">⚠️ Chave Pix não configurada: usuários não conseguem gerar QR Code. <Link href="/admin/config" className="underline">Configurar agora</Link></p>}
+      {!pix.key && <p className="rounded-xl bg-red-100 p-3 text-sm">⚠️ Chave Pix não configurada: usuários não conseguem gerar QR Code. <Link href="/admin/config" className="underline">Configurar agora</Link></p>}
       <p className="text-sm text-mute">Confira no extrato do banco o valor e o identificador (txid / descrição) antes de aprovar. A aprovação credita as moedas uma única vez.</p>
       <div className="card divide-y divide-line">
         {pending.length === 0 && <p className="p-4 text-sm text-mute">Nada pendente.</p>}
@@ -44,7 +44,7 @@ export default async function Pagamentos() {
         {recent.map((p) => (
           <div key={p.id} className="flex gap-3 p-2">
             <span className="font-mono">{p.code}</span><span>@{p.user.nick}</span><span>{brl(p.amountCents)}</span>
-            <span className={p.status === "PAID" ? "text-green-300" : "text-red-300"}>{p.status === "PAID" ? "aprovado" : "recusado"}</span>
+            <span className={p.status === "PAID" ? "text-green-700" : "text-red-700"}>{p.status === "PAID" ? "aprovado" : "recusado"}</span>
             <span className="ml-auto text-xs text-mute">{p.reviewedAt?.toLocaleString("pt-BR")}</span>
           </div>
         ))}

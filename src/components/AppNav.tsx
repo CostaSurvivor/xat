@@ -24,13 +24,13 @@ export function AppNav({ variant }: { variant: "top" | "bottom" }) {
     return (
       <nav className="hidden items-center gap-1 md:flex">
         {LINKS.map((l) => (
-          <Link key={l.href} href={l.href} className={`relative rounded-full px-3 py-1.5 text-sm ${path.startsWith(l.href) ? "bg-wine/50 text-white" : "text-mute hover:text-white"}`}>
+          <Link key={l.href} href={l.href} className={`relative rounded-full px-3 py-1.5 text-sm ${path.startsWith(l.href) ? "bg-wine text-white" : "text-mute hover:text-fg"}`}>
             {l.label}
             {l.badge && <Dot n={b[l.badge]} />}
           </Link>
         ))}
         {EXTRA.map((l) => (
-          <Link key={l.href} href={l.href} className={`rounded-full px-3 py-1.5 text-sm ${path.startsWith(l.href) ? "bg-wine/50 text-white" : "text-mute hover:text-white"}`}>{l.label}</Link>
+          <Link key={l.href} href={l.href} className={`rounded-full px-3 py-1.5 text-sm ${path.startsWith(l.href) ? "bg-wine text-white" : "text-mute hover:text-fg"}`}>{l.label}</Link>
         ))}
       </nav>
     );

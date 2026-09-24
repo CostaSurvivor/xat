@@ -93,13 +93,13 @@ function PcPane({ nick, meNick }: { nick: string; meNick: string }) {
         {msgs.map((m) => (
           <div key={m.id} className="text-[15px] leading-snug">
             <span className="mr-1 text-[11px] text-mute">{hhmm(m.createdAt)}</span>
-            <b className={m.mine ? "text-gold2" : "text-pink-300"}>{m.mine ? meNick : nick}</b>
+            <b className={m.mine ? "text-gold2" : "text-pink-700"}>{m.mine ? meNick : nick}</b>
             <span className="text-mute">: </span>
             {m.mediaId ? <Link href={`/mensagens/${nick}`} className="text-gold underline">📷 foto (abrir no PV)</Link> : <span className="break-words">{m.body}</span>}
           </div>
         ))}
       </div>
-      {err && <div className="mx-3 mb-1 rounded-lg bg-wine/40 px-3 py-1 text-xs text-red-100">{err}</div>}
+      {err && <div className="mx-3 mb-1 rounded-lg bg-wine/40 px-3 py-1 text-xs text-red-800">{err}</div>}
       <form onSubmit={send} className="flex items-center gap-2 border-t border-line p-2">
         <input value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} placeholder={`Mensagem privada para ${nick}…`} className="input flex-1" autoComplete="off" />
         <button disabled={!text.trim()} className="btn-gold">Enviar</button>
@@ -320,7 +320,7 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
     <li>
       <button
         onClick={() => setSelected({ ...u, offline: off })}
-        className={`flex w-full items-center gap-2 rounded-lg px-1.5 py-1 text-left hover:bg-white/5 ${"highlight" in u && u.highlight ? "bg-gradient-to-r from-gold/20 to-transparent" : ""} ${off ? "opacity-60" : ""}`}
+        className={`flex w-full items-center gap-2 rounded-lg px-1.5 py-1 text-left hover:bg-black/5 ${"highlight" in u && u.highlight ? "bg-gradient-to-r from-gold/20 to-transparent" : ""} ${off ? "opacity-60" : ""}`}
       >
         <RoleIcon role={u.chatRole as ChatRole} size={26} vip={u.style?.vip} accessory={u.style?.doll} offline={off} />
         <Avatar mediaId={u.avatarId} nick={u.nick} size={28} style={u.style} />
@@ -339,20 +339,20 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
       <section className="card flex min-h-0 flex-col overflow-hidden bg-panel/85 backdrop-blur">
         {/* abas (sala + conversas privadas) */}
         <div className="flex items-end gap-1 overflow-x-auto border-b border-line bg-ink/60 px-2 pt-1.5">
-          <button onClick={() => setActive("sala")} className={`shrink-0 rounded-t-lg px-3 py-1.5 text-sm ${active === "sala" ? "bg-panel font-semibold text-gold" : "text-mute hover:text-white"}`}>💬 Sala</button>
+          <button onClick={() => setActive("sala")} className={`shrink-0 rounded-t-lg px-3 py-1.5 text-sm ${active === "sala" ? "bg-panel font-semibold text-gold" : "text-mute hover:text-fg"}`}>💬 Sala</button>
           {tabs.map((t) => (
             <span key={t.nick} className={`flex shrink-0 items-center rounded-t-lg ${active === t.nick ? "bg-panel" : ""}`}>
               <button
                 onClick={() => { setActive(t.nick); setTabs((x) => x.map((y) => (y.nick === t.nick ? { ...y, unread: 0 } : y))); }}
-                className={`py-1.5 pl-3 pr-1 text-sm ${active === t.nick ? "font-semibold text-pink-300" : "text-mute hover:text-white"} ${t.unread ? "animate-pulse text-pink-300" : ""}`}
+                className={`py-1.5 pl-3 pr-1 text-sm ${active === t.nick ? "font-semibold text-pink-700" : "text-mute hover:text-fg"} ${t.unread ? "animate-pulse text-pink-700" : ""}`}
               >
                 🔒 {t.nick}{t.unread ? <span className="ml-1 rounded-full bg-wine2 px-1.5 text-[10px] text-white">{t.unread}</span> : null}
               </button>
-              <button onClick={() => { setTabs((x) => x.filter((y) => y.nick !== t.nick)); if (active === t.nick) setActive("sala"); }} className="px-1.5 text-xs text-mute hover:text-white" aria-label="Fechar">✕</button>
+              <button onClick={() => { setTabs((x) => x.filter((y) => y.nick !== t.nick)); if (active === t.nick) setActive("sala"); }} className="px-1.5 text-xs text-mute hover:text-fg" aria-label="Fechar">✕</button>
             </span>
           ))}
           <span className="ml-auto flex shrink-0 items-center gap-2 pb-1 text-xs text-mute">
-            {noPcUnread > 0 && active === "sala" && <span className="text-pink-300">{noPcUnread} PC nova(s)</span>}
+            {noPcUnread > 0 && active === "sala" && <span className="text-pink-700">{noPcUnread} PC nova(s)</span>}
             <button
               onClick={() => { const v = !muted; setMuted(v); mutedRef.current = v; try { localStorage.setItem("chat-muted", v ? "1" : "0"); } catch {} }}
               title={muted ? "Ativar sons" : "Silenciar sons"}
@@ -369,7 +369,7 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
             {pinned && (
               <div className="flex items-center gap-2 border-b border-line bg-gold/10 px-3 py-1.5 text-xs text-gold2">
                 📌 <b>{pinned.nick}:</b> <span className="truncate">{pinned.body}</span>
-                {isMod && <button onClick={() => mod("unpin")} className="ml-auto text-mute hover:text-white">✕</button>}
+                {isMod && <button onClick={() => mod("unpin")} className="ml-auto text-mute hover:text-fg">✕</button>}
               </div>
             )}
             <div
@@ -439,7 +439,7 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
                       <button onClick={() => setPickerFor(pickerFor === m.id ? null : m.id)}>reagir</button>
                       <button onClick={() => setText((t) => `${t}@${m.author!.nick} `)}>responder</button>
                       {isMod ? <button onClick={() => mod("pin", { messageId: m.id })}>fixar</button> : mine && pollMe?.canPinOwn && <button onClick={() => pinOwn(m.id)} title="Poder: fixar mensagem">📌 fixar</button>}
-                      {isMod && <button onClick={() => mod("delete_message", { messageId: m.id })} className="hover:text-red-300">apagar</button>}
+                      {isMod && <button onClick={() => mod("delete_message", { messageId: m.id })} className="hover:text-red-700">apagar</button>}
                       {!mine && <ReportButton targetType="ROOM_MESSAGE" targetId={m.id} label="" />}
                     </div>
                   </div>
@@ -447,7 +447,7 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
               })}
             </div>
             <div className="h-5 px-3 text-xs italic text-mute">{typers.length > 0 && `${typers.slice(0, 3).join(", ")} ${typers.length > 1 ? "estão" : "está"} digitando…`}</div>
-            {error && <div className="mx-3 mb-1 rounded-lg bg-wine/40 px-3 py-1 text-xs text-red-100">{error}</div>}
+            {error && <div className="mx-3 mb-1 rounded-lg bg-wine/40 px-3 py-1 text-xs text-red-800">{error}</div>}
             {pollMe?.mutedUntil ? (
               <div className="border-t border-line p-3 text-center text-sm text-mute">🔇 Você está silenciado nesta sala.</div>
             ) : (
@@ -480,7 +480,7 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
       <aside className={`${showUsers ? "fixed inset-0 z-50 bg-black/70 p-4" : "hidden"} md:static md:block md:bg-transparent md:p-0`} onClick={() => setShowUsers(false)}>
         <div className="card flex h-full max-h-full flex-col overflow-hidden bg-panel/85 backdrop-blur" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center justify-between border-b border-line bg-ink/60 px-3 py-2 text-sm">
-            <b className="text-green-300">● Online ({online.length})</b>
+            <b className="text-green-700">● Online ({online.length})</b>
             {isMod && (
               <select className="rounded bg-panel2 text-xs" value={slowMode} onChange={(e) => mod("set_slowmode", { seconds: Number(e.target.value) })}>
                 {[0, 5, 10, 30, 60].map((s) => <option key={s} value={s}>{s ? `lento ${s}s` : "sem modo lento"}</option>)}
@@ -492,7 +492,7 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
             {offline.length > 0 && (
               <>
                 <button onClick={() => setShowOffline((v) => !v)} className="mt-2 flex w-full items-center justify-between border-t border-line px-2 pt-2 text-xs text-mute">
-                  <span className="text-red-300">● Offline ({offline.length})</span>
+                  <span className="text-red-700">● Offline ({offline.length})</span>
                   <span>{showOffline ? "▲" : "▼"}</span>
                 </button>
                 {showOffline && <ul>{offline.map((u) => <UserRow key={u.id} u={u} off />)}</ul>}
@@ -517,7 +517,7 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
               <Avatar mediaId={selected.avatarId} nick={selected.nick} size={72} style={selected.style} />
               <div className="min-w-0">
                 <div className="text-lg"><Nick nick={selected.nick} style={selected.style} link={false} /></div>
-                {selected.statusText && <p className="truncate text-xs italic text-white/70">“{selected.statusText}”</p>}
+                {selected.statusText && <p className="truncate text-xs italic text-fg/70">“{selected.statusText}”</p>}
                 <div className="mt-1 flex items-center gap-1 text-xs text-mute">
                   <RoleIcon role={selected.chatRole as ChatRole} size={18} vip={selected.style?.vip} accessory={selected.style?.doll} offline={selected.offline} />
                   {CHAT_ROLES[selected.chatRole as ChatRole].label}

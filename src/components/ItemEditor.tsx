@@ -34,7 +34,7 @@ export function ItemEditor() {
       <input name="limitedQty" type="number" placeholder="qtd limitada" className="input" />
       <input name="powerScore" type="number" defaultValue={5} placeholder="poder" className="input" />
       <button disabled={pending} className="btn-gold sm:col-span-3">Salvar item (cria ou atualiza pelo slug)</button>
-      {state?.error && <p className="text-sm text-red-300 sm:col-span-4">{state.error}</p>}
+      {state?.error && <p className="text-sm text-red-700 sm:col-span-4">{state.error}</p>}
       {state?.ok && <p className="text-sm text-gold sm:col-span-4">Item salvo!</p>}
       <p className="text-xs text-mute sm:col-span-4">O visual é gerado a partir desse JSON validado: só cores #hex e animações da lista (none, pulse, rainbow, shift, flicker). Não é possível injetar CSS.</p>
     </form>

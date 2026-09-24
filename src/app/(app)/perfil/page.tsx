@@ -79,7 +79,7 @@ export default async function MeuPerfil() {
                   {g.tags.map((t) => (
                     <label key={t} className="cursor-pointer">
                       <input type="checkbox" name="likes" value={t} defaultChecked={likes.includes(t)} className="peer sr-only" />
-                      <span className="inline-block rounded-full border border-line px-2.5 py-1 text-xs text-mute peer-checked:border-gold peer-checked:bg-wine/40 peer-checked:text-white">{t}</span>
+                      <span className="inline-block rounded-full border border-line px-2.5 py-1 text-xs text-mute peer-checked:border-gold peer-checked:bg-wine peer-checked:text-white">{t}</span>
                     </label>
                   ))}
                 </div>
@@ -176,7 +176,7 @@ export default async function MeuPerfil() {
           {album.map((m) => (
             <div key={m.id} className="relative">
               <ProtectedImage id={m.id} className="aspect-square rounded-lg" />
-              <form action={deleteMedia.bind(null, m.id)} className="absolute right-1 top-1"><button className="rounded-full bg-black/70 px-2 text-xs">✕</button></form>
+              <form action={deleteMedia.bind(null, m.id)} className="absolute right-1 top-1"><button className="rounded-full bg-black/70 text-white px-2 text-xs">✕</button></form>
             </div>
           ))}
         </div>

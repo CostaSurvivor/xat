@@ -32,3 +32,15 @@ describe("bonequinho por cargo", () => {
     expect(chatRole("USER", undefined)).toBe("GUEST");
   });
 });
+
+describe("salas oficiais: Geral + uma por estado", async () => {
+  const { UFS, UF_NAMES, GENERAL_ROOM, stateRoom, RESERVED_SLUGS } = await import("@/lib/config");
+  it("27 estados com nome, slug único e sem colidir com páginas do site", () => {
+    expect(UFS).toHaveLength(27);
+    const slugs = UFS.map((u) => stateRoom(u).slug);
+    expect(new Set([...slugs, GENERAL_ROOM.slug]).size).toBe(28);
+    for (const u of UFS) expect(UF_NAMES[u]).toBeTruthy();
+    for (const s of slugs) expect(RESERVED_SLUGS.has(s)).toBe(false);
+    expect(RESERVED_SLUGS.has("geral") && RESERVED_SLUGS.has("lobby")).toBe(true); // ninguém cria sala com esses nomes
+  });
+});
