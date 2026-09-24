@@ -13,6 +13,7 @@ export const metadata = { title: "Avisos" };
 export const dynamic = "force-dynamic";
 
 const ICON: Record<string, string> = {
+  TICKET: "🎫",
   FOLLOW: "👀", FRIEND_REQUEST: "🤝", FRIEND_ACCEPTED: "🤝", POST_REACTION: "🔥", POST_COMMENT: "💬", COMMENT_REPLY: "↩️",
   COMMENT_REACTION: "❤️", MENTION: "@", ALBUM_REQUEST: "🔒", ALBUM_GRANTED: "🔓", GIFT: "🎁", COINS_CREDITED: "🌶️", VERIFICATION: "✅", SYSTEM: "📢",
 };
@@ -43,6 +44,7 @@ export default async function Notificacoes({ searchParams }: { searchParams: Pro
     if (n.kind === "GIFT") return "/loja/inventario";
     if (n.kind === "VERIFICATION") return "/verificacao";
     if (n.kind === "FRIEND_REQUEST") return "/notificacoes?aba=pedidos";
+    if (n.kind === "TICKET" && n.refId) return `/suporte/${n.refId}`;
     return nick ? `/u/${nick}` : "#";
   };
 

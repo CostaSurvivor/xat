@@ -24,7 +24,7 @@ export type MediaVariant = "d" | "b" | "o" | "v";
  * Retorna a variante efetiva (pode rebaixar "d" para "b") ou null (sem acesso).
  */
 export async function resolveMediaAccess(viewer: CurrentUser, mediaId: string, want: MediaVariant) {
-  const m = await db.media.findUnique({ where: { id: mediaId }, include: { owner: { select: { id: true, hideFromUnverified: true, status: true } } } });
+  const m = await db.media.findUnique({ where: { id: mediaId }, include: { owner: { select: { id: true, hideFromUnverified: true, status: true, albumVisibility: true } } } });
   if (!m) return null;
   const staff = isStaff(viewer);
   const own = m.ownerId === viewer.id;
@@ -46,8 +46,7 @@ export async function resolveMediaAccess(viewer: CurrentUser, mediaId: string, w
       if (want === "v") return isSubscriber(viewer) && !blurOnly ? { media: m, variant: "v" as const } : null;
       break;
     case "PRIVATE_ALBUM": {
-      const acc = await db.albumAccess.findUnique({ where: { ownerId_viewerId: { ownerId: m.ownerId, viewerId: viewer.id } } });
-      if (!acc?.granted) return { media: m, variant: "b" as const };
+      if (!(await canSeeAlbum(viewer.id, m.ownerId, m.owner.albumVisibility))) return { media: m, variant: "b" as const };
       break;
     }
     case "PM_PHOTO": {
@@ -60,4 +59,22 @@ export async function resolveMediaAccess(viewer: CurrentUser, mediaId: string, w
     }
   }
   return { media: m, variant: blurOnly ? ("b" as const) : want };
+}
+
+/**
+ * Álbum privado: o dono escolhe quem vê (PRIVATE = só liberados um a um,
+ * FRIENDS = amigos, FOLLOWERS = seguidores). Liberação individual vale sempre.
+ */
+export async function canSeeAlbum(viewerId: string, ownerId: string, visibility: string) {
+  if (viewerId === ownerId) return true;
+  const acc = await db.albumAccess.findUnique({ where: { ownerId_viewerId: { ownerId, viewerId } } });
+  if (acc?.granted) return true;
+  if (visibility === "FRIENDS") {
+    const { areFriends } = await import("./friends");
+    return areFriends(viewerId, ownerId);
+  }
+  if (visibility === "FOLLOWERS") {
+    return !!(await db.follow.findUnique({ where: { followerId_followeeId: { followerId: viewerId, followeeId: ownerId } } }));
+  }
+  return false;
 }

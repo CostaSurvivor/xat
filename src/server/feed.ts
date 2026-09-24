@@ -11,28 +11,48 @@ export async function getFeed(viewer: CurrentUser, opts: { tab?: FeedTab; before
   const take = opts.take ?? 15;
   const blocked = await blockedIds(viewer.id);
   const following = (await db.follow.findMany({ where: { followerId: viewer.id }, select: { followeeId: true } })).map((f) => f.followeeId);
+  const { friendIds } = await import("./friends");
+  const friends = await friendIds(viewer.id);
 
   const where: Prisma.PostWhereInput = {
     deletedAt: null,
     authorId: { notIn: blocked },
     author: { status: "ACTIVE" },
-    OR: [{ visibility: "PUBLIC" }, { authorId: { in: [...following, viewer.id] } }],
+    OR: [
+      { visibility: "PUBLIC" },
+      { authorId: viewer.id },
+      { visibility: "FRIENDS", authorId: { in: friends } },
+      { visibility: "FOLLOWERS", authorId: { in: following } },
+    ],
   };
   if (opts.authorId) where.AND = [{ authorId: opts.authorId }];
   else if (opts.tab === "seguindo") where.AND = [{ authorId: { in: [...following, viewer.id] } }];
   else if (opts.tab === "regiao" && viewer.state) where.AND = [{ author: { state: viewer.state } }];
   if (opts.before) where.createdAt = { lt: new Date(opts.before) };
 
-  const posts = await db.post.findMany({
-    where,
-    orderBy: { createdAt: "desc" },
-    take,
-    include: {
+  const include = {
       author: { select: { id: true, nick: true, avatarId: true, profileType: true, city: true, state: true, hideCity: true, ageVerification: true, vipUntil: true } },
       media: { orderBy: { position: "asc" }, include: { media: { select: { id: true, status: true, width: true, height: true, kind: true } } } },
       _count: { select: { comments: { where: { deletedAt: null } } } },
-    },
+  } as const;
+  // Prioridade: na 1ª página de "Todos", posts recentes (72h) de quem eu sigo vêm primeiro
+  const prioritized =
+    !opts.before && !opts.authorId && (opts.tab ?? "todos") === "todos" && following.length
+      ? await db.post.findMany({
+          where: { AND: [where, { authorId: { in: following } }, { createdAt: { gt: new Date(Date.now() - 72 * 3600_000) } }] },
+          orderBy: { createdAt: "desc" },
+          take: 8,
+          include,
+        })
+      : [];
+  const rest = await db.post.findMany({
+    where: prioritized.length ? { AND: [where, { id: { notIn: prioritized.map((p) => p.id) } }] } : where,
+    orderBy: { createdAt: "desc" },
+    take,
+    include,
   });
+  const posts = [...prioritized, ...rest];
+  const followedSet = new Set(prioritized.map((p) => p.id));
   const ids = posts.map((p) => p.id);
   const [reactions, mine] = await Promise.all([
     db.postReaction.groupBy({ by: ["postId", "emoji"], where: { postId: { in: ids } }, _count: true }),
@@ -51,6 +71,7 @@ export async function getFeed(viewer: CurrentUser, opts: { tab?: FeedTab; before
     reactions: Object.fromEntries(reactions.filter((r) => r.postId === p.id).map((r) => [r.emoji, r._count])),
     myReaction: mine.find((m) => m.postId === p.id)?.emoji ?? null,
     canDelete: p.authorId === viewer.id || viewer.role !== "USER",
+    fromFollowed: followedSet.has(p.id),
   }));
 }
 export type FeedPost = Awaited<ReturnType<typeof getFeed>>[number];

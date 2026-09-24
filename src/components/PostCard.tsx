@@ -93,6 +93,8 @@ export function PostCard({ post, viewer }: { post: FeedPost; viewer: { nick: str
             {PROFILE_TYPES[a.profileType as keyof typeof PROFILE_TYPES]?.label}
             {a.city ? ` · ${a.city}/${a.state}` : ""} · {timeAgo(post.createdAt)}
             {post.visibility === "FOLLOWERS" && " · 🔒 seguidores"}
+            {post.visibility === "FRIENDS" && " · 🤝 amigos"}
+            {post.fromFollowed && <span className="ml-1 rounded bg-gold/20 px-1 text-[10px] text-gold2">seguindo</span>}
           </div>
         </div>
         {post.canDelete ? (

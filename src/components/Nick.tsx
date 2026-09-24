@@ -6,6 +6,7 @@ export function Nick({ nick, style, link = true, className = "" }: { nick: strin
     <>
       <span style={style?.nick} className={`font-semibold ${style?.nickClass ?? ""}`}>{nick}</span>
       {style?.badges?.map((b, i) => <span key={i} className="ml-0.5 text-[0.9em]">{b}</span>)}
+      {style?.founder && <span className="founder-chip ml-1 rounded px-1 align-middle text-[0.6em]">FUNDADOR</span>}
     </>
   );
   return link ? <Link href={`/u/${encodeURIComponent(nick)}`} className={`hover:underline ${className}`}>{inner}</Link> : <span className={className}>{inner}</span>;

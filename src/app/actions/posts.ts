@@ -16,7 +16,8 @@ export async function createPost(_: R | undefined, formData: FormData): Promise<
   const user = await requireUser();
   if (!limiter("post", 10, 10 / 3600).take(user.id)) return { ok: false, error: "Você postou muito em pouco tempo. Aguarde." };
   const body = String(formData.get("body") || "").trim().slice(0, 3000);
-  const visibility = formData.get("visibility") === "FOLLOWERS" ? "FOLLOWERS" : "PUBLIC";
+  const v = formData.get("visibility");
+  const visibility = v === "FRIENDS" ? "FRIENDS" : v === "FOLLOWERS" ? "FOLLOWERS" : "PUBLIC";
   const files = formData.getAll("photos").filter((f): f is File => f instanceof File && f.size > 0).slice(0, 6);
   const video = formData.get("video");
   const hasVideo = video instanceof File && video.size > 0;

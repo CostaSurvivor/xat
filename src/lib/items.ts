@@ -39,6 +39,7 @@ export type NickStyle = {
   entry?: { effect: string; message?: string };
   powers: Set<string>;
   power: number;
+  founder?: boolean;
 };
 
 const ANIM_CLASS: Record<string, string> = {

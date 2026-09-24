@@ -35,6 +35,7 @@ export async function updateProfile(_: R, formData: FormData): Promise<R> {
       hideCity: formData.get("hideCity") === "on",
       hideFromUnverified: formData.get("hideFromUnverified") === "on",
       acceptPmPhotos: formData.get("acceptPmPhotos") === "on",
+      albumVisibility: ["PRIVATE", "FRIENDS", "FOLLOWERS"].includes(String(formData.get("albumVisibility"))) ? String(formData.get("albumVisibility")) : "FRIENDS",
     },
   });
   revalidatePath("/perfil");
@@ -152,7 +153,17 @@ export async function submitVerification(_: R, formData: FormData): Promise<R> {
 export async function updatePersons(_: R, formData: FormData): Promise<R> {
   const user = await requireUser();
   const { PERSON_FIELDS } = await import("@/lib/config");
-  const persons = await db.profilePerson.findMany({ where: { userId: user.id } });
+  const persons = await db.profilePerson.findMany({ where: { userId: user.id }, orderBy: { id: "asc" } });
+  const { parseBirthDate, isAdult } = await import("@/lib/age");
+  const births = new Map<string, Date>();
+  for (const p of persons) {
+    const raw = String(formData.get(`${p.id}.birthDate`) || "");
+    if (!raw) continue;
+    const d = parseBirthDate(raw);
+    if (!d) return { error: `Data de nascimento inválida (${p.label})` };
+    if (!isAdult(d)) return { error: "Todas as pessoas do perfil precisam ter 18 anos ou mais." };
+    births.set(p.id, d);
+  }
   for (const p of persons) {
     const data: Record<string, string | number | null> = {};
     for (const [key, def] of Object.entries(PERSON_FIELDS)) {
@@ -161,8 +172,16 @@ export async function updatePersons(_: R, formData: FormData): Promise<R> {
     }
     const h = Number(formData.get(`${p.id}.heightCm`) || 0);
     data.heightCm = Number.isInteger(h) && h >= 120 && h <= 230 ? h : null;
+    const nb = births.get(p.id);
+    if (nb && nb.getTime() !== p.birthDate.getTime()) {
+      (data as Record<string, unknown>).birthDate = nb;
+      const { audit } = await import("@/server/notify");
+      await audit(user.id, "profile.birthdate", "ProfilePerson", p.id, { from: p.birthDate.toISOString().slice(0, 10), to: nb.toISOString().slice(0, 10) });
+    }
     await db.profilePerson.update({ where: { id: p.id }, data });
   }
+  const first = persons[0];
+  if (first && births.get(first.id)) await db.user.update({ where: { id: user.id }, data: { birthDate: births.get(first.id)! } });
   revalidatePath("/perfil");
   return { ok: true };
 }
@@ -216,4 +235,16 @@ export async function removeFriend(otherId: string) {
   });
   revalidatePath("/u/[nick]", "page");
   revalidatePath("/amigos");
+}
+
+/** Troca de tipo de perfil direta: só ADMIN (usuários pedem por ticket). */
+export async function updateProfileType(_: R, formData: FormData): Promise<R> {
+  const user = await requireUser();
+  if (user.role !== "ADMIN") return { error: "Peça a troca de tipo de perfil pelo Suporte." };
+  const { applyProfileType } = await import("@/server/profileType");
+  const births = [0, 1].map((i) => String(formData.get(`birth${i}`) || "")).filter(Boolean);
+  const r = await applyProfileType(user.id, String(formData.get("profileType")), births, user.id);
+  if (r.error) return { error: r.error };
+  revalidatePath("/perfil");
+  return { ok: true };
 }

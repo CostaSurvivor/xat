@@ -89,8 +89,8 @@ export function Composer({ verified }: { verified: boolean }) {
           <a href="/verificacao" className="text-xs text-mute underline">Verifique-se para postar fotos e vídeos</a>
         )}
         <select name="visibility" className="input w-auto py-1.5 text-xs">
-          <option value="PUBLIC">Todos</option>
-          <option value="FOLLOWERS">Só quem me segue</option>
+          <option value="PUBLIC">🌎 Todos</option>
+          <option value="FRIENDS">🤝 Só amigos</option>
         </select>
         <div className="flex-1" />
         <button disabled={pending} className="btn-gold">{pending ? "Publicando…" : "Publicar"}</button>

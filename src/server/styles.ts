@@ -2,6 +2,9 @@ import "server-only";
 import { db } from "@/lib/db";
 import { compileStyle, serializeStyle, type NickStyleJSON } from "@/lib/items";
 
+/** E-mails do(s) fundador(es): visual exclusivo no chat e no site. */
+export const FOUNDER_EMAILS = (process.env.FOUNDER_EMAILS || "admin@sexpapo.com").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+
 /** Estilos (itens ativos, não expirados) de vários usuários de uma vez. */
 export async function stylesFor(userIds: string[]): Promise<Record<string, NickStyleJSON>> {
   const ids = [...new Set(userIds)];
@@ -12,7 +15,21 @@ export async function stylesFor(userIds: string[]): Promise<Record<string, NickS
   });
   const by: Record<string, typeof inv> = {};
   for (const i of inv) (by[i.userId] ??= []).push(i);
+  const founders = new Set((await db.user.findMany({ where: { id: { in: ids }, email: { in: FOUNDER_EMAILS } }, select: { id: true } })).map((u) => u.id));
   const out: Record<string, NickStyleJSON> = {};
-  for (const id of ids) out[id] = serializeStyle(compileStyle((by[id] ?? []).map((i) => i.item)));
+  for (const id of ids) {
+    const st = serializeStyle(compileStyle((by[id] ?? []).map((i) => i.item)));
+    if (founders.has(id)) {
+      // fundador: visual exclusivo por cima dos itens (ninguém consegue comprar igual)
+      st.founder = true;
+      st.nick = {};
+      st.nickClass = "founder-nick";
+      st.badges = ["👑"];
+      st.frame = { boxShadow: "0 0 0 2px #d4af37, 0 0 14px 3px rgba(212,175,55,.8), 0 0 24px 6px rgba(255,92,138,.35)" };
+      st.frameClass = "fx-pulse";
+      st.power += 1_000_000;
+    }
+    out[id] = st;
+  }
   return out;
 }

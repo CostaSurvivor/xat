@@ -42,7 +42,7 @@ export const RESERVED_SLUGS = new Set([
   "regras", "_next", "static", "favicon.ico", "robots.txt", "denunciar", "busca", "pessoas",
 ]);
 
-export const REACTIONS = ["🔥", "❤️", "😈", "👏", "😍"] as const;
+export const REACTIONS = ["🔥", "❤️", "😈", "😂", "👏", "😍"] as const;
 
 /** Características opcionais de cada pessoa do perfil (sobre ela / sobre ele). */
 export const PERSON_FIELDS = {

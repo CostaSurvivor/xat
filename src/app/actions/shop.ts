@@ -41,7 +41,7 @@ export async function purchaseItem(itemId: string, duration: Duration, giftToNic
   return { ok: true };
 }
 
-export async function sendCoins(toId: string, amount: number, idem?: string): Promise<R> {
+export async function sendCoins(toId: string, amount: number, idem?: string, roomSlug?: string): Promise<R> {
   const user = await requireUser();
   if (!isVerified(user)) return { ok: false, error: "Verifique seu perfil para presentear." };
   if (!limiter("gift", 10, 10 / 600).take(user.id)) return { ok: false, error: "Muitos presentes seguidos." };
@@ -53,6 +53,11 @@ export async function sendCoins(toId: string, amount: number, idem?: string): Pr
     return fail(e);
   }
   await notify(toId, "GIFT", `🎁 @${user.nick} te deu ${amount} ${CURRENCY_NAME}!`, user.id);
+  if (roomSlug) {
+    // animação na sala: mensagem especial GIFT (texto montado aqui, sem input do usuário)
+    const room = await db.room.findUnique({ where: { slug: roomSlug } });
+    if (room) await db.message.create({ data: { roomId: room.id, authorId: user.id, kind: "GIFT", body: `${amount}|${to.nick}` } });
+  }
   revalidatePath("/", "layout");
   return { ok: true };
 }

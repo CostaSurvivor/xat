@@ -41,7 +41,8 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
   ]);
   const st = styles[u.id];
   const likes = (u.likes as string[] | null) ?? [];
-  const canSeeAlbum = me || access?.granted;
+  const { canSeeAlbum: albumCheck } = await import("@/server/access");
+  const canSeeAlbum = me || (await albumCheck(viewer.id, u.id, u.albumVisibility));
   const hidden = u.hideFromUnverified && !isVerified(viewer) && !me;
 
   return (
@@ -110,6 +111,7 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
           <div className="mb-2 flex items-center justify-between">
             <h2 className="font-semibold text-gold">🔒 Álbum privado ({album.length})</h2>
             {!canSeeAlbum && (access ? <span className="text-xs text-mute">Pedido enviado</span> : <form action={requestAlbum.bind(null, u.id)}><button className="btn-wine text-xs">Pedir acesso</button></form>)}
+            {!canSeeAlbum && u.albumVisibility !== "PRIVATE" && <span className="w-full text-[11px] text-mute">{u.albumVisibility === "FRIENDS" ? "Liberado para amigos." : "Liberado para seguidores."}</span>}
           </div>
           <div className="grid grid-cols-3 gap-1.5">
             {album.slice(0, canSeeAlbum ? 30 : 6).map((m) => <ProtectedImage key={m.id} id={m.id} className="aspect-square rounded-lg" />)}

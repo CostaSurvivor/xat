@@ -94,8 +94,8 @@ export async function onlineList(roomId: string, viewer: CurrentUser) {
         invisible: st?.powers.includes("INVISIBLE") ?? false,
         highlight: st?.powers.includes("HIGHLIGHT_ONLINE") ?? false,
         typing: !!p.typingUntil && p.typingUntil > typingNow && u.id !== viewer.id,
-        chatRole: chatRole(u.role, role),
-        sort: CHAT_ROLE_RANK[chatRole(u.role, role)] * 10_000_000 + onlineSortKey(role, st?.power ?? 0),
+        chatRole: chatRole(u.role, role, st?.founder),
+        sort: CHAT_ROLE_RANK[chatRole(u.role, role, st?.founder)] * 10_000_000 + onlineSortKey(role, (st?.power ?? 0) % 1_000_000),
       };
     })
     .sort((a, b) => b.sort - a.sort || a.nick.localeCompare(b.nick));
@@ -131,7 +131,7 @@ export async function messagesView(roomId: string, viewerId: string, opts: { aft
     body: m.body,
     createdAt: m.createdAt.toISOString(),
     author: m.author
-      ? { id: m.author.id, nick: m.author.nick, avatarId: m.author.avatarId, style: styles[m.author.id], chatRole: chatRole(m.author.role, roomRoleOf.get(m.author.id)) }
+      ? { id: m.author.id, nick: m.author.nick, avatarId: m.author.avatarId, style: styles[m.author.id], chatRole: chatRole(m.author.role, roomRoleOf.get(m.author.id), styles[m.author.id]?.founder) }
       : null,
   }));
 }

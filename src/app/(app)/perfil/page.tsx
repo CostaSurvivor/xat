@@ -5,6 +5,9 @@ import { ageOn } from "@/lib/age";
 import { isVerified, requireUser } from "@/server/auth";
 import { deleteMedia, setAlbumAccess, updatePersons, updateProfile, uploadPhoto } from "@/app/actions/profile";
 import { logout } from "@/app/actions/auth";
+import { changePassword } from "@/app/actions/account";
+import { ProfileTypeForm } from "@/components/ProfileTypeForm";
+import { PROFILE_TYPES, type ProfileTypeKey } from "@/lib/config";
 import { ActionForm, AutoSubmitFile } from "@/components/Forms";
 import { Avatar } from "@/components/Avatar";
 import { ProtectedImage } from "@/components/ProtectedImage";
@@ -24,13 +27,18 @@ export default async function MeuPerfil() {
   return (
     <div className="mx-auto max-w-2xl space-y-4">
       <div className="flex items-center gap-3">
-        <h1 className="mr-auto font-[family-name:var(--font-display)] text-2xl font-bold">Meu perfil</h1>
+        <h1 className="mr-auto font-[family-name:var(--font-display)] text-2xl font-bold">Meu perfil e configurações</h1>
         <Link href={`/u/${user.nick}`} className="btn-ghost">Ver como os outros veem</Link>
         <form action={logout}><button className="btn-ghost">Sair</button></form>
       </div>
 
-      <section className="card flex items-center gap-4 p-5">
+      <section className="card flex flex-wrap items-center gap-4 p-5">
         <Avatar mediaId={user.avatarId} nick={user.nick} size={72} />
+        <div className="min-w-40 flex-1">
+          <p className="label">Nick</p>
+          <p className="font-semibold">{user.nick}</p>
+          <Link href="/suporte?novo=NICK_CHANGE" className="text-xs text-mute underline">Pedir troca de nick</Link>
+        </div>
         {verified ? (
           <ActionForm action={uploadPhoto} okText="Foto atualizada!">
             <input type="hidden" name="kind" value="AVATAR" />
@@ -83,6 +91,14 @@ export default async function MeuPerfil() {
               <option value="NOBODY">Ninguém</option>
             </select>
           </div>
+          <div>
+            <label className="label">Quem vê o álbum privado</label>
+            <select name="albumVisibility" defaultValue={user.albumVisibility} className="input">
+              <option value="PRIVATE">🔒 Manter privado (só quem eu liberar)</option>
+              <option value="FRIENDS">🤝 Liberar para amigos</option>
+              <option value="FOLLOWERS">👀 Liberar para seguidores</option>
+            </select>
+          </div>
           <div className="space-y-2 text-sm text-mute">
             <label className="flex gap-2"><input type="checkbox" name="acceptPmPhotos" defaultChecked={user.acceptPmPhotos} /> Aceito receber fotos no PV (chegam borradas até eu abrir)</label>
             <label className="flex gap-2"><input type="checkbox" name="hideCity" defaultChecked={user.hideCity} /> Esconder minha cidade</label>
@@ -90,6 +106,20 @@ export default async function MeuPerfil() {
           </div>
           <button className="btn-gold">Salvar</button>
         </ActionForm>
+      </section>
+
+      <section className="card p-5">
+        <h2 className="mb-3 font-semibold text-gold">Tipo de perfil</h2>
+        {user.role === "ADMIN" ? (
+          <ProfileTypeForm current={user.profileType as ProfileTypeKey} births={persons.map((p) => p.birthDate.toISOString().slice(0, 10))} />
+        ) : (
+          <p className="text-sm">
+            <b>{PROFILE_TYPES[user.profileType as ProfileTypeKey].label}</b>
+            <span className="text-mute"> · para trocar, </span>
+            <Link href="/suporte?novo=PROFILE_TYPE" className="text-gold underline">peça à moderação</Link>
+            <span className="text-mute"> (evita perfis falsos).</span>
+          </p>
+        )}
       </section>
 
       <section className="card p-5">
@@ -101,6 +131,10 @@ export default async function MeuPerfil() {
               <fieldset key={p.id} className="space-y-2 rounded-xl border border-line p-3">
                 <legend className="px-1 text-sm font-semibold">{p.label} · {ageOn(p.birthDate)} anos</legend>
                 <div className="grid grid-cols-2 gap-2">
+                  <label className="col-span-2 text-xs text-mute">
+                    Data de nascimento
+                    <input type="date" name={`${p.id}.birthDate`} defaultValue={p.birthDate.toISOString().slice(0, 10)} required className="input mt-0.5 py-1.5" />
+                  </label>
                   {(Object.keys(PERSON_FIELDS) as (keyof typeof PERSON_FIELDS)[]).map((k) => (
                     <label key={k} className="text-xs text-mute">
                       {PERSON_FIELDS[k].label}
@@ -118,7 +152,7 @@ export default async function MeuPerfil() {
               </fieldset>
             ))}
           </div>
-          <button className="btn-gold">Salvar características</button>
+          <button className="btn-gold">Salvar</button>
         </ActionForm>
       </section>
 
@@ -132,7 +166,7 @@ export default async function MeuPerfil() {
             </ActionForm>
           )}
         </div>
-        <p className="text-xs text-mute">Só quem vocês liberarem vê essas fotos. Os demais veem apenas versões borradas.</p>
+        <p className="text-xs text-mute">Quem pode ver é definido em “Quem vê o álbum privado” acima; você também pode liberar pessoas uma a uma. Os demais veem versões borradas.</p>
         <div className="grid grid-cols-3 gap-1.5">
           {album.map((m) => (
             <div key={m.id} className="relative">
@@ -160,12 +194,23 @@ export default async function MeuPerfil() {
         )}
       </section>
 
+      <section className="card p-5">
+        <h2 className="mb-3 font-semibold text-gold">🔑 Trocar senha</h2>
+        <ActionForm action={changePassword} className="grid gap-2 sm:grid-cols-3" okText="Senha alterada! Outras sessões foram encerradas." resetOnOk>
+          <input name="current" type="password" required placeholder="Senha atual" className="input" autoComplete="current-password" />
+          <input name="next" type="password" required minLength={8} placeholder="Nova senha (8+)" className="input" autoComplete="new-password" />
+          <input name="confirm" type="password" required minLength={8} placeholder="Repita a nova senha" className="input" autoComplete="new-password" />
+          <button className="btn-gold sm:col-span-3 sm:justify-self-start">Salvar nova senha</button>
+        </ActionForm>
+      </section>
+
       <section className="card p-5 text-sm">
         <h2 className="mb-2 font-semibold text-gold">Conta e privacidade</h2>
         <div className="flex flex-wrap gap-2">
           <Link href="/loja/inventario" className="btn-ghost">🎒 Meus itens</Link>
           <Link href="/carteira" className="btn-ghost">🌶️ Carteira</Link>
           <Link href="/conta" className="btn-ghost">🔑 Senha e dados (LGPD)</Link>
+          <Link href="/suporte" className="btn-ghost">🎫 Suporte</Link>
         </div>
       </section>
     </div>

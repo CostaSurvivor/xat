@@ -7,6 +7,8 @@ import { Avatar } from "./Avatar";
 import { Nick } from "./Nick";
 import { ReportButton } from "./ReportButton";
 import { CHAT_ROLES, RoleIcon, type ChatRole } from "./RoleIcon";
+import { sendCoins } from "@/app/actions/shop";
+import { CURRENCY_ICON, CURRENCY_NAME, REACTIONS } from "@/lib/config";
 
 type Me = { id: string; nick: string };
 type PollMe = { role: string; platformRole: string; mutedUntil: string | null };
@@ -37,6 +39,8 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
   const [showEmoji, setShowEmoji] = useState(false);
   const [selected, setSelected] = useState<OnlineUser | null>(null);
   const [sending, setSending] = useState(false);
+  const [reactions, setReactions] = useState<Record<string, { e: Record<string, number>; mine: string | null }>>({});
+  const [pickerFor, setPickerFor] = useState<string | null>(null);
 
   const lastId = useRef(initial.at(-1)?.id ?? "0");
   const lastPoll = useRef<number | null>(null);
@@ -68,6 +72,7 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
     }
     if (j.deleted.length) setMessages((prev) => prev.filter((m) => !j.deleted.includes(m.id)));
     setOnline(j.online);
+    if (j.reactions) setReactions(j.reactions);
     setPollMe(j.me);
     setPinned(j.pinned);
     setSlowMode(j.slowMode);
@@ -121,6 +126,19 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
     poll();
   }
 
+  async function react(messageId: string, emoji: string) {
+    setPickerFor(null);
+    setReactions((prev) => {
+      const cur = prev[messageId] ?? { e: {}, mine: null };
+      const e = { ...cur.e };
+      if (cur.mine) e[cur.mine] = Math.max(0, (e[cur.mine] ?? 1) - 1);
+      const mine = cur.mine === emoji ? null : emoji;
+      if (mine) e[mine] = (e[mine] ?? 0) + 1;
+      return { ...prev, [messageId]: { e, mine } };
+    });
+    await fetch(`/api/rooms/${slug}/react`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messageId, emoji }) });
+  }
+
   const typers = online.filter((u) => u.typing).map((u) => u.nick);
 
   if (fatal)
@@ -157,6 +175,16 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
                 </div>
               );
             }
+            if (m.kind === "GIFT" && m.author) {
+              const [amount, toNick] = m.body.split("|");
+              return (
+                <div key={m.id} className="entry-pop my-1 flex items-center gap-2 rounded-xl border border-gold/40 bg-gradient-to-r from-gold/20 via-wine/30 to-transparent px-3 py-2 text-sm">
+                  <span className="text-2xl">🎁</span>
+                  <span><Nick nick={m.author.nick} style={m.author.style} /> presenteou <b className="text-gold2">@{toNick}</b> com <b className="text-gold">{CURRENCY_ICON} {amount} {CURRENCY_NAME}</b>!</span>
+                  <span className="ml-auto animate-bounce text-xl">✨</span>
+                </div>
+              );
+            }
             if (m.kind === "SYSTEM" || m.kind === "ANNOUNCEMENT")
               return <div key={m.id} className="py-0.5 text-center text-xs italic text-mute">{m.kind === "ANNOUNCEMENT" && "📢 "}{m.body}</div>;
             if (!m.author) return null;
@@ -169,8 +197,21 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
                   <Nick nick={m.author.nick} style={m.author.style} />
                   <span className="text-mute">: </span>
                   <span className="break-words" style={m.author.style?.text}>{renderBody(m.body, me.nick)}</span>
+                  {reactions[m.id] && Object.values(reactions[m.id].e).some((n) => n > 0) && (
+                    <span className="ml-2 inline-flex gap-1 align-middle">
+                      {Object.entries(reactions[m.id].e).filter(([, n]) => n > 0).map(([e, n]) => (
+                        <button key={e} onClick={() => react(m.id, e)} className={`rounded-full border px-1.5 text-xs ${reactions[m.id].mine === e ? "border-gold bg-gold/15" : "border-line"}`}>{e} {n}</button>
+                      ))}
+                    </span>
+                  )}
+                  {pickerFor === m.id && (
+                    <span className="ml-2 inline-flex gap-1 rounded-full border border-line bg-panel2 px-2 align-middle">
+                      {REACTIONS.map((e) => <button key={e} onClick={() => react(m.id, e)} className="text-base hover:scale-125">{e}</button>)}
+                    </span>
+                  )}
                 </div>
                 <div className="hidden shrink-0 gap-2 text-[11px] text-mute group-hover:flex">
+                  <button onClick={() => setPickerFor(pickerFor === m.id ? null : m.id)}>reagir</button>
                   <button onClick={() => setText((t) => `${t}@${m.author!.nick} `)}>responder</button>
                   {isMod && <button onClick={() => mod("pin", { messageId: m.id })}>fixar</button>}
                   {isMod && <button onClick={() => mod("delete_message", { messageId: m.id })} className="hover:text-red-300">apagar</button>}
@@ -253,6 +294,27 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
               <Link href={`/u/${selected.nick}`} className="btn-ghost">Perfil</Link>
               {selected.id !== me.id && <Link href={`/mensagens/${selected.nick}`} className="btn-wine">PV</Link>}
             </div>
+            {selected.id !== me.id && (
+              <div className="border-t border-line pt-2">
+                <p className="mb-1 text-xs text-mute">🎁 Presentear na sala</p>
+                <div className="grid grid-cols-4 gap-1">
+                  {[10, 50, 100, 500].map((v) => (
+                    <button
+                      key={v}
+                      onClick={async () => {
+                        const r = await sendCoins(selected.id, v, crypto.randomUUID(), slug);
+                        setError(r.ok ? null : r.error ?? "Erro");
+                        setSelected(null);
+                        poll();
+                      }}
+                      className="rounded-lg border border-gold/40 py-1 text-xs text-gold hover:bg-gold/10"
+                    >
+                      {CURRENCY_ICON}{v}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             {isMod && selected.id !== me.id && (
               <div className="grid grid-cols-2 gap-2 border-t border-line pt-2 text-xs">
                 <button onClick={() => mod("mute", { targetUserId: selected.id, minutes: 10 })} className="btn-ghost">Silenciar 10m</button>

@@ -5,6 +5,7 @@ const LINKS = [
   ["/admin", "Dashboard", false],
   ["/admin/denuncias", "Denúncias", false],
   ["/admin/verificacoes", "Verificações", false],
+  ["/admin/tickets", "🎫 Tickets", false],
   ["/admin/pagamentos", "Pix", true],
   ["/admin/usuarios", "Usuários", true],
   ["/admin/salas", "Salas", true],

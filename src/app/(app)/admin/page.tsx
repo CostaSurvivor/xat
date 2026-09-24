@@ -13,6 +13,7 @@ export default async function Dashboard() {
   const now = new Date();
   const day = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const month = new Date(now.getFullYear(), now.getMonth(), 1);
+  const openTickets = await db.ticket.count({ where: { status: "OPEN" } });
   const [online, users, newToday, revDay, revMonth, pendingPix, pendingVerif, openReports, minorReports, counts, top] = await Promise.all([
     db.user.count({ where: { lastSeenAt: { gt: new Date(Date.now() - 5 * 60_000) } } }),
     db.user.count({ where: { status: "ACTIVE" } }),
@@ -50,6 +51,7 @@ export default async function Dashboard() {
         <Stat label="Pix a conferir" value={pendingPix} href="/admin/pagamentos" alert={pendingPix > 0} />
         <Stat label="Verificações" value={pendingVerif} href="/admin/verificacoes" alert={pendingVerif > 0} />
         <Stat label="Denúncias abertas" value={openReports} href="/admin/denuncias" alert={openReports > 0} />
+        <Stat label="Tickets abertos" value={openTickets} href="/admin/tickets" alert={openTickets > 0} />
       </div>
       <section className="card p-4">
         <h2 className="mb-2 font-semibold text-gold">Itens mais vendidos (mês)</h2>

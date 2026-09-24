@@ -40,3 +40,19 @@ body { min-height: 100dvh; -webkit-tap-highlight-color: transparent; }
 .entry-pop { animation: entry-pop .6s ease-out; }
 
 .protected-img { -webkit-user-drag: none; user-select: none; -webkit-touch-callout: none; }
+
+/* Estilo exclusivo do fundador (não existe na loja) */
+@keyframes founder-shift { 0% { background-position: 0% 50%; } 100% { background-position: 300% 50%; } }
+.founder-nick {
+  background-image: linear-gradient(90deg, #fff3c4, #d4af37, #ff5c8a, #d4af37, #fff3c4);
+  background-size: 300% auto;
+  -webkit-background-clip: text; background-clip: text; color: transparent !important;
+  animation: founder-shift 4s linear infinite;
+  filter: drop-shadow(0 0 6px rgba(212,175,55,.75)) drop-shadow(0 0 12px rgba(255,92,138,.35));
+  font-weight: 800;
+}
+.founder-chip {
+  background: linear-gradient(90deg, #d4af37, #f1d77a, #d4af37);
+  color: #1a0a0f; font-weight: 800; letter-spacing: .06em;
+  box-shadow: 0 0 8px rgba(212,175,55,.6);
+}
