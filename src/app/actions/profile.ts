@@ -28,6 +28,7 @@ export async function updateProfile(_: R, formData: FormData): Promise<R> {
     where: { id: user.id },
     data: {
       bio: p.data.bio?.trim() || null,
+      statusText: String(formData.get("statusText") || "").replace(/\s+/g, " ").trim().slice(0, 60) || null,
       city: p.data.city || null,
       state: p.data.state,
       pmPolicy: p.data.pmPolicy,

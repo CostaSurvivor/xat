@@ -2,13 +2,14 @@
 export type ChatRole = "FOUNDER" | "ADMIN" | "STAFF" | "OWNER" | "MODERATOR" | "MEMBER" | "GUEST";
 
 export const CHAT_ROLES: Record<ChatRole, { label: string; color: string; mark?: "crown" | "shield" | "star" }> = {
+  // cores no padrão do xat: convidado verde, membro azul, moderador branco, dono laranja
   FOUNDER: { label: "Fundador", color: "#f1d77a", mark: "crown" },
   ADMIN: { label: "Admin", color: "#ff4d4d", mark: "crown" },
-  STAFF: { label: "Moderação", color: "#3ba7ff", mark: "shield" },
+  STAFF: { label: "Moderação SexPapo", color: "#b07cff", mark: "shield" },
   OWNER: { label: "Dono da sala", color: "#ff9f1a", mark: "star" },
-  MODERATOR: { label: "Moderador", color: "#2fd07a" },
-  MEMBER: { label: "Membro", color: "#b07cff" },
-  GUEST: { label: "Convidado", color: "#d9d4d6" },
+  MODERATOR: { label: "Moderador", color: "#f4f4f4" },
+  MEMBER: { label: "Membro", color: "#3b8cff" },
+  GUEST: { label: "Convidado", color: "#35d06a" },
 };
 
 export function chatRole(platformRole: string | undefined, roomRole: string | undefined, founder = false): ChatRole {
@@ -119,10 +120,10 @@ function Accessory({ kind }: { kind: string }) {
  * Bonequinho estilo xat: cor pelo cargo; assinante ganha brilho neon + diamante
  * (e a cor VIP quando não tem cargo na sala); acessório comprado na loja por cima.
  */
-export function RoleIcon({ role, size = 16, vip = false, accessory }: { role: ChatRole; size?: number; vip?: boolean; accessory?: string | null }) {
+export function RoleIcon({ role, size = 16, vip = false, accessory, offline = false }: { role: ChatRole; size?: number; vip?: boolean; accessory?: string | null; offline?: boolean }) {
   const r = CHAT_ROLES[role];
   const plain = role === "GUEST" || role === "MEMBER";
-  const color = vip && plain ? "#ff4fd8" : r.color;
+  const color = offline ? "#e0403a" : vip && plain ? "#ff4fd8" : r.color;
   const label = vip ? `${r.label} · Assinante` : r.label;
   const glowId = `g-${role}-${vip ? 1 : 0}`;
   return (

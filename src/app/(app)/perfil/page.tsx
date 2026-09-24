@@ -52,6 +52,10 @@ export default async function MeuPerfil() {
       <section className="card p-5">
         <ActionForm action={updateProfile} className="space-y-4">
           <div>
+            <label className="label">Frase de status (aparece sob o nick no chat)</label>
+            <input name="statusText" maxLength={60} defaultValue={user.statusText ?? ""} className="input" placeholder="Ex.: Casal SP, só papo bom 🍷" />
+          </div>
+          <div>
             <label className="label">Sobre vocês</label>
             <textarea name="bio" maxLength={1500} defaultValue={user.bio ?? ""} className="input h-28" placeholder="Casal liberal de SP, curtimos…" />
           </div>
