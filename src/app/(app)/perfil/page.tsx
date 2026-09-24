@@ -1,11 +1,12 @@
 import Link from "next/link";
+import { PasswordForm } from "@/components/PasswordForm";
+import { hasPassword } from "@/lib/oauth";
 import { db } from "@/lib/db";
 import { LIKE_GROUPS, PERSON_FIELDS, UFS } from "@/lib/config";
 import { ageOn } from "@/lib/age";
 import { isVerified, requireUser } from "@/server/auth";
 import { deleteMedia, setAlbumAccess, updatePersons, updateProfile, uploadPhoto } from "@/app/actions/profile";
 import { logout } from "@/app/actions/auth";
-import { changePassword } from "@/app/actions/account";
 import { ProfileTypeForm } from "@/components/ProfileTypeForm";
 import { PROFILE_TYPES, type ProfileTypeKey } from "@/lib/config";
 import { ActionForm, AutoSubmitFile } from "@/components/Forms";
@@ -199,13 +200,8 @@ export default async function MeuPerfil() {
       </section>
 
       <section className="card p-5">
-        <h2 className="mb-3 font-semibold text-gold">🔑 Trocar senha</h2>
-        <ActionForm action={changePassword} className="grid gap-2 sm:grid-cols-3" okText="Senha alterada! Outras sessões foram encerradas." resetOnOk>
-          <input name="current" type="password" required placeholder="Senha atual" className="input" autoComplete="current-password" />
-          <input name="next" type="password" required minLength={8} placeholder="Nova senha (8+)" className="input" autoComplete="new-password" />
-          <input name="confirm" type="password" required minLength={8} placeholder="Repita a nova senha" className="input" autoComplete="new-password" />
-          <button className="btn-gold sm:col-span-3 sm:justify-self-start">Salvar nova senha</button>
-        </ActionForm>
+        <h2 className="mb-3 font-semibold text-gold">🔑 {hasPassword(user) ? "Trocar senha" : "Definir senha"}</h2>
+        <PasswordForm hasPassword={hasPassword(user)} compact />
       </section>
 
       <section className="card p-5 text-sm">

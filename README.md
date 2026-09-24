@@ -8,7 +8,7 @@ Comunidade liberal 18+ (casais, solteiras e solteiros): **salas de chat estilo x
 
 | Área | Recursos |
 |---|---|
-| Entrada | Age gate 18+, cadastro com a data de nascimento de **todas** as pessoas do perfil, senha argon2id, 2FA opcional, "esqueci minha senha" por e-mail |
+| Entrada | Age gate 18+, cadastro com a data de nascimento de **todas** as pessoas do perfil, **login com Google ou e-mail e senha** (a pessoa escolhe), senha argon2id, 2FA opcional (vale também no Google), "esqueci minha senha" por e-mail |
 | Verificação | Selfie com gesto sorteado e papel com o nick, revisada no admin. Libera fotos, vídeos, PV, loja e salas |
 | Perfil | Tipo (casal H/M, H/H, M/M, mulher, homem, trans, outro), "sobre ele / sobre ela" com características opcionais, gostos agrupados, álbum privado (privado / amigos / seguidores). **Nick e tipo de perfil só mudam por ticket** |
 | Social | Seguir (prioridade no feed), **amizade** (libera PV, álbum e posts "só amigos"), central de Avisos com pedidos de amizade |
@@ -41,7 +41,7 @@ Cadastre-se com um e-mail listado em `ADMIN_EMAILS`: essa conta vira admin já v
 ## Testes
 
 ```bash
-npm test      # 54 testes (+2 de S3 com S3_TEST_ENDPOINT): age gate, ao vivo (gorjetas, sinalização), permissões de sala, salas inativas, rate-limit/flood, ledger (concorrência e idempotência), trocas, webhook de pagamento, CSAM, Pix, itens (anti-XSS), vídeo
+npm test      # 58 testes (+2 de S3 com S3_TEST_ENDPOINT): login com Google, age gate, ao vivo (gorjetas, sinalização), permissões de sala, salas inativas, rate-limit/flood, ledger (concorrência e idempotência), trocas, webhook de pagamento, CSAM, Pix, itens (anti-XSS), vídeo
 npm run lint  # checagem de tipos
 ```
 

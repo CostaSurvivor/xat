@@ -2,13 +2,20 @@ import Link from "next/link";
 import { requireUser } from "@/server/auth";
 import { DeleteAccountForm } from "@/components/DeleteAccountForm";
 import { ActionForm } from "@/components/Forms";
-import { changePassword, confirm2fa, disable2fa, start2fa } from "@/app/actions/account";
+import { confirm2fa, disable2fa, start2fa, unlinkGoogle } from "@/app/actions/account";
+import { PasswordForm } from "@/components/PasswordForm";
+import { GoogleButton } from "@/components/GoogleButton";
+import { hasPassword } from "@/lib/oauth";
+import { googleEnabled } from "@/server/google";
 import QRCode from "qrcode";
 
 export const metadata = { title: "Meus dados" };
 
-export default async function Conta() {
+const GOOGLE_MSG: Record<string, string> = { vinculado: "✅ Google vinculado! Agora você pode entrar com ele.", "em-uso": "Esse Google já está vinculado a outra conta." };
+
+export default async function Conta({ searchParams }: { searchParams: Promise<{ google?: string }> }) {
   const user = await requireUser();
+  const { google: googleMsg } = await searchParams;
   let qr: string | null = null;
   if (user.twoFactorSecret && !user.twoFactorEnabled) {
     const { totpFor } = await import("@/server/totp");
@@ -18,14 +25,33 @@ export default async function Conta() {
     <div className="mx-auto max-w-xl space-y-4">
       <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold">Conta e dados</h1>
       <section className="card space-y-2 p-5">
-        <h2 className="font-semibold text-gold">Trocar senha</h2>
-        <ActionForm action={changePassword} className="space-y-2" okText="Senha alterada! Outras sessões foram encerradas." resetOnOk>
-          <input name="current" type="password" required placeholder="Senha atual" className="input" autoComplete="current-password" />
-          <input name="next" type="password" required minLength={8} placeholder="Nova senha (8+ caracteres)" className="input" autoComplete="new-password" />
-          <input name="confirm" type="password" required minLength={8} placeholder="Repita a nova senha" className="input" autoComplete="new-password" />
-          <button className="btn-gold">Salvar nova senha</button>
-        </ActionForm>
+        <h2 className="font-semibold text-gold">{hasPassword(user) ? "Trocar senha" : "Definir senha"}</h2>
+        <PasswordForm hasPassword={hasPassword(user)} />
       </section>
+      {(googleEnabled() || user.googleSub) && (
+        <section className="card space-y-3 p-5">
+          <h2 className="font-semibold text-gold">Login com Google</h2>
+          {googleMsg && GOOGLE_MSG[googleMsg] && <p className="text-sm text-gold2">{GOOGLE_MSG[googleMsg]}</p>}
+          {user.googleSub ? (
+            <>
+              <p className="text-sm text-green-300">Vinculado. Você pode entrar com o Google{hasPassword(user) ? " ou com e-mail e senha" : ""}.</p>
+              {hasPassword(user) ? (
+                <ActionForm action={unlinkGoogle} className="flex flex-wrap gap-2" okText="Google desvinculado.">
+                  <input name="password" type="password" required placeholder="Sua senha" className="input w-48" autoComplete="current-password" />
+                  <button className="btn-ghost">Desvincular Google</button>
+                </ActionForm>
+              ) : (
+                <p className="text-xs text-mute">Para desvincular, defina uma senha acima primeiro.</p>
+              )}
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-mute">Vincule sua conta Google para entrar com um clique. Seu e-mail e senha continuam funcionando.</p>
+              <div className="max-w-xs"><GoogleButton label="Vincular Google" href="/api/auth/google/start?modo=vincular" /></div>
+            </>
+          )}
+        </section>
+      )}
       <section className="card space-y-3 p-5">
         <h2 className="font-semibold text-gold">🛡️ Verificação em duas etapas (2FA)</h2>
         {user.twoFactorEnabled ? (

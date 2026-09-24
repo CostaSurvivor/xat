@@ -63,7 +63,29 @@ Na tela do app → **Variáveis de ambiente**, copie de `.env.example` e preench
 2. O botão **ADMIN** aparece no topo. Em **Admin → Configurações**, cadastre sua chave Pix (tem um QR de teste). Em **Admin → Loja**, ajuste pacotes de moeda e planos de assinatura.
 3. Faça um Pix de teste de R$ 0,01 para você mesmo (ou só gere o QR) e confira se nome e chave aparecem certos no app do banco.
 
-## 6. Rotina do dia a dia
+## 6. Login com Google (opcional)
+
+As pessoas escolhem entre **Continuar com Google** e **e-mail e senha**. O botão só aparece depois de configurar:
+
+1. Acesse [console.cloud.google.com](https://console.cloud.google.com) → crie um projeto.
+2. **APIs e serviços → Tela de consentimento OAuth**:
+   - Tipo **Externo**, com o nome do site, e-mail de suporte, domínio e links de Termos e Privacidade.
+   - Escopos: apenas `openid`, `email` e `profile`.
+   - Publique o app. Enquanto estiver em "Teste", só os e-mails cadastrados como testadores conseguem entrar.
+3. **Credenciais → Criar credenciais → ID do cliente OAuth → Aplicativo da Web**. Em **URIs de redirecionamento autorizados**, coloque exatamente `https://SEU-DOMINIO/api/auth/google/callback` (o mesmo domínio de `PUBLIC_URL`).
+4. Copie o ID e a chave secreta para `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` nas variáveis de ambiente e faça o redeploy.
+
+Como funciona:
+
+- **Cadastro:** quem entra pelo Google pela primeira vez ainda informa o tipo de perfil, as **datas de nascimento de todos** (18+) e aceita termos e consentimentos. Depois vai para a verificação por selfie, como todo mundo.
+- **Senha:** a conta nasce sem senha. Dá para definir uma em Conta, e ela é necessária para confirmar trocas e para excluir a conta.
+- **Conta existente:** o Google **não** é vinculado sozinho a uma conta que já existe com o mesmo e-mail, para evitar tomada de conta. A pessoa entra com a senha e clica em **Vincular Google** em Conta.
+- **2FA:** contas com 2FA recebem o pedido do código também no login pelo Google.
+- **Admin:** cadastro pelo Google nunca vira admin sozinho.
+
+> ⚠️ **Conteúdo adulto:** as regras do Google podem restringir o login em sites adultos. Se o Google suspender o app, o login com e-mail e senha continua funcionando, e quem só tinha Google pode usar "Esqueci minha senha" (precisa do SMTP configurado).
+
+## 7. Rotina do dia a dia
 
 - **Admin → Pix:** confira no extrato do banco o valor e o identificador (ex.: `PABC1234`), depois clique em **Aprovar**. O sistema credita as moedas ou ativa a assinatura **uma única vez**, mesmo que você clique duas vezes.
 - **Admin → Verificações:** aprove as selfies. Na dúvida sobre a idade, **recuse**.
