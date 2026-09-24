@@ -174,7 +174,10 @@ export async function buyItem(buyerId: string, itemId: string, duration: Duratio
       note: `${item.slug}:${duration}`,
     });
     if (!r.created) return null;
-    await tx.item.update({ where: { id: item.id }, data: { soldCount: { increment: 1 } } });
+    // UPDATE condicional e atômico: com compras simultâneas da última unidade, só uma passa
+    // (as outras falham aqui e a transação inteira, inclusive a cobrança, é desfeita)
+    const sold = await tx.$executeRaw`UPDATE Item SET soldCount = soldCount + 1 WHERE id = ${item.id} AND (limitedQty IS NULL OR soldCount < limitedQty)`;
+    if (sold !== 1) throw new Error("Edição esgotada");
     const ownerId = recipientId ?? buyerId;
     const days = duration === "perm" ? null : Number(duration);
     // se já tem o item com validade, estende

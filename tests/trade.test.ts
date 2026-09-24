@@ -82,6 +82,19 @@ d("trocas entre usuários", async () => {
     expect(Math.round((ua.vipUntil!.getTime() - Date.now()) / 86400_000)).toBe(30);
   });
 
+  it("dias de assinatura nos dois sentidos: ninguém perde dias", async () => {
+    // depois do teste anterior: A tem ~30 dias e B ~10
+    const t = await T.createTrade(a, b);
+    await T.setOffer(t.id, a, { coins: 0, vipDays: 5, itemIds: [] });
+    const cur = await T.setOffer(t.id, b, { coins: 0, vipDays: 2, itemIds: [] });
+    await unlock(t.id);
+    for (const u of [a, b]) await T.acceptTrade(t.id, u, cur.version, "accept");
+    for (const u of [a, b]) await T.acceptTrade(t.id, u, cur.version, "confirm");
+    const days = async (id: string) => Math.round(((await db.user.findUniqueOrThrow({ where: { id } })).vipUntil!.getTime() - Date.now()) / 86400_000);
+    expect(await days(a)).toBe(30 - 5 + 2);
+    expect(await days(b)).toBe(10 + 5 - 2);
+  });
+
   it("saldo insuficiente: nada muda (rollback)", async () => {
     const t = await T.createTrade(b, a);
     await expect(T.setOffer(t.id, b, { coins: 99999, vipDays: 0, itemIds: [] })).rejects.toThrow(/só tem/);

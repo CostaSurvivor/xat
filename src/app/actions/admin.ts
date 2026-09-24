@@ -52,7 +52,17 @@ export async function reviewVerification(id: string, approve: boolean, formData?
 }
 
 // ---------------- Denúncias (staff) ----------------
-async function banUser(userId: string, actorId: string, reason: string, days: number | null) {
+/**
+ * Bane/suspende. Moderador não age contra staff (admin/moderador); ninguém bane a si mesmo.
+ * Devolve false quando recusado (a denúncia continua sendo resolvida, só sem o banimento).
+ */
+async function banUser(userId: string, actor: { id: string; role: string }, reason: string, days: number | null): Promise<boolean> {
+  const target = await db.user.findUnique({ where: { id: userId }, select: { role: true } });
+  if (!target || userId === actor.id || (target.role !== "USER" && actor.role !== "ADMIN")) {
+    await audit(actor.id, "user.ban.refused", "User", userId, { reason, targetRole: target?.role });
+    return false;
+  }
+  const actorId = actor.id;
   const u = await db.user.update({ where: { id: userId }, data: { status: days ? "SUSPENDED" : "BANNED" } });
   await db.session.deleteMany({ where: { userId } });
   if (!days) {
@@ -69,6 +79,7 @@ async function banUser(userId: string, actorId: string, reason: string, days: nu
     });
   }
   await audit(actorId, days ? "user.suspend" : "user.ban", "User", userId, { reason, days });
+  return true;
 }
 
 async function removeTarget(type: string, id: string) {
@@ -115,7 +126,7 @@ export async function handleReport(reportId: string, formData: FormData) {
     }
   } else if (op === "remove" || op === "remove_ban" || op === "remove_suspend") {
     await removeTarget(r.targetType, r.targetId);
-    if (op !== "remove" && r.targetUserId) await banUser(r.targetUserId, staff.id, `Denúncia ${r.reason}`, op === "remove_suspend" ? 7 : null);
+    if (op !== "remove" && r.targetUserId) await banUser(r.targetUserId, staff, `Denúncia ${r.reason}`, op === "remove_suspend" ? 7 : null);
     await db.report.update({ where: { id: r.id }, data: { status: "RESOLVED", resolution: note ?? op, resolvedById: staff.id, resolvedAt: new Date() } });
   } else if (op === "escalate") {
     // CSAM / crime: preserva evidência, bloqueia hash, bane, marca para reporte às autoridades
@@ -125,7 +136,7 @@ export async function handleReport(reportId: string, formData: FormData) {
     await db.media.updateMany({ where: { id: { in: ids } }, data: { status: "QUARANTINED" } });
     for (const m of medias) await db.mediaHashBlock.upsert({ where: { sha256: m.sha256 }, create: { sha256: m.sha256, reason: `report:${r.id}` }, update: {} });
     await removeTarget(r.targetType, r.targetId).catch(() => {});
-    if (r.targetUserId) await banUser(r.targetUserId, staff.id, "Conteúdo ilegal (escalado)", null);
+    if (r.targetUserId) await banUser(r.targetUserId, staff, "Conteúdo ilegal (escalado)", null);
     await db.report.update({ where: { id: r.id }, data: { status: "ESCALATED", resolution: note, resolvedById: staff.id, resolvedAt: new Date() } });
   }
   await audit(staff.id, `report.${op}`, "Report", r.id, { note });
@@ -137,8 +148,8 @@ export async function adminUserAction(userId: string, formData: FormData) {
   const admin = await requireAdmin();
   const op = String(formData.get("op"));
   if (userId === admin.id && op !== "coins") return;
-  if (op === "ban") await banUser(userId, admin.id, "Banido pelo admin", null);
-  else if (op === "suspend") await banUser(userId, admin.id, "Suspenso pelo admin", 7);
+  if (op === "ban") await banUser(userId, admin, "Banido pelo admin", null);
+  else if (op === "suspend") await banUser(userId, admin, "Suspenso pelo admin", 7);
   else if (op === "unban") {
     const u = await db.user.update({ where: { id: userId }, data: { status: "ACTIVE" } });
     await db.banFingerprint.deleteMany({ where: { kind: "EMAIL", valueHash: sha256(u.email) } });

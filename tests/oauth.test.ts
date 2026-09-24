@@ -24,6 +24,11 @@ describe("login com Google", () => {
     expect(safeNext("/\\evil.com")).toBe("/feed");
     expect(safeNext("https://evil.com")).toBe("/feed");
     expect(safeNext(null)).toBe("/feed");
+    expect(safeNext("/\t/evil.com")).toBe("/feed");
+    expect(safeNext("/\n/evil.com")).toBe("/feed");
+    expect(safeNext("/%5Cevil.com")).toBe("/%5Cevil.com"); // codificado: fica no próprio site
+    expect(safeNext("/salas?uf=SP#x")).toBe("/salas?uf=SP#x");
+    expect(safeNext("/ao-vivo/abc", "/")).toBe("/ao-vivo/abc");
   });
   it("conta criada pelo Google começa sem senha", () => {
     expect(hasPassword({ passwordHash: NO_PASSWORD })).toBe(false);

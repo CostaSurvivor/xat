@@ -8,7 +8,7 @@ import { RESERVED_SLUGS, UFS } from "@/lib/config";
 import { can } from "@/lib/permissions";
 import { limiter } from "@/lib/ratelimit";
 import { isSubscriber, requireUser } from "@/server/auth";
-import { actorFor, roomBySlug } from "@/server/rooms";
+import { actorFor, canEnter, roomBySlug } from "@/server/rooms";
 import { audit } from "@/server/notify";
 
 type R = { ok?: boolean; error?: string } | undefined;
@@ -80,6 +80,8 @@ export async function joinRoom(slug: string) {
   const user = await requireUser();
   const room = await roomBySlug(slug);
   if (!room || room.access === "MEMBERS_ONLY") return;
+  // mesmas regras da entrada (só casais, só verificados, banido, sala inativa): virar membro não pode furá-las
+  if (await canEnter(user, room, await actorFor(user, room.id))) return;
   await db.roomMember.upsert({ where: { roomId_userId: { roomId: room.id, userId: user.id } }, create: { roomId: room.id, userId: user.id }, update: {} });
   revalidatePath(`/${slug}`);
 }

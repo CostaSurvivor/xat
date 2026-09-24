@@ -56,7 +56,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
     }
   }
   const myStyle = (await stylesFor([user.id]))[user.id];
-  const pinned = fresh?.pinnedMessageId ? await db.message.findUnique({ where: { id: fresh.pinnedMessageId }, include: { author: { select: { nick: true } } } }) : null;
+  const pinned = fresh?.pinnedMessageId ? await db.message.findFirst({ where: { id: fresh.pinnedMessageId, roomId: room.id }, include: { author: { select: { nick: true } } } }) : null;
 
   return NextResponse.json({
     now: Date.now(),

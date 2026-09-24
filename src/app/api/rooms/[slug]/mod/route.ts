@@ -51,9 +51,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
       await db.message.updateMany({ where: { roomId: room.id, deletedAt: null }, data: { deletedAt: new Date() } });
       await sys(`${user.nick} limpou o chat.`);
       break;
-    case "pin":
-      if (d.messageId) await db.room.update({ where: { id: room.id }, data: { pinnedMessageId: BigInt(d.messageId) } });
+    case "pin": {
+      if (!d.messageId) break;
+      // só mensagens desta sala (senão daria para ler outras salas pelo "fixado")
+      const msg = await db.message.findFirst({ where: { id: BigInt(d.messageId), roomId: room.id, deletedAt: null }, select: { id: true } });
+      if (!msg) return NextResponse.json({ error: "Mensagem não encontrada nesta sala" }, { status: 404 });
+      await db.room.update({ where: { id: room.id }, data: { pinnedMessageId: msg.id } });
       break;
+    }
     case "unpin":
       await db.room.update({ where: { id: room.id }, data: { pinnedMessageId: null } });
       break;
