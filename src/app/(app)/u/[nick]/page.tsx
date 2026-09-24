@@ -15,6 +15,7 @@ import { PostCard } from "@/components/PostCard";
 import { ProtectedImage } from "@/components/ProtectedImage";
 import { ReportButton } from "@/components/ReportButton";
 import { GiftButton } from "@/components/GiftButton";
+import { startTrade } from "@/app/actions/trade";
 
 export async function generateMetadata({ params }: { params: Promise<{ nick: string }> }) {
   return { title: `@${decodeURIComponent((await params).nick)}` };
@@ -71,6 +72,7 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
                 {!iBlocked && <form action={toggleFollow.bind(null, u.id)}><button className={isFollowing ? "btn-ghost" : "btn-wine"}>{isFollowing ? "Seguindo ✓" : "Seguir"}</button></form>}
                 {!iBlocked && <Link href={`/mensagens/${u.nick}`} className="btn-ghost">✉️ PV</Link>}
                 {!iBlocked && <GiftButton toId={u.id} toNick={u.nick} />}
+                {!iBlocked && <form action={startTrade.bind(null, u.nick)}><button className="btn-ghost">🔄 Trocar</button></form>}
                 <form action={toggleBlock.bind(null, u.id)}><button className="btn-ghost text-xs">{iBlocked ? "Desbloquear" : "Bloquear"}</button></form>
                 <ReportButton targetType="USER" targetId={u.id} />
               </div>

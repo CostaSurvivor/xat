@@ -127,6 +127,7 @@ enum WalletKind {
 }
 
 enum LedgerTxType {
+  TRADE
   PURCHASE_CREDIT
   VIP_BONUS
   ITEM_PURCHASE
@@ -172,6 +173,7 @@ enum ReportStatus {
 }
 
 enum NotificationKind {
+  TRADE
   TICKET
   FOLLOW
   FRIEND_REQUEST
@@ -206,6 +208,7 @@ model User {
   // perfil
   profileType      ProfileType
   bio              String?            @db.Text
+  statusText       String?            @db.VarChar(60) // frase curta sob o nick no chat (estilo xat)
   city             String?            @db.VarChar(80)
   state            String?            @db.VarChar(2)
   hideCity         Boolean            @default(false)
@@ -884,6 +887,41 @@ model TicketMessage {
   ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 
   @@index([ticketId, createdAt])
+}
+
+// Troca segura entre usuários (estilo xat trade): Pimentas, itens permanentes e dias de assinatura.
+// Qualquer alteração de oferta incrementa `version`, zera aceites/confirmações e trava por alguns segundos.
+model Trade {
+  id          String      @id @default(cuid())
+  aId         String // quem propôs
+  bId         String
+  status      String      @default("PENDING") @db.VarChar(12) // PENDING | COMPLETED | CANCELLED | EXPIRED
+  version     Int         @default(1)
+  aCoins      Int         @default(0)
+  bCoins      Int         @default(0)
+  aVipDays    Int         @default(0)
+  bVipDays    Int         @default(0)
+  aAccepted   Boolean     @default(false)
+  bAccepted   Boolean     @default(false)
+  aConfirmed  Boolean     @default(false)
+  bConfirmed  Boolean     @default(false)
+  lockedUntil DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  completedAt DateTime?
+  items       TradeItem[]
+
+  @@index([aId, status])
+  @@index([bId, status])
+}
+
+model TradeItem {
+  tradeId         String
+  inventoryItemId String
+  side            String @db.VarChar(1) // A | B
+  trade           Trade  @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+
+  @@id([tradeId, inventoryItemId])
 }
 
 model PlatformSetting {
