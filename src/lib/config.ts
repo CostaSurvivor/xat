@@ -46,29 +46,13 @@ export const GENERAL_ROOM = { slug: "geral", name: "Geral", description: "O chat
 export const COUPLES_ROOM = { slug: "casais", name: "Só Casais", description: "Sala exclusiva para perfis de casal (H/M, H/H e M/M).", access: "COUPLES_ONLY" as const };
 /** Salas principais: só a equipe do site (admin/moderador) modera; ninguém recebe cargo de sala nelas. */
 export const STAFF_ONLY_ROOMS = new Set([GENERAL_ROOM.slug, COUPLES_ROOM.slug]);
-/** Descrição com sotaque regional (as demais usam o texto padrão). */
-const STATE_DESCRIPTIONS: Record<string, string> = {
-  RS: "Bah, tchê! O chat dos gaúchos: casais, prendas e peões liberais do Rio Grande do Sul. Chega mais e puxa um chimarrão 🧉",
-  SC: "O chat de Santa Catarina: casais, solteiras e solteiros catarinenses, da serra ao litoral. 🌊",
-  PR: "O chat do Paraná: casais, solteiras e solteiros paranaenses, de Curitiba ao interior. 🌲",
-};
 export const defaultStateDescription = (uf: string) => `Chat de ${UF_NAMES[uf]}: casais, solteiras e solteiros de ${uf}.`;
 export const stateRoom = (uf: string) => ({
   slug: uf.toLowerCase(),
   name: UF_NAMES[uf],
   state: uf,
-  description: STATE_DESCRIPTIONS[uf] ?? defaultStateDescription(uf),
+  description: defaultStateDescription(uf),
 });
-
-/** Regiões para organizar as salas de estado. */
-export const REGIONS = [
-  { key: "SUL", name: "Sul", emoji: "🧉", tagline: "Bah, tchê! Gaúchos, catarinenses e paranaenses", ufs: ["RS", "SC", "PR"] },
-  { key: "SUDESTE", name: "Sudeste", emoji: "🏙️", tagline: "SP, RJ, MG e ES", ufs: ["SP", "RJ", "MG", "ES"] },
-  { key: "CENTRO_OESTE", name: "Centro-Oeste", emoji: "🌾", tagline: "Do Planalto ao Pantanal", ufs: ["DF", "GO", "MS", "MT"] },
-  { key: "NORDESTE", name: "Nordeste", emoji: "🏖️", tagline: "Calor humano de sobra", ufs: ["BA", "PE", "CE", "RN", "PB", "AL", "SE", "PI", "MA"] },
-  { key: "NORTE", name: "Norte", emoji: "🌳", tagline: "Da Amazônia para o Brasil", ufs: ["PA", "AM", "TO", "RO", "AC", "AP", "RR"] },
-] as const;
-export const regionOf = (uf: string | null | undefined) => REGIONS.find((r) => (r.ufs as readonly string[]).includes(uf ?? ""));
 
 export const UFS = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
 
