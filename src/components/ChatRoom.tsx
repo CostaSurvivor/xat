@@ -8,12 +8,11 @@ import { Nick } from "./Nick";
 import { ReportButton } from "./ReportButton";
 import { CHAT_ROLES, RoleIcon, type ChatRole } from "./RoleIcon";
 import { sendCoins } from "@/app/actions/shop";
-import { sendRoomPhoto } from "@/app/actions/rooms";
 import { ProtectedImage } from "./ProtectedImage";
 import { CURRENCY_ICON, CURRENCY_NAME, REACTIONS } from "@/lib/config";
 
 type Me = { id: string; nick: string };
-type PollMe = { role: string; platformRole: string; mutedUntil: string | null; canPhoto?: boolean };
+type PollMe = { role: string; platformRole: string; mutedUntil: string | null };
 
 const EMOJIS = ["😈", "🔥", "😍", "😘", "😏", "🍑", "🍆", "💦", "👅", "💋", "🥂", "😂", "❤️", "👀", "🙈", "👏"];
 const ENTRY_FX: Record<string, string> = { sparkle: "✨", fire: "🔥", hearts: "💞", gold: "👑" };
@@ -45,7 +44,6 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
   const [pickerFor, setPickerFor] = useState<string | null>(null);
   const [hasOlder, setHasOlder] = useState(initial.length >= 50);
   const [loadingOlder, setLoadingOlder] = useState(false);
-  const [photoSending, setPhotoSending] = useState(false);
   const [muted, setMuted] = useState(false);
   const mutedRef = useRef(false);
   useEffect(() => {
@@ -291,30 +289,6 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
         ) : (
           <form onSubmit={send} className="relative flex items-center gap-2 border-t border-line p-2">
             <button type="button" onClick={() => setShowEmoji((v) => !v)} className="rounded-full px-2 text-xl">😈</button>
-            {pollMe?.canPhoto && (
-              <label className={`cursor-pointer px-1 text-xl ${photoSending ? "opacity-40" : ""}`} title="Enviar foto na sala">
-                📷
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  className="hidden"
-                  disabled={photoSending}
-                  onChange={async (e) => {
-                    const f = e.target.files?.[0];
-                    e.target.value = "";
-                    if (!f) return;
-                    setPhotoSending(true);
-                    const fd = new FormData();
-                    fd.set("photo", f);
-                    const r = await sendRoomPhoto(slug, fd);
-                    setPhotoSending(false);
-                    setError(r.ok ? null : r.error ?? "Erro");
-                    stick.current = true;
-                    poll();
-                  }}
-                />
-              </label>
-            )}
             {showEmoji && (
               <div className="absolute bottom-14 left-2 z-10 grid grid-cols-8 gap-1 rounded-xl border border-line bg-panel2 p-2 shadow-xl">
                 {EMOJIS.map((e) => <button type="button" key={e} onClick={() => { setText((t) => t + e); setShowEmoji(false); }} className="text-xl">{e}</button>)}

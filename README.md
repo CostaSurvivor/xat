@@ -14,7 +14,7 @@ Comunidade liberal 18+ (casais, solteiras e solteiros): **salas de chat estilo x
 | Social | Seguir (prioridade no feed), **amizade** (libera PV, álbum e posts "só amigos"), central de Avisos com pedidos de amizade |
 | Feed | Até 6 fotos **ou** 1 vídeo por post, reações, comentários com **respostas e reações** |
 | Vídeos | Qualquer perfil verificado posta; **só assinantes assistem** (streaming protegido, marca d'água com o nick de quem assiste) |
-| Salas (estilo xat) | Só **admin e assinantes** criam (a sala fica inativa se a assinatura vencer). Bonequinho por cargo + acessórios, glow neon, fundador exclusivo, moderação completa, reações, presentes animados, @menções com aviso, fotos conforme a regra do dono, fundo personalizado, som de entrada, histórico |
+| Salas (estilo xat) | Só **admin e assinantes** criam (a sala fica inativa se a assinatura vencer). Bonequinho por cargo + acessórios, glow neon, fundador exclusivo, moderação completa, reações, presentes animados, @menções com aviso, **só texto** (fotos ficam no feed e no perfil), fundo personalizado, som de entrada, histórico |
 | PV | Estilo WhatsApp (lista + conversa), exige verificação, só amigos por padrão; foto só se os dois aceitarem, chega **borrada** até clicar |
 | Economia | Pimentas com **ledger de partidas dobradas**, loja com prévia ao vivo (glow, neon, cores, ícones, molduras, entradas, poderes, **acessórios do boneco**), presentes, cupons |
 | Pagamento | **Pix manual** com QR Code gerado da chave cadastrada no admin; o usuário clica "Já paguei" e o admin aprova. Recibo por e-mail |

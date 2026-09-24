@@ -143,19 +143,3 @@ export async function roomOnlineCounts() {
   const g = await db.roomPresence.groupBy({ by: ["roomId"], where: { lastSeenAt: { gt: since } }, _count: true });
   return new Map(g.map((x) => [x.roomId, x._count]));
 }
-
-/** Pode enviar foto nesta sala? (regra do dono + idade verificada sempre) */
-export function canSendRoomPhoto(room: { mediaPolicy: string }, actor: Actor, verified: boolean) {
-  if (actor.platformRole !== "USER") return true;
-  if (!verified) return false;
-  switch (room.mediaPolicy) {
-    case "VERIFIED":
-      return true;
-    case "MEMBERS":
-      return actor.role !== "GUEST";
-    case "MODS":
-      return actor.role === "OWNER" || actor.role === "MODERATOR";
-    default:
-      return false;
-  }
-}

@@ -505,7 +505,7 @@ model Room {
   access          RoomAccess @default(PUBLIC)
   slowModeSeconds Int        @default(0)
   linksAllowed    Boolean    @default(false)
-  mediaPolicy     String     @default("MODS") @db.VarChar(10) // NOBODY | MODS | MEMBERS | VERIFIED: quem envia foto na sala
+  mediaPolicy     String     @default("NOBODY") @db.VarChar(10) // chat das salas é só texto (fotos ficam no feed/perfil)
   bgMediaId       String? // foto de fundo/capa enviada pelo dono
   pinnedMessageId BigInt?
   createdAt       DateTime   @default(now())
@@ -572,7 +572,7 @@ model Message {
   authorId  String?
   kind      MessageKind @default(TEXT)
   body      String      @db.VarChar(1000)
-  mediaId   String? // foto enviada na sala
+  mediaId   String? // legado: o chat é só texto
   createdAt DateTime    @default(now())
   deletedAt DateTime?
   room      Room        @relation(fields: [roomId], references: [id], onDelete: Cascade)
