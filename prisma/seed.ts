@@ -43,6 +43,13 @@ const ITEMS: ItemSeed[] = [
   { slug: "nick-degrade-fogo", name: "Nick Degradê Fogo", category: "NICK_COLOR", rarity: "EPIC", config: { colors: ["#ff512f", "#f09819", "#ff2f6d"] }, price30: 200, pricePerm: 1000, powerScore: 12 },
   { slug: "nick-rosa", name: "Nick Rosa Choque", category: "NICK_COLOR", config: { colors: ["#ff4fa0"] }, price30: 80, pricePerm: 400, powerScore: 3 },
   { slug: "texto-champagne", name: "Texto Champagne", category: "TEXT_COLOR", config: { color: "#f1d77a" }, price30: 60, pricePerm: 300, powerScore: 2 },
+  // cores de texto pensadas para o fundo claro
+  { slug: "texto-vinho", name: "Texto Vinho", category: "TEXT_COLOR", config: { color: "#9d174d" }, price30: 60, pricePerm: 300, powerScore: 2 },
+  { slug: "texto-rosa-choque", name: "Texto Rosa Choque", category: "TEXT_COLOR", config: { color: "#db2777" }, price30: 60, pricePerm: 300, powerScore: 2 },
+  { slug: "texto-roxo", name: "Texto Roxo Sensual", category: "TEXT_COLOR", config: { color: "#6d28d9" }, price30: 60, pricePerm: 300, powerScore: 2 },
+  { slug: "texto-azul-noite", name: "Texto Azul Noite", category: "TEXT_COLOR", config: { color: "#1e3a8a" }, price30: 60, pricePerm: 300, powerScore: 2 },
+  { slug: "texto-esmeralda", name: "Texto Esmeralda", category: "TEXT_COLOR", config: { color: "#047857" }, price30: 60, pricePerm: 300, powerScore: 2 },
+  { slug: "texto-ouro-velho", name: "Texto Ouro Velho", category: "TEXT_COLOR", rarity: "RARE", config: { color: "#8a6100" }, price30: 80, pricePerm: 400, powerScore: 3 },
   { slug: "badge-coroa", name: "Coroa", category: "BADGE", rarity: "LEGENDARY", config: { emoji: "👑" }, price30: 300, pricePerm: 2500, powerScore: 25 },
   { slug: "badge-chama", name: "Chama", category: "BADGE", config: { emoji: "🔥" }, price30: 50, pricePerm: 300, powerScore: 3 },
   { slug: "badge-diamante", name: "Diamante", category: "BADGE", rarity: "EPIC", config: { emoji: "💎" }, price30: 150, pricePerm: 900, powerScore: 12 },

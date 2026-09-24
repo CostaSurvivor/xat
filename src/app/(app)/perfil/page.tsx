@@ -19,16 +19,19 @@ export default async function MeuPerfil() {
   const user = await requireUser();
   const verified = isVerified(user);
   const persons = await db.profilePerson.findMany({ where: { userId: user.id }, orderBy: { label: "asc" } });
-  const [album, requests] = await Promise.all([
+  const { visitCountSince } = await import("@/server/visits");
+  const [album, requests, visitsWeek] = await Promise.all([
     db.media.findMany({ where: { ownerId: user.id, kind: "PRIVATE_ALBUM", status: "APPROVED" }, orderBy: { createdAt: "desc" } }),
     db.albumAccess.findMany({ where: { ownerId: user.id }, include: { viewer: { select: { id: true, nick: true } } }, orderBy: { createdAt: "desc" } }),
+    visitCountSince(user.id, 7),
   ]);
   const likes = (user.likes as string[] | null) ?? [];
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <h1 className="mr-auto font-[family-name:var(--font-display)] text-2xl font-bold">Meu perfil e configurações</h1>
+        <Link href="/visitas" className="btn-ghost">👀 {visitsWeek} {visitsWeek === 1 ? "visita" : "visitas"} na semana</Link>
         <Link href={`/u/${user.nick}`} className="btn-ghost">Ver como os outros veem</Link>
         <form action={logout}><button className="btn-ghost">Sair</button></form>
       </div>

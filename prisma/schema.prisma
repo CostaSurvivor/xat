@@ -1039,3 +1039,16 @@ model OAuthPending {
 
   @@index([expiresAt])
 }
+
+/// "Quem visitou meu perfil" (estilo Sexlog). Uma linha por par; purgado após 90 dias.
+model ProfileVisit {
+  visitedId String
+  visitorId String
+  count     Int      @default(1)
+  firstAt   DateTime @default(now())
+  lastAt    DateTime @default(now())
+
+  @@id([visitedId, visitorId])
+  @@index([visitedId, lastAt])
+  @@index([lastAt])
+}
