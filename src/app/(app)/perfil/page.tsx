@@ -13,6 +13,7 @@ import { PROFILE_TYPES, type ProfileTypeKey } from "@/lib/config";
 import { ActionForm, AutoSubmitFile } from "@/components/Forms";
 import { Avatar } from "@/components/Avatar";
 import { ProtectedImage } from "@/components/ProtectedImage";
+import { ThemedAlbumsOwner } from "@/components/ThemedAlbums";
 
 export const metadata = { title: "Meu perfil" };
 
@@ -22,7 +23,7 @@ export default async function MeuPerfil() {
   const persons = await db.profilePerson.findMany({ where: { userId: user.id }, orderBy: { label: "asc" } });
   const { visitCountSince } = await import("@/server/visits");
   const [album, requests, visitsWeek, pendingTestimonials] = await Promise.all([
-    db.media.findMany({ where: { ownerId: user.id, kind: "PRIVATE_ALBUM", status: "APPROVED" }, orderBy: { createdAt: "desc" } }),
+    db.media.findMany({ where: { ownerId: user.id, kind: "PRIVATE_ALBUM", status: "APPROVED", albumId: null }, orderBy: { createdAt: "desc" } }),
     db.albumAccess.findMany({ where: { ownerId: user.id }, include: { viewer: { select: { id: true, nick: true } } }, orderBy: { createdAt: "desc" } }),
     visitCountSince(user.id, 7),
     db.testimonial.count({ where: { profileId: user.id, status: "PENDING" } }),
@@ -196,6 +197,8 @@ export default async function MeuPerfil() {
           </div>
         )}
       </section>
+
+      <ThemedAlbumsOwner ownerId={user.id} verified={verified} />
 
       <section className="card p-5">
         <h2 className="mb-3 font-semibold text-gold">🔑 {hasPassword(user) ? "Trocar senha" : "Definir senha"}</h2>

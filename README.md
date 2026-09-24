@@ -10,7 +10,7 @@ Comunidade liberal 18+ (casais, solteiras e solteiros), com **visual claro (fund
 |---|---|
 | Entrada | Age gate 18+, cadastro com a data de nascimento de **todas** as pessoas do perfil, **login com Google ou e-mail e senha** (a pessoa escolhe), senha argon2id, 2FA opcional (vale também no Google), "esqueci minha senha" por e-mail |
 | Verificação | Selfie com gesto sorteado e papel com o nick, revisada no admin. Libera fotos, vídeos, PV, loja e salas |
-| Perfil | Tipo (casal H/M, H/H, M/M, mulher, homem, trans, outro), "sobre ele / sobre ela" com características opcionais, gostos agrupados, álbum privado (privado / amigos / seguidores). **Nick e tipo de perfil só mudam por ticket** |
+| Perfil | Tipo (casal H/M, H/H, M/M, mulher, homem, trans, outro), "sobre ele / sobre ela" com características opcionais, gostos agrupados, álbum privado (privado / amigos / seguidores). **Nick e tipo de perfil só mudam por ticket**; **álbuns por tema** (até 10, com 30 fotos cada), cada um com quem pode ver: perfis verificados, seguidores, amigos ou só quem o dono liberar; quem não pode ver recebe a versão borrada |
 | Destaques | **Fotos em alta** (semana/mês, por estado) e **perfis mais curtidos** (casais, mulheres, homens, trans e outros); contam só reações de perfis verificados e cada comentarista 1x, sem o próprio autor, só posts públicos e só autores verificados; selo **🏆 Top 10 da semana** no perfil; faixa "Em alta" no feed; página própria de cada post |
 | Grupos | **Grupos por interesse** (Iniciantes, Casais procuram casais, Ménage, Swing em viagem, Fetiches, Casas e clubes) criados só pela equipe em `/admin/grupos`; membros entram, postam e comentam dentro do grupo; grupos **só de casais** checam o tipo de perfil; posts de grupo não vão para o feed nem para os Destaques; grupos arquivados somem para os usuários |
 | Depoimentos | Referências entre perfis: só **perfis verificados** escrevem (1 por perfil, até 5 por dia, sem telefone ou links), com a marca **"🤝 nos conhecemos pessoalmente"**; o dono **aprova antes de publicar**, pode tirar do perfil ou excluir; editar devolve para aprovação; quem teve o depoimento ocultado não é avisado; contagem de "conheceram pessoalmente" no perfil; selo **🤝 Confirmado** no perfil e na busca com 3 ou mais depoimentos presenciais aprovados de perfis verificados; denunciável |
@@ -48,7 +48,7 @@ Cadastre-se com um e-mail listado em `ADMIN_EMAILS`: essa conta vira admin já v
 ## Testes
 
 ```bash
-npm test      # 98 testes (+2 de S3 com S3_TEST_ENDPOINT): login com Google, age gate, ao vivo (gorjetas, sinalização), permissões de sala, salas inativas, rate-limit/flood, ledger (concorrência e idempotência), trocas, webhook de pagamento, CSAM, Pix, itens (anti-XSS), vídeo
+npm test      # 100 testes (+2 de S3 com S3_TEST_ENDPOINT): login com Google, age gate, ao vivo (gorjetas, sinalização), permissões de sala, salas inativas, rate-limit/flood, ledger (concorrência e idempotência), trocas, webhook de pagamento, CSAM, Pix, itens (anti-XSS), vídeo
 npm run lint  # checagem de tipos
 ```
 

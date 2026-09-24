@@ -54,10 +54,13 @@ export async function uploadPhoto(_: R, formData: FormData): Promise<R> {
   const file = formData.get("photo");
   if (!(file instanceof File)) return { error: "Escolha uma foto" };
   if (!["AVATAR", "PRIVATE_ALBUM"].includes(kind)) return { error: "Tipo inválido" };
-  if (kind === "PRIVATE_ALBUM" && (await db.media.count({ where: { ownerId: user.id, kind: "PRIVATE_ALBUM", status: "APPROVED" } })) >= 30)
-    return { error: "Álbum privado cheio (máx. 30)." };
+  const albumId = kind === "PRIVATE_ALBUM" ? String(formData.get("albumId") || "") || null : null;
+  if (albumId && !(await db.album.findFirst({ where: { id: albumId, ownerId: user.id } }))) return { error: "Álbum não encontrado" };
+  if (kind === "PRIVATE_ALBUM" && (await db.media.count({ where: { ownerId: user.id, kind: "PRIVATE_ALBUM", status: "APPROVED", albumId } })) >= 30)
+    return { error: "Álbum cheio (máx. 30 fotos)." };
   try {
     const m = await processUpload({ file, ownerId: user.id, ownerNick: user.nick, kind: kind as "AVATAR" | "PRIVATE_ALBUM" });
+    if (albumId) await db.media.update({ where: { id: m.id }, data: { albumId } });
     if (kind === "AVATAR") await db.user.update({ where: { id: user.id }, data: { avatarId: m.id } });
   } catch (e) {
     return { error: e instanceof MediaError ? e.message : "Falha ao processar a foto" };

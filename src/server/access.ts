@@ -57,7 +57,9 @@ export async function resolveMediaAccess(viewer: CurrentUser, mediaId: string, w
       break;
     }
     case "PRIVATE_ALBUM": {
-      if (!(await canSeeAlbum(viewer.id, m.ownerId, m.owner.albumVisibility))) return { media: m, variant: "b" as const };
+      // álbum por tema: vale a visibilidade do álbum; sem álbum, a do álbum privado padrão
+      const album = m.albumId ? await db.album.findUnique({ where: { id: m.albumId }, select: { visibility: true } }) : null;
+      if (!(await canSeeAlbum(viewer.id, m.ownerId, album?.visibility ?? m.owner.albumVisibility))) return { media: m, variant: "b" as const };
       break;
     }
     case "PM_PHOTO": {
@@ -78,6 +80,7 @@ export async function resolveMediaAccess(viewer: CurrentUser, mediaId: string, w
  */
 export async function canSeeAlbum(viewerId: string, ownerId: string, visibility: string) {
   if (viewerId === ownerId) return true;
+  if (visibility === "VERIFIED") return true; // quem não é verificado já recebe a versão borrada
   const acc = await db.albumAccess.findUnique({ where: { ownerId_viewerId: { ownerId, viewerId } } });
   if (acc?.granted) return true;
   if (visibility === "FRIENDS") {

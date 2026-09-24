@@ -19,6 +19,7 @@ import { GiftButton } from "@/components/GiftButton";
 import { startTrade } from "@/app/actions/trade";
 import { recordVisit } from "@/server/visits";
 import { TestimonialsSection } from "@/components/Testimonials";
+import { ThemedAlbumsViewer } from "@/components/ThemedAlbums";
 
 export async function generateMetadata({ params }: { params: Promise<{ nick: string }> }) {
   return { title: `@${decodeURIComponent((await params).nick)}` };
@@ -39,7 +40,7 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
     db.follow.count({ where: { followeeId: u.id } }),
     db.follow.count({ where: { followerId: u.id } }),
     db.follow.findUnique({ where: { followerId_followeeId: { followerId: viewer.id, followeeId: u.id } } }),
-    db.media.findMany({ where: { ownerId: u.id, kind: "PRIVATE_ALBUM", status: "APPROVED" }, orderBy: { createdAt: "desc" }, select: { id: true } }),
+    db.media.findMany({ where: { ownerId: u.id, kind: "PRIVATE_ALBUM", status: "APPROVED", albumId: null }, orderBy: { createdAt: "desc" }, select: { id: true } }),
     db.albumAccess.findUnique({ where: { ownerId_viewerId: { ownerId: u.id, viewerId: viewer.id } } }),
     iBlocked ? Promise.resolve([]) : getFeed(viewer, { authorId: u.id, take: 30 }),
     stylesFor([u.id]),
@@ -139,6 +140,8 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
           </div>
         </section>
       )}
+
+      {!iBlocked && !hidden && !me && <ThemedAlbumsViewer owner={{ id: u.id, nick: u.nick }} viewerId={viewer.id} requested={!!access} />}
 
       {!iBlocked && !hidden && <TestimonialsSection profile={{ id: u.id, nick: u.nick }} viewer={viewer} />}
 
