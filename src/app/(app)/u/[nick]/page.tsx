@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { ageOn } from "@/lib/age";
 import { PERSON_FIELDS, PROFILE_TYPES, agesLabel } from "@/lib/config";
+import { distanceLabel, distanceVisible, haversineKm } from "@/lib/geo";
 import { isSubscriber, isVerified, requireUser } from "@/server/auth";
 import { isBlockedBetween } from "@/server/access";
 import { getFeed } from "@/server/feed";
@@ -47,6 +48,7 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
   const { canSeeAlbum: albumCheck } = await import("@/server/access");
   const canSeeAlbum = me || (await albumCheck(viewer.id, u.id, u.albumVisibility));
   const hidden = u.hideFromUnverified && !isVerified(viewer) && !me;
+  const km = viewer.lat != null && viewer.lng != null && distanceVisible(u) ? haversineKm({ lat: viewer.lat, lng: viewer.lng }, { lat: u.lat!, lng: u.lng! }) : null;
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
@@ -58,6 +60,7 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
             <p className="text-sm text-mute">
               {PROFILE_TYPES[u.profileType].label} · {agesLabel(u.persons.map((p) => ({ label: p.label, age: ageOn(p.birthDate) })))}
               {!u.hideCity && u.city ? ` · ${u.city}/${u.state}` : u.state ? ` · ${u.state}` : ""}
+              {!me && km != null && <span className="ml-1 rounded-full bg-pink-50 px-2 py-0.5 text-xs font-semibold text-wine">📍 {distanceLabel(km)}</span>}
             </p>
             <p className="mt-1 text-xs text-mute"><b className="text-fg">{friends.length}</b> amigos · <b className="text-fg">{followers}</b> seguidores · <b className="text-fg">{following}</b> seguindo</p>
             {!me && (

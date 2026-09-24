@@ -12,6 +12,7 @@ import { hash } from "@node-rs/argon2";
 const db = new PrismaClient();
 
 import { COUPLES_ROOM, GENERAL_ROOM, STAFF_ONLY_ROOMS, UFS, stateRoom } from "../src/lib/config";
+import { cityCoords } from "../src/lib/geo";
 
 type ItemSeed = { slug: string; name: string; category: ItemCategory; rarity?: ItemRarity; config: object; powerScore?: number; price7?: number; price30?: number; pricePerm?: number; limitedQty?: number; description?: string };
 
@@ -120,6 +121,14 @@ async function main() {
     await db.platformSetting.upsert({ where: { key: "rooms-v2" }, create: { key: "rooms-v2", value: { at: new Date().toISOString() } }, update: {} });
   }
   await migrateRoomsV2();
+  // proximidade: preenche coordenadas pela cidade de quem ainda não tem (idempotente, barato)
+  const semCoord = await db.user.findMany({ where: { lat: null, geoSource: null, city: { not: null } }, select: { id: true, city: true, state: true }, take: 5000 });
+  let geo = 0;
+  for (const u of semCoord) {
+    const c = cityCoords(u.city, u.state);
+    if (c) { await db.user.update({ where: { id: u.id }, data: { lat: c.lat, lng: c.lng, geoSource: "CITY" } }); geo++; }
+  }
+  if (geo) console.log(`Proximidade: ${geo} perfis com coordenadas da cidade`);
   // Geral e Só Casais não têm cargos de sala (a equipe do site modera)
   await db.roomMember.updateMany({ where: { role: { in: ["OWNER", "MODERATOR"] }, room: { slug: { in: [...STAFF_ONLY_ROOMS] } } }, data: { role: "MEMBER" } });
   // Itens novos do catálogo entram a cada deploy; os existentes NÃO são alterados

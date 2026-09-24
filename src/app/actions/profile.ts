@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { LIKE_TAGS, UFS } from "@/lib/config";
+import { coordsForProfile, roundCoord, validLatLng } from "@/lib/geo";
 import { limiter } from "@/lib/ratelimit";
 import { isVerified, requireUser } from "@/server/auth";
 import { MediaError, processUpload } from "@/server/media";
@@ -34,6 +35,8 @@ export async function updateProfile(_: R, formData: FormData): Promise<R> {
       pmPolicy: p.data.pmPolicy,
       likes,
       hideCity: formData.get("hideCity") === "on",
+      showDistance: formData.get("showDistance") === "on",
+      ...coordsForProfile(p.data.city || null, p.data.state, user),
       hideFromUnverified: formData.get("hideFromUnverified") === "on",
       acceptPmPhotos: formData.get("acceptPmPhotos") === "on",
       albumVisibility: ["PRIVATE", "FRIENDS", "FOLLOWERS"].includes(String(formData.get("albumVisibility"))) ? String(formData.get("albumVisibility")) : "FRIENDS",
@@ -246,6 +249,26 @@ export async function updateProfileType(_: R, formData: FormData): Promise<R> {
   const births = [0, 1].map((i) => String(formData.get(`birth${i}`) || "")).filter(Boolean);
   const r = await applyProfileType(user.id, String(formData.get("profileType")), births, user.id);
   if (r.error) return { error: r.error };
+  revalidatePath("/perfil");
+  return { ok: true };
+}
+
+/** "Usar minha localização aproximada": grava com 2 casas (~1 km), nunca a posição exata. */
+export async function setApproxLocation(lat: number, lng: number): Promise<R> {
+  const user = await requireUser();
+  if (!limiter("geo", 10, 10 / 3600).take(user.id)) return { error: "Tente de novo mais tarde." };
+  if (!validLatLng(lat, lng)) return { error: "Localização fora do Brasil ou inválida." };
+  await db.user.update({ where: { id: user.id }, data: { lat: roundCoord(lat), lng: roundCoord(lng), geoSource: "GPS" } });
+  revalidatePath("/pessoas");
+  revalidatePath("/perfil");
+  return { ok: true };
+}
+
+/** Volta a calcular a distância pela cidade do perfil (apaga a localização do aparelho). */
+export async function resetToCityLocation(): Promise<R> {
+  const user = await requireUser();
+  await db.user.update({ where: { id: user.id }, data: coordsForProfile(user.city, user.state ?? "", { geoSource: null }) });
+  revalidatePath("/pessoas");
   revalidatePath("/perfil");
   return { ok: true };
 }
