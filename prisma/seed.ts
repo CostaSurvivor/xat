@@ -11,7 +11,7 @@ import { hash } from "@node-rs/argon2";
 
 const db = new PrismaClient();
 
-import { COUPLES_ROOM, GENERAL_ROOM, STAFF_ONLY_ROOMS, UFS, defaultStateDescription, stateRoom } from "../src/lib/config";
+import { COUPLES_ROOM, GENERAL_ROOM, STAFF_ONLY_ROOMS, UFS, stateRoom } from "../src/lib/config";
 import { cityCoords } from "../src/lib/geo";
 import { DEFAULT_GROUPS } from "../src/lib/groups";
 
@@ -129,11 +129,13 @@ async function main() {
     await db.platformSetting.upsert({ where: { key: "rooms-v2" }, create: { key: "rooms-v2", value: { at: new Date().toISOString() } }, update: {} });
   }
   await migrateRoomsV2();
-  // descrições regionais (ex.: RS "Bah, tchê!"): só troca se ainda estiver com o texto padrão (não sobrescreve edição do admin)
-  for (const uf of UFS) {
-    const want = stateRoom(uf).description;
-    if (want !== defaultStateDescription(uf)) await db.room.updateMany({ where: { slug: uf.toLowerCase(), description: defaultStateDescription(uf) }, data: { description: want } });
-  }
+  // desfaz as descrições regionais (todas as salas de estado com o mesmo texto padrão), sem mexer em edição do admin
+  const REGIONAL_OLD: Record<string, string> = {
+    RS: "Bah, tchê! O chat dos gaúchos: casais, prendas e peões liberais do Rio Grande do Sul. Chega mais e puxa um chimarrão 🧉",
+    SC: "O chat de Santa Catarina: casais, solteiras e solteiros catarinenses, da serra ao litoral. 🌊",
+    PR: "O chat do Paraná: casais, solteiras e solteiros paranaenses, de Curitiba ao interior. 🌲",
+  };
+  for (const [uf, old] of Object.entries(REGIONAL_OLD)) await db.room.updateMany({ where: { slug: uf.toLowerCase(), description: old }, data: { description: stateRoom(uf).description } });
   // grupos iniciais: criados uma vez (depois a equipe cria/arquiva pelo painel)
   if (!(await db.platformSetting.findUnique({ where: { key: "groups-v1" } }))) {
     for (const g of DEFAULT_GROUPS) await db.group.upsert({ where: { slug: g.slug }, create: { ...g }, update: {} });
