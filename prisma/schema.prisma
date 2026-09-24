@@ -725,6 +725,8 @@ model Payment {
   vipDays     Int?
   provider    String        @default("pix_manual") @db.VarChar(30)
   code        String        @unique @db.VarChar(12) // identificador p/ o usuário citar
+  providerRef String?       @db.VarChar(120) // id da cobrança no gateway (quando não é Pix manual)
+  chargeData  String?       @db.Text // copia-e-cola ou URL devolvidos pelo gateway (criados 1x)
   status      PaymentStatus @default(PENDING)
   amountCents Int
   coins       Int
@@ -775,6 +777,21 @@ model Subscription {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, endsAt])
+}
+
+// Todo webhook de gateway é gravado ANTES de processar; (provider, eventId) único
+// garante que reentregas não creditem duas vezes.
+model WebhookEvent {
+  id          String    @id @default(cuid())
+  provider    String    @db.VarChar(30)
+  eventId     String    @db.VarChar(120)
+  type        String    @db.VarChar(60)
+  payload     Json
+  receivedAt  DateTime  @default(now())
+  processedAt DateTime?
+  error       String?   @db.VarChar(500)
+
+  @@unique([provider, eventId])
 }
 
 // -----------------------------------------------------------------------------

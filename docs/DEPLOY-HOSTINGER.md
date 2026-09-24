@@ -72,4 +72,5 @@ Na tela do app → **Variáveis de ambiente**, copie de `.env.example` e preench
 - **Tamanho de upload:** a Hostinger pode limitar o tamanho das requisições. Se vídeos grandes falharem, reduza `MAX_VIDEO_MB` (ex.: 50) ou fale com o suporte.
 - **Vídeos sem conversão:** sem `ffmpeg` no servidor, o vídeo fica como foi enviado (MP4/MOV/WEBM). A marca d'água do vídeo é sobreposta no player com o nick de quem assiste. A capa do vídeo recebe marca d'água de verdade.
 - **Escala:** o chat por polling aguenta bem algumas centenas de pessoas online. Para milhares ao mesmo tempo, a migração natural é uma VPS com WebSocket e Redis. O código foi separado para essa troca ser localizada (`src/app/api/rooms/*` e `ChatRoom.tsx`).
+- **Porta de origem (Marco Civil):** na hospedagem compartilhada, o proxy da Hostinger pode não repassar a porta do visitante. O app grava IP, data e hora sempre, e a porta quando o proxy envia `X-Client-Port` ou `X-Real-Port`. Na VPS, o Caddy já envia.
 - **Backup:** ative os backups do plano e baixe periodicamente a pasta `UPLOAD_DIR` e o banco.

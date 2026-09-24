@@ -39,15 +39,24 @@ Cadastre-se com um e-mail listado em `ADMIN_EMAILS`: essa conta vira admin já v
 ## Testes
 
 ```bash
-npm test      # 38 testes: age gate, permissões de sala, rate-limit/flood, ledger (concorrência e idempotência), Pix, itens (anti-XSS), vídeo
+npm test      # 41 testes: age gate, permissões de sala, salas inativas, rate-limit/flood, ledger (concorrência e idempotência), webhook de pagamento, CSAM, Pix, itens (anti-XSS), vídeo
 npm run lint  # checagem de tipos
 ```
 
 Os testes do ledger usam o banco do `.env`.
 
-## Publicar na Hostinger
+## Publicar
 
-Veja o passo a passo em [docs/DEPLOY-HOSTINGER.md](docs/DEPLOY-HOSTINGER.md).
+- **Hostinger (Node.js Web App):** [docs/DEPLOY-HOSTINGER.md](docs/DEPLOY-HOSTINGER.md). É o que está no ar hoje.
+- **VPS com Docker Compose (app + MySQL + HTTPS):** [docs/DEPLOY-VPS.md](docs/DEPLOY-VPS.md).
+
+## Pagamentos plugáveis
+
+`src/server/payments/`: a interface `PaymentProvider` (`createCharge` + `parseWebhook`) tem o Pix manual ativo e um **modelo de gateway** (`exampleGateway.ts`, com webhook assinado por HMAC). O webhook `POST /api/webhooks/{provider}` grava cada evento antes de processar e é **idempotente**: reentregas não creditam duas vezes, e isso tem teste. Para ligar um gateway, copie o modelo, ajuste para a API escolhida e defina `PAYMENT_PROVIDER`.
+
+## Proteção contra CSAM
+
+Toda imagem passa pela blocklist de hashes e, se configurado (`CSAM_SCAN_URL`), por um serviço externo de detecção (PhotoDNA, Thorn Safer…). Se o resultado for positivo, o upload é recusado e a mídia fica em quarentena com a evidência preservada. O hash é bloqueado e uma denúncia de prioridade máxima é aberta no admin.
 
 ## Estrutura
 

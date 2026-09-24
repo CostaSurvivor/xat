@@ -1,0 +1,9 @@
+{$DOMAIN} {
+	encode zstd gzip
+	request_body {
+		max_size 110MB
+	}
+	reverse_proxy app:3000 {
+		header_up X-Client-Port {remote_port}
+	}
+}

@@ -27,7 +27,9 @@ export async function clientInfo() {
   const h = await headers();
   const fwd = h.get("x-forwarded-for")?.split(",")[0]?.trim();
   const ip = fwd || h.get("x-real-ip") || "0.0.0.0";
-  const port = Number(h.get("x-forwarded-port") || h.get("x-real-port") || 0) || null;
+  // porta de ORIGEM do visitante (Marco Civil, IPs compartilhados/CGNAT). X-Forwarded-Port
+  // é a porta do servidor e não serve; o proxy precisa enviar X-Client-Port / X-Real-Port.
+  const port = Number(h.get("x-client-port") || h.get("x-real-port") || 0) || null;
   const deviceId = (await cookies()).get("did")?.value?.slice(0, 64) ?? null;
   return { ip, port, deviceId, userAgent: h.get("user-agent")?.slice(0, 255) ?? null };
 }

@@ -3,7 +3,6 @@ import QRCode from "qrcode";
 import { db } from "@/lib/db";
 import { CURRENCY_ICON, SITE_NAME } from "@/lib/config";
 import { getPixConfig } from "@/server/settings";
-import { pixPayload } from "@/lib/pix";
 import { requireUser } from "@/server/auth";
 import { cancelPayment, claimPayment } from "@/app/actions/wallet";
 import { CopyButton } from "@/components/CopyButton";
@@ -16,8 +15,9 @@ export default async function PixPage({ params }: { params: Promise<{ id: string
   if (!p || p.userId !== user.id) notFound();
   const brl = (p.amountCents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const pix = await getPixConfig();
-  if (!pix.key) return <div className="card mx-auto max-w-md p-6 text-center">Pagamento via Pix indisponível no momento. Tente mais tarde.</div>;
-  const code = pixPayload({ key: pix.key, name: pix.merchantName, city: pix.merchantCity, amountCents: p.amountCents, txid: p.code });
+  if (!pix.key && p.provider === "pix_manual") return <div className="card mx-auto max-w-md p-6 text-center">Pagamento via Pix indisponível no momento. Tente mais tarde.</div>;
+  const { chargeFor } = await import("@/server/payments");
+  const code = await chargeFor(p, user);
   const qr = await QRCode.toDataURL(code, { margin: 1, width: 320, color: { dark: "#000000", light: "#ffffff" } });
   return (
     <div className="card mx-auto max-w-md space-y-4 p-6 text-center">

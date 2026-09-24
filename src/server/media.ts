@@ -5,6 +5,7 @@ import type { MediaKind } from "@prisma/client";
 import { db } from "@/lib/db";
 import { SITE_NAME } from "@/lib/config";
 import { storage } from "./storage";
+import { scanImage } from "./csam";
 
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 const OK_FORMATS = new Set(["jpeg", "png", "webp", "heif", "avif"]);
@@ -76,6 +77,20 @@ export async function processUpload(opts: { file: File; ownerId: string; ownerNi
   await storage.put(`${dir}/o.webp`, original.data);
   await storage.put(`${dir}/d.webp`, display);
   await storage.put(`${dir}/b.webp`, blur);
+
+  // Detecção externa de CSAM (quando configurada): positivo => quarentena,
+  // evidência preservada, hash bloqueado, denúncia prioritária e upload recusado.
+  const scan = await scanImage(original.data);
+  if (scan?.match) {
+    const m = await db.media.create({
+      data: { ownerId: opts.ownerId, kind: opts.kind, status: "QUARANTINED", originalKey: `${dir}/o.webp`, displayKey: `${dir}/d.webp`, blurKey: `${dir}/b.webp`, width: original.info.width, height: original.info.height, sha256: sha },
+    });
+    await db.mediaHashBlock.upsert({ where: { sha256: sha }, create: { sha256: sha, reason: `scanner:${scan.provider}` }, update: {} });
+    await db.report.create({
+      data: { reporterId: opts.ownerId, targetType: "MEDIA", targetId: m.id, targetUserId: opts.ownerId, reason: "POSSIBLE_MINOR", priority: 100, details: `Detecção automática (${scan.provider})`, evidence: { mediaId: m.id, sha256: sha, auto: true } },
+    });
+    throw new MediaError("Esta imagem não é permitida.");
+  }
 
   return db.media.create({
     data: {
