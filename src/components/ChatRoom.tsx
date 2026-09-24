@@ -1,5 +1,6 @@
 "use client";
 
+import { RoomPollBar, type RoomPollView } from "./RoomPollBar";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { ChatMessage, OfflineUser, OnlineUser } from "@/server/rooms";
@@ -115,6 +116,7 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
   const [showOffline, setShowOffline] = useState(false);
   const [pollMe, setPollMe] = useState<PollMe | null>(null);
   const [pinned, setPinned] = useState<{ id: string; body: string; nick: string } | null>(null);
+  const [enquete, setEnquete] = useState<RoomPollView | null>(null);
   const [slowMode, setSlowMode] = useState(0);
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -189,6 +191,7 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
     if (j.reactions) setReactions(j.reactions);
     setPollMe(j.me);
     setPinned(j.pinned);
+    setEnquete(j.enquete ?? null);
     setSlowMode(j.slowMode);
     return true;
   }, [slug, chime]);
@@ -372,6 +375,7 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
                 {isMod && <button onClick={() => mod("unpin")} className="ml-auto text-mute hover:text-fg">✕</button>}
               </div>
             )}
+            <RoomPollBar slug={slug} poll={enquete} isMod={!!isMod} onChange={() => void poll()} />
             <div
               ref={listRef}
               onScroll={(e) => {
