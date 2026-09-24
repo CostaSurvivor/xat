@@ -62,6 +62,7 @@ enum MediaKind {
   VERIFICATION_SELFIE
   ROOM_COVER
   ROOM_PHOTO
+  EVENT_COVER
 }
 
 enum MediaStatus {
@@ -155,6 +156,7 @@ enum ReportTargetType {
   MEDIA
   ROOM
   LIVE
+  EVENT
 }
 
 enum ReportReason {
@@ -175,6 +177,7 @@ enum ReportStatus {
 }
 
 enum NotificationKind {
+  EVENT
   LIVE
   TRADE
   TICKET
@@ -258,6 +261,7 @@ model User {
   albumViewing    AlbumAccess[]         @relation("AlbumViewer")
   liveStreams     LiveStream[]
   liveMessages    LiveMessage[]
+  events          Event[]
 
   @@index([state, city])
   @@index([createdAt])
@@ -1051,4 +1055,52 @@ model ProfileVisit {
   @@id([visitedId, visitorId])
   @@index([visitedId, lastAt])
   @@index([lastAt])
+}
+
+// -----------------------------------------------------------------------------
+// Eventos (festas e encontros liberais, estilo Sexlog). Só aparecem após aprovação.
+// -----------------------------------------------------------------------------
+
+enum EventStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELED
+}
+
+model Event {
+  id           String      @id @default(cuid())
+  creatorId    String
+  title        String      @db.VarChar(90)
+  description  String      @db.Text
+  startsAt     DateTime
+  endsAt       DateTime?
+  state        String      @db.VarChar(2)
+  city         String      @db.VarChar(80)
+  venue        String      @db.VarChar(120)
+  priceText    String?     @db.VarChar(80)
+  audience     String      @default("ALL") @db.VarChar(10) // ALL | COUPLES
+  coverMediaId String?
+  status       EventStatus @default(PENDING)
+  reviewNote   String?     @db.VarChar(200)
+  reviewedById String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  creator      User        @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  rsvps        EventRsvp[]
+
+  @@index([status, startsAt])
+  @@index([state, startsAt])
+  @@index([creatorId])
+}
+
+model EventRsvp {
+  eventId   String
+  userId    String
+  status    String   @db.VarChar(6) // GOING | MAYBE
+  createdAt DateTime @default(now())
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, userId])
+  @@index([userId])
 }

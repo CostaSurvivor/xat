@@ -17,7 +17,7 @@ const PRIORITY: Record<ReportReason, number> = {
 };
 
 const schema = z.object({
-  targetType: z.enum(["USER", "POST", "COMMENT", "ROOM_MESSAGE", "PRIVATE_MESSAGE", "MEDIA", "ROOM", "LIVE"]),
+  targetType: z.enum(["USER", "POST", "COMMENT", "ROOM_MESSAGE", "PRIVATE_MESSAGE", "MEDIA", "ROOM", "LIVE", "EVENT"]),
   targetId: z.string().min(1).max(64),
   reason: z.enum(["POSSIBLE_MINOR", "NON_CONSENSUAL", "ILLEGAL_CONTENT", "HARASSMENT", "FAKE_PROFILE", "SPAM", "OTHER"]),
   details: z.string().max(1000).optional(),
@@ -53,6 +53,10 @@ async function snapshot(type: ReportTargetType, id: string) {
     case "ROOM": {
       const r = await db.room.findUnique({ where: { id } });
       return { userId: r?.ownerId ?? undefined, evidence: r && { slug: r.slug, name: r.name, description: r.description }, mediaIds: [] };
+    }
+    case "EVENT": {
+      const e = await db.event.findUnique({ where: { id } });
+      return { userId: e?.creatorId, evidence: e && { title: e.title, description: e.description, venue: e.venue, city: e.city, startsAt: e.startsAt }, mediaIds: e?.coverMediaId ? [e.coverMediaId] : [] };
     }
     case "LIVE": {
       const l = await db.liveStream.findUnique({ where: { id } });

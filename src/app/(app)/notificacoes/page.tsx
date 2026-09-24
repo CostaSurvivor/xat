@@ -14,6 +14,7 @@ export const dynamic = "force-dynamic";
 
 const ICON: Record<string, string> = {
   LIVE: "🔴",
+  EVENT: "🎉",
   TICKET: "🎫",
   TRADE: "🔄",
   FOLLOW: "👀", FRIEND_REQUEST: "🤝", FRIEND_ACCEPTED: "🤝", POST_REACTION: "🔥", POST_COMMENT: "💬", COMMENT_REPLY: "↩️",
@@ -50,6 +51,7 @@ export default async function Notificacoes({ searchParams }: { searchParams: Pro
     if (n.kind === "MENTION" && n.refId) return `/${n.refId}`;
     if (n.kind === "TRADE" && n.refId) return `/trocas/${n.refId}`;
     if (n.kind === "LIVE" && n.refId) return `/ao-vivo/${n.refId}`;
+    if (n.kind === "EVENT" && n.refId) return `/eventos/${n.refId}`;
     return nick ? `/u/${nick}` : "#";
   };
 

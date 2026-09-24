@@ -38,6 +38,8 @@ export async function deleteAccount(_: { error?: string } | undefined, formData:
     db.postReaction.deleteMany({ where: { userId: user.id } }),
     db.privateMessage.deleteMany({ where: { senderId: user.id } }),
     db.profileVisit.deleteMany({ where: { OR: [{ visitedId: user.id }, { visitorId: user.id }] } }),
+    db.eventRsvp.deleteMany({ where: { userId: user.id } }),
+    db.event.deleteMany({ where: { creatorId: user.id } }),
     db.message.updateMany({ where: { authorId: user.id }, data: { deletedAt: new Date(), body: "[removido]" } }),
     db.media.deleteMany({ where: { ownerId: user.id, id: { notIn: [...keepMedia] } } }),
     db.follow.deleteMany({ where: { OR: [{ followerId: user.id }, { followeeId: user.id }] } }),

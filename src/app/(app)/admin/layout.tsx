@@ -10,6 +10,7 @@ const LINKS = [
   ["/admin/usuarios", "Usuários", true],
   ["/admin/salas", "Salas", false],
   ["/admin/ao-vivo", "🔴 Ao vivo", false],
+  ["/admin/eventos", "🎉 Eventos", false],
   ["/admin/loja", "Loja", true],
   ["/admin/avisos", "Anúncios", true],
   ["/admin/config", "⚙️ Configurações", true],

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Dot, useBadges } from "./Badges";
 
 const LINKS = [
@@ -13,10 +14,34 @@ const LINKS = [
   { href: "/notificacoes", label: "Avisos", icon: "🔔", badge: "notif" as const },
 ];
 const EXTRA = [
+  { href: "/eventos", label: "Eventos" },
   { href: "/visitas", label: "Visitas" },
   { href: "/loja", label: "Loja" },
   { href: "/trocas", label: "Trocas" },
 ];
+
+/** Menu "☰" do celular: as páginas que não cabem na barra de baixo. */
+export function MobileMenu({ admin }: { admin?: boolean }) {
+  const path = usePathname();
+  const [open, setOpen] = useState(false);
+  useEffect(() => setOpen(false), [path]);
+  const links = [...EXTRA, { href: "/perfil", label: "Meu perfil" }, { href: "/carteira", label: "Carteira" }, { href: "/assinar", label: "Assinar" }, { href: "/suporte", label: "Suporte" }, ...(admin ? [{ href: "/admin", label: "Admin" }] : [])];
+  return (
+    <div className="relative md:hidden">
+      <button onClick={() => setOpen((o) => !o)} aria-label="Menu" aria-expanded={open} className="rounded-full border border-line bg-panel px-3 py-1 text-lg leading-none">☰</button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <nav className="card absolute right-0 top-10 z-50 w-48 overflow-hidden py-1 shadow-lg">
+            {links.map((l) => (
+              <Link key={l.href} href={l.href} className={`block px-4 py-2.5 text-sm ${path.startsWith(l.href) ? "bg-pink-50 font-semibold text-wine" : "hover:bg-black/5"}`}>{l.label}</Link>
+            ))}
+          </nav>
+        </>
+      )}
+    </div>
+  );
+}
 
 export function AppNav({ variant }: { variant: "top" | "bottom" }) {
   const path = usePathname();

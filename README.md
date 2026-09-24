@@ -16,6 +16,7 @@ Comunidade liberal 18+ (casais, solteiras e solteiros), com **visual claro (fund
 | Vídeos | Qualquer perfil verificado posta; **só assinantes assistem** (streaming protegido, marca d'água com o nick de quem assiste) |
 | Salas (estilo xat) | Salas fixas da plataforma: **Geral** (Brasil todo), **Só Casais** (só entra perfil de casal) e **uma por estado**; ninguém cria salas. Geral e Só Casais são moderadas só pela equipe do site; nas salas de estado, admin/moderadores do site nomeiam moderadores em **Admin → Salas**. Visual estilo xat: bonequinho por cargo (cores do xat) + acessórios, frase de status, lista Online/Offline, mini-perfil com ações, **PC em abas dentro da sala**, glow neon, fundador exclusivo, moderação completa, reações, presentes animados, @menções com aviso, **só texto** (fotos ficam no feed e no perfil), fundo personalizado, som de entrada, histórico |
 | Ao vivo | **Só assinantes transmitem**. Transmissão da câmera direto do navegador (WebRTC, sem servidor de mídia), chat ao vivo, **gorjetas em Pimentas** com animação, meta com barra de progresso, ranking de quem mais apoiou, só assinantes (opcional), remover espectador, encerramento pela moderação, marca d'água com o nick de quem assiste, aviso para seguidores e amigos |
+| Eventos | Festas e encontros liberais: assinantes verificados (e a equipe) divulgam com capa, data (horário de Brasília), local, valor e "só casais"; **só aparecem após aprovação** em Admin → Eventos; lista com o seu estado primeiro, "Vou"/"Talvez", quem confirmou, avisos, denúncia e cancelamento |
 | PV | Estilo WhatsApp (lista + conversa), exige verificação, só amigos por padrão; foto só se os dois aceitarem, chega **borrada** até clicar |
 | Economia | Pimentas com **ledger de partidas dobradas**, loja com abas, busca, raridade, destaques e prévia ao vivo (glow, neon, cores, ícones, molduras, entradas, poderes como invisível, nick maior, destaque, PV prioritário e **fixar mensagem**, **acessórios do boneco**), presentes, cupons |
 | Trocas (estilo xat) | Troca segura de Pimentas, **itens permanentes** e dias de assinatura: oferta dos dois lados, mudança zera aceites + trava de 5 s, aceite duplo e **confirmação com senha**, execução atômica |
@@ -42,7 +43,7 @@ Cadastre-se com um e-mail listado em `ADMIN_EMAILS`: essa conta vira admin já v
 ## Testes
 
 ```bash
-npm test      # 60 testes (+2 de S3 com S3_TEST_ENDPOINT): login com Google, age gate, ao vivo (gorjetas, sinalização), permissões de sala, salas inativas, rate-limit/flood, ledger (concorrência e idempotência), trocas, webhook de pagamento, CSAM, Pix, itens (anti-XSS), vídeo
+npm test      # 71 testes (+2 de S3 com S3_TEST_ENDPOINT): login com Google, age gate, ao vivo (gorjetas, sinalização), permissões de sala, salas inativas, rate-limit/flood, ledger (concorrência e idempotência), trocas, webhook de pagamento, CSAM, Pix, itens (anti-XSS), vídeo
 npm run lint  # checagem de tipos
 ```
 

@@ -3,7 +3,7 @@ import { isSubscriber, requireUser } from "@/server/auth";
 import { balanceOf } from "@/server/ledger";
 import { CURRENCY_ICON } from "@/lib/config";
 import { Logo } from "@/components/Logo";
-import { AppNav } from "@/components/AppNav";
+import { AppNav, MobileMenu } from "@/components/AppNav";
 import { Avatar } from "@/components/Avatar";
 import { db } from "@/lib/db";
 import { InstallApp } from "@/components/InstallApp";
@@ -25,6 +25,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <Link href="/loja" className="rounded-full border border-gold/40 px-3 py-1 text-sm text-gold hover:bg-gold/10">{CURRENCY_ICON} {balance.toLocaleString("pt-BR")}</Link>
           {(user.role === "ADMIN" || user.role === "MODERATOR") && <Link href="/admin" className="hidden rounded-full bg-wine px-3 py-1 text-xs font-bold text-white sm:inline">ADMIN</Link>}
           <Link href="/perfil" aria-label="Meu perfil"><Avatar mediaId={user.avatarId} nick={user.nick} size={34} /></Link>
+          <MobileMenu admin={user.role === "ADMIN" || user.role === "MODERATOR"} />
         </div>
         {user.ageVerification !== "APPROVED" && (
           <Link href="/verificacao" className="block bg-wine px-4 py-1.5 text-center text-xs text-white">
