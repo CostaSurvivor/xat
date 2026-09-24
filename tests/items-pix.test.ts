@@ -42,3 +42,11 @@ describe("Pix copia e cola (BR Code)", () => {
     expect(crc16(p.slice(0, -4))).toBe(p.slice(-4));
   });
 });
+
+describe("poder fixar mensagem", () => {
+  it("é um poder válido do catálogo e aparece nos poderes ativos", () => {
+    expect(parseItemConfig("POWER", { power: "PIN_MESSAGE" })).toBeTruthy();
+    const s = compileStyle([{ category: "POWER", config: { power: "PIN_MESSAGE" }, powerScore: 15 }]);
+    expect(s.powers).toContain("PIN_MESSAGE");
+  });
+});

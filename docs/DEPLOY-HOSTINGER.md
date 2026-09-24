@@ -76,4 +76,5 @@ Na tela do app → **Variáveis de ambiente**, copie de `.env.example` e preench
 - **Escala:** o chat por polling aguenta bem algumas centenas de pessoas online. Para milhares ao mesmo tempo, a migração natural é uma VPS com WebSocket e Redis. O código foi separado para essa troca ser localizada (`src/app/api/rooms/*` e `ChatRoom.tsx`).
 - **Porta de origem (Marco Civil):** na hospedagem compartilhada, o proxy da Hostinger pode não repassar a porta do visitante. O app grava IP, data e hora sempre, e a porta quando o proxy envia `X-Client-Port` ou `X-Real-Port`. Na VPS, o Caddy já envia.
 - **Ao vivo:** o vídeo vai direto do aparelho de quem transmite para cada espectador (WebRTC), então a hospedagem não carrega o vídeo. O limite é o upload de quem transmite: 10 espectadores com vídeo por padrão. Em 4G/5G algumas conexões falham sem **TURN**. Para lives com centenas de pessoas, o caminho é um SFU (LiveKit) numa VPS.
+- **Fotos em S3/R2 (opcional):** para não depender do disco da hospedagem, veja a seção "Fotos e vídeos em S3 / Cloudflare R2" no README.
 - **Backup:** ative os backups do plano e baixe periodicamente a pasta `UPLOAD_DIR` e o banco.

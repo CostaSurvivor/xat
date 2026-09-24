@@ -29,7 +29,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         if (start > end || start >= size) return new NextResponse(null, { status: 416, headers: { "Content-Range": `bytes */${size}` } });
         end = Math.min(end, start + 4 * 1024 * 1024 - 1); // pedaços de até 4 MB
       }
-      return new NextResponse(storage.stream(key, start, end), {
+      return new NextResponse(await storage.stream(key, start, end), {
         status: range ? 206 : 200,
         headers: {
           ...HEADERS,

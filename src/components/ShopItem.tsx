@@ -13,7 +13,7 @@ type Item = { id: string; name: string; description: string | null; category: st
 
 const RARITY: Record<string, string> = { COMMON: "text-mute", RARE: "text-sky-300", EPIC: "text-fuchsia-300", LEGENDARY: "text-gold", LIMITED: "text-red-300" };
 const RARITY_PT: Record<string, string> = { COMMON: "comum", RARE: "raro", EPIC: "épico", LEGENDARY: "lendário", LIMITED: "edição limitada" };
-const POWER_PT: Record<string, string> = { INVISIBLE: "👻 some da lista de online", BIG_NICK: "🔠 nick maior no chat", HIGHLIGHT_ONLINE: "✨ destaque na lista de online", PRIORITY_PM: "⚡ PV no topo da caixa" };
+const POWER_PT: Record<string, string> = { INVISIBLE: "👻 some da lista de online", BIG_NICK: "🔠 nick maior no chat", HIGHLIGHT_ONLINE: "✨ destaque na lista de online", PRIORITY_PM: "⚡ PV no topo da caixa", PIN_MESSAGE: "📌 fixa sua mensagem no topo da sala" };
 const ENTRY_PT: Record<string, string> = { fire: "🔥 entrada em chamas", gold: "👑 entrada real", hearts: "💞 entrada com corações", sparkle: "✨ entrada brilhante" };
 
 export function ShopItem({ item, nick, avatarId, canBuy }: { item: Item; nick: string; avatarId: string | null; canBuy: boolean }) {

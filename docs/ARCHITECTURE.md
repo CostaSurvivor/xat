@@ -10,7 +10,7 @@ Por decisão do dono, a primeira versão roda em **hospedagem Node.js da Hosting
 | PostgreSQL | **MySQL** (o banco que a Hostinger oferece), via Prisma: [`prisma/schema.prisma`](../prisma/schema.prisma) |
 | Redis (presença, rate-limit, pub/sub) | Presença em tabela (`RoomPresence`, heartbeat); rate-limit em memória + checagem de flood no banco |
 | WebSocket | **Polling HTTP** (chat a cada 2s, PV a cada 3s, pausa com a aba oculta), sem dependência de WebSocket |
-| Cloudflare R2 | **Disco local** (`UPLOAD_DIR`) atrás de `src/server/storage.ts`, trocável por S3/R2 |
+| Cloudflare R2 | **Disco local** (`UPLOAD_DIR`) por padrão, ou **S3/R2** com `STORAGE_DRIVER=s3` (`src/server/storage.ts`). O bucket fica privado e as mídias continuam saindo por `/api/media` com as regras de acesso. `npm run storage:to-s3` migra o que já está no disco |
 | Gateways (Segpay, CCBill…) | **Pix manual** com QR Code (BR Code com valor e identificador) e aprovação no admin. `Payment.provider` permite plugar gateway depois |
 | — | **Perfil assinante** (`User.vipUntil` + `Subscription`): só assinante assiste vídeos |
 | — | **Feed** estilo Sexlog (posts, fotos, vídeo, reações, comentários) |

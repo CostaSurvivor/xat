@@ -20,7 +20,7 @@ export const itemConfigSchemas = {
   BADGE: z.object({ emoji: z.enum(BADGE_EMOJIS) }),
   AVATAR_FRAME: z.object({ colors: z.array(hex).min(1).max(4), animation: anim.default("none") }),
   ENTRY_EFFECT: z.object({ effect: z.enum(["sparkle", "fire", "hearts", "gold"]), message: z.string().max(40).optional() }),
-  POWER: z.object({ power: z.enum(["INVISIBLE", "BIG_NICK", "HIGHLIGHT_ONLINE", "PRIORITY_PM"]) }),
+  POWER: z.object({ power: z.enum(["INVISIBLE", "BIG_NICK", "HIGHLIGHT_ONLINE", "PRIORITY_PM", "PIN_MESSAGE"]) }),
 } as const;
 
 export type ItemCategoryKey = keyof typeof itemConfigSchemas;
@@ -28,6 +28,9 @@ export type ItemCategoryKey = keyof typeof itemConfigSchemas;
 export function parseItemConfig(category: ItemCategoryKey, config: unknown) {
   return itemConfigSchemas[category].safeParse(config);
 }
+
+/** Tempo que a mensagem fixada pelo poder fica no topo da sala. */
+export const PIN_POWER_MINUTES = 10;
 
 export type ActiveItem = { category: string; config: unknown; powerScore: number };
 

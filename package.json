@@ -12,7 +12,8 @@
     "setup": "prisma db push && tsx prisma/seed.ts",
     "lint": "tsc --noEmit",
     "test": "vitest run",
-    "build:hostinger": "prisma db push --skip-generate && prisma generate && tsx prisma/seed.ts && next build"
+    "build:hostinger": "prisma db push --skip-generate && prisma generate && tsx prisma/seed.ts && next build",
+    "storage:to-s3": "tsx scripts/storage-to-s3.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -21,6 +22,7 @@
     "node": ">=20"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1139.0",
     "@node-rs/argon2": "^2.2.1",
     "@prisma/client": "^6.19.3",
     "@tailwindcss/postcss": "^4.3.3",

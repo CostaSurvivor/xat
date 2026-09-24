@@ -46,6 +46,16 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
     if (r.userId === user.id) reactions[k].mine = r.emoji;
   }
   const offline = await offlineMembers(room.id, online.map((u) => u.id), user.id);
+  // poder "Fixar mensagem": expira sozinho
+  if (fresh?.pinnedMessageId) {
+    const { PIN_POWER_MINUTES } = await import("@/lib/items");
+    const powerPin = await db.message.findFirst({ where: { roomId: room.id, kind: "SYSTEM", body: `pin:${fresh.pinnedMessageId}` }, orderBy: { id: "desc" }, select: { createdAt: true } });
+    if (powerPin && Date.now() - powerPin.createdAt.getTime() > PIN_POWER_MINUTES * 60_000) {
+      await db.room.updateMany({ where: { id: room.id, pinnedMessageId: fresh.pinnedMessageId }, data: { pinnedMessageId: null } });
+      fresh.pinnedMessageId = null;
+    }
+  }
+  const myStyle = (await stylesFor([user.id]))[user.id];
   const pinned = fresh?.pinnedMessageId ? await db.message.findUnique({ where: { id: fresh.pinnedMessageId }, include: { author: { select: { nick: true } } } }) : null;
 
   return NextResponse.json({
@@ -55,7 +65,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
     offline,
     deleted: deleted.map((d) => d.id.toString()),
     reactions,
-    me: { role: actor.role, platformRole: actor.platformRole, mutedUntil: mute ? (mute.expiresAt?.toISOString() ?? "sempre") : null },
+    me: { role: actor.role, platformRole: actor.platformRole, mutedUntil: mute ? (mute.expiresAt?.toISOString() ?? "sempre") : null, canPinOwn: !!myStyle?.powers.includes("PIN_MESSAGE") },
     slowMode: fresh?.slowModeSeconds ?? 0,
     pinned: pinned && !pinned.deletedAt ? { id: pinned.id.toString(), body: pinned.body, nick: pinned.author?.nick ?? "" } : null,
   });
