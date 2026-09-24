@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/server/auth";
 import { stylesFor } from "@/server/styles";
-import { activeSanction, actorFor, canEnter, messagesView, onlineList, roomBySlug, touchPresence } from "@/server/rooms";
+import { activeSanction, actorFor, canEnter, messagesView, offlineMembers, onlineList, roomBySlug, touchPresence } from "@/server/rooms";
 
 /** Polling do chat (funciona em qualquer hospedagem, sem WebSocket/Redis). */
 export async function GET(req: Request, { params }: { params: Promise<{ slug: string }> }) {
@@ -45,12 +45,14 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
     reactions[k].e[r.emoji] = (reactions[k].e[r.emoji] ?? 0) + 1;
     if (r.userId === user.id) reactions[k].mine = r.emoji;
   }
+  const offline = await offlineMembers(room.id, online.map((u) => u.id), user.id);
   const pinned = fresh?.pinnedMessageId ? await db.message.findUnique({ where: { id: fresh.pinnedMessageId }, include: { author: { select: { nick: true } } } }) : null;
 
   return NextResponse.json({
     now: Date.now(),
     messages,
     online,
+    offline,
     deleted: deleted.map((d) => d.id.toString()),
     reactions,
     me: { role: actor.role, platformRole: actor.platformRole, mutedUntil: mute ? (mute.expiresAt?.toISOString() ?? "sempre") : null },

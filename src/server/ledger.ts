@@ -199,7 +199,7 @@ export async function buyItem(buyerId: string, itemId: string, duration: Duratio
 }
 
 /** Estende a assinatura a partir do fim atual (ou de agora, se já venceu). */
-export async function extendVip(tx: Tx, userId: string, days: number, source: "PIX" | "ADMIN", paymentId?: string) {
+export async function extendVip(tx: Tx, userId: string, days: number, source: "PIX" | "ADMIN" | "TRADE", paymentId?: string) {
   const u = await tx.user.findUniqueOrThrow({ where: { id: userId } });
   const start = u.vipUntil && u.vipUntil > new Date() ? u.vipUntil : new Date();
   const end = new Date(start.getTime() + days * 86400_000);

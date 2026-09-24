@@ -71,7 +71,7 @@ export async function onlineList(roomId: string, viewer: CurrentUser) {
   });
   const ids = rows.map((r) => r.userId);
   const [users, members, styles, blocked] = await Promise.all([
-    db.user.findMany({ where: { id: { in: ids }, status: "ACTIVE" }, select: { id: true, nick: true, avatarId: true, profileType: true, ageVerification: true, role: true } }),
+    db.user.findMany({ where: { id: { in: ids }, status: "ACTIVE" }, select: { id: true, nick: true, avatarId: true, profileType: true, ageVerification: true, role: true, statusText: true, city: true, state: true, hideCity: true } }),
     db.roomMember.findMany({ where: { roomId, userId: { in: ids } } }),
     stylesFor(ids),
     blockedIds(viewer.id),
@@ -89,6 +89,7 @@ export async function onlineList(roomId: string, viewer: CurrentUser) {
       const p = rows.find((r) => r.userId === u.id)!;
       return {
         ...u,
+        city: u.hideCity ? null : u.city,
         roomRole: role,
         style: st,
         invisible: st?.powers.includes("INVISIBLE") ?? false,
@@ -110,6 +111,7 @@ export async function messagesView(roomId: string, viewerId: string, opts: { aft
     where: {
       roomId,
       deletedAt: null,
+      mediaId: null, // chat é só texto (fotos antigas ficam ocultas)
       ...(opts.after ? { id: { gt: opts.after } } : opts.before ? { id: { lt: opts.before } } : {}),
       OR: [{ authorId: null }, { authorId: { notIn: blocked } }],
     },
@@ -143,3 +145,20 @@ export async function roomOnlineCounts() {
   const g = await db.roomPresence.groupBy({ by: ["roomId"], where: { lastSeenAt: { gt: since } }, _count: true });
   return new Map(g.map((x) => [x.roomId, x._count]));
 }
+
+/** Membros da sala que estão offline (seção "Offline" da lista, estilo xat). */
+export async function offlineMembers(roomId: string, onlineIds: string[], viewerId: string) {
+  const blocked = await blockedIds(viewerId);
+  const rows = await db.roomMember.findMany({
+    where: { roomId, userId: { notIn: [...onlineIds, ...blocked] }, user: { status: "ACTIVE" } },
+    include: { user: { select: { id: true, nick: true, avatarId: true, role: true, statusText: true, profileType: true } } },
+    take: 80,
+  });
+  const { chatRole, CHAT_ROLE_RANK } = await import("@/components/RoleIcon");
+  const styles = await stylesFor(rows.map((r) => r.userId));
+  return rows
+    .map((r) => ({ ...r.user, style: styles[r.userId], chatRole: chatRole(r.user.role, r.role, styles[r.userId]?.founder) }))
+    .filter((u) => !u.style?.powers.includes("INVISIBLE"))
+    .sort((a, b) => CHAT_ROLE_RANK[b.chatRole] - CHAT_ROLE_RANK[a.chatRole] || a.nick.localeCompare(b.nick));
+}
+export type OfflineUser = Awaited<ReturnType<typeof offlineMembers>>[number];
