@@ -106,6 +106,9 @@ async function removeTarget(type: string, id: string) {
     case "MEDIA":
       await db.media.update({ where: { id }, data: { status: "REMOVED" } });
       break;
+    case "TESTIMONIAL":
+      await db.testimonial.deleteMany({ where: { id } });
+      break;
   }
 }
 

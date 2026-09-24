@@ -21,10 +21,11 @@ export default async function MeuPerfil() {
   const verified = isVerified(user);
   const persons = await db.profilePerson.findMany({ where: { userId: user.id }, orderBy: { label: "asc" } });
   const { visitCountSince } = await import("@/server/visits");
-  const [album, requests, visitsWeek] = await Promise.all([
+  const [album, requests, visitsWeek, pendingTestimonials] = await Promise.all([
     db.media.findMany({ where: { ownerId: user.id, kind: "PRIVATE_ALBUM", status: "APPROVED" }, orderBy: { createdAt: "desc" } }),
     db.albumAccess.findMany({ where: { ownerId: user.id }, include: { viewer: { select: { id: true, nick: true } } }, orderBy: { createdAt: "desc" } }),
     visitCountSince(user.id, 7),
+    db.testimonial.count({ where: { profileId: user.id, status: "PENDING" } }),
   ]);
   const likes = (user.likes as string[] | null) ?? [];
 
@@ -32,6 +33,7 @@ export default async function MeuPerfil() {
     <div className="mx-auto max-w-2xl space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="mr-auto font-[family-name:var(--font-display)] text-2xl font-bold">Meu perfil e configurações</h1>
+        <Link href="/depoimentos" className="btn-ghost">📝 Depoimentos{pendingTestimonials ? ` (${pendingTestimonials})` : ""}</Link>
         <Link href="/visitas" className="btn-ghost">👀 {visitsWeek} {visitsWeek === 1 ? "visita" : "visitas"} na semana</Link>
         <Link href={`/u/${user.nick}`} className="btn-ghost">Ver como os outros veem</Link>
         <form action={logout}><button className="btn-ghost">Sair</button></form>

@@ -18,6 +18,7 @@ import { ReportButton } from "@/components/ReportButton";
 import { GiftButton } from "@/components/GiftButton";
 import { startTrade } from "@/app/actions/trade";
 import { recordVisit } from "@/server/visits";
+import { TestimonialsSection } from "@/components/Testimonials";
 
 export async function generateMetadata({ params }: { params: Promise<{ nick: string }> }) {
   return { title: `@${decodeURIComponent((await params).nick)}` };
@@ -128,6 +129,8 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
           </div>
         </section>
       )}
+
+      {!iBlocked && !hidden && <TestimonialsSection profile={{ id: u.id, nick: u.nick }} viewer={viewer} />}
 
       {!hidden && posts.map((p) => <PostCard key={p.id} post={p} viewer={{ nick: viewer.nick, subscriber: isSubscriber(viewer) }} />)}
     </div>

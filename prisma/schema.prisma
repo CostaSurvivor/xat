@@ -157,6 +157,7 @@ enum ReportTargetType {
   ROOM
   LIVE
   EVENT
+  TESTIMONIAL
 }
 
 enum ReportReason {
@@ -177,6 +178,7 @@ enum ReportStatus {
 }
 
 enum NotificationKind {
+  TESTIMONIAL
   EVENT
   LIVE
   TRADE
@@ -236,36 +238,38 @@ model User {
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
 
-  persons         ProfilePerson[]
-  sessions        Session[]
-  consents        ConsentRecord[]
-  verifications   VerificationRequest[]
-  media           Media[]
-  posts           Post[]
-  comments        PostComment[]
-  postReactions   PostReaction[]
-  following       Follow[]              @relation("Follower")
-  followers       Follow[]              @relation("Followee")
-  blocking        Block[]               @relation("Blocker")
-  blockedBy       Block[]               @relation("Blocked")
-  roomsOwned      Room[]
-  roomMemberships RoomMember[]
-  messages        Message[]
-  pmSent          PrivateMessage[]
-  wallet          Wallet?
-  inventory       InventoryItem[]
-  payments        Payment[]
-  subscriptions   Subscription[]
-  reportsFiled    Report[]              @relation("Reporter")
-  notifications   Notification[]        @relation("NotifUser")
-  albumOwned      AlbumAccess[]         @relation("AlbumOwner")
-  friendsSent     Friendship[]          @relation("FriendRequester")
-  tickets         Ticket[]
-  friendsReceived Friendship[]          @relation("FriendAddressee")
-  albumViewing    AlbumAccess[]         @relation("AlbumViewer")
-  liveStreams     LiveStream[]
-  liveMessages    LiveMessage[]
-  events          Event[]
+  persons              ProfilePerson[]
+  sessions             Session[]
+  consents             ConsentRecord[]
+  verifications        VerificationRequest[]
+  media                Media[]
+  posts                Post[]
+  comments             PostComment[]
+  postReactions        PostReaction[]
+  following            Follow[]              @relation("Follower")
+  followers            Follow[]              @relation("Followee")
+  blocking             Block[]               @relation("Blocker")
+  blockedBy            Block[]               @relation("Blocked")
+  roomsOwned           Room[]
+  roomMemberships      RoomMember[]
+  messages             Message[]
+  pmSent               PrivateMessage[]
+  wallet               Wallet?
+  inventory            InventoryItem[]
+  payments             Payment[]
+  subscriptions        Subscription[]
+  reportsFiled         Report[]              @relation("Reporter")
+  notifications        Notification[]        @relation("NotifUser")
+  albumOwned           AlbumAccess[]         @relation("AlbumOwner")
+  friendsSent          Friendship[]          @relation("FriendRequester")
+  tickets              Ticket[]
+  friendsReceived      Friendship[]          @relation("FriendAddressee")
+  albumViewing         AlbumAccess[]         @relation("AlbumViewer")
+  liveStreams          LiveStream[]
+  liveMessages         LiveMessage[]
+  events               Event[]
+  testimonialsReceived Testimonial[]         @relation("TestimonialsReceived")
+  testimonialsWritten  Testimonial[]         @relation("TestimonialsWritten")
 
   @@index([state, city])
   @@index([createdAt])
@@ -1139,4 +1143,27 @@ model GroupMember {
 
   @@id([groupId, userId])
   @@index([userId])
+}
+
+// -----------------------------------------------------------------------------
+// Depoimentos (referências entre perfis): o dono do perfil aprova antes de publicar
+// -----------------------------------------------------------------------------
+
+model Testimonial {
+  id          String    @id @default(cuid())
+  profileId   String
+  authorId    String
+  body        String    @db.Text
+  metInPerson Boolean   @default(false)
+  /// PENDING | APPROVED | HIDDEN
+  status      String    @default("PENDING") @db.VarChar(10)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  reviewedAt  DateTime?
+  profile     User      @relation("TestimonialsReceived", fields: [profileId], references: [id], onDelete: Cascade)
+  author      User      @relation("TestimonialsWritten", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, authorId])
+  @@index([profileId, status, createdAt])
+  @@index([authorId])
 }
