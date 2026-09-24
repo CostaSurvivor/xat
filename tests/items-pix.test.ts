@@ -50,3 +50,19 @@ describe("poder fixar mensagem", () => {
     expect(s.powers).toContain("PIN_MESSAGE");
   });
 });
+
+describe("cores legíveis no fundo claro", async () => {
+  const { readable, contrastOnWhite } = await import("@/lib/items");
+  it("escurece cores claras até o contraste mínimo, mantendo cores já boas", () => {
+    for (const c of ["#f1d77a", "#d4af37", "#ff4fa0", "#ff2fa3", "#ffffff", "#28d7ff", "#39ff88", "#ffe066"]) {
+      const r = readable(c, 4.5);
+      expect(r).toMatch(/^#[0-9a-f]{6}$/);
+      expect(contrastOnWhite(r)).toBeGreaterThanOrEqual(4.5);
+    }
+    expect(readable("#1e3a8a")).toBe("#1e3a8a");
+  });
+  it("texto champagne comprado continua legível no chat", () => {
+    const s = compileStyle([{ category: "TEXT_COLOR", config: { color: "#f1d77a" }, powerScore: 2 }]);
+    expect(contrastOnWhite(s.text!.color as string)).toBeGreaterThanOrEqual(4.5);
+  });
+});
