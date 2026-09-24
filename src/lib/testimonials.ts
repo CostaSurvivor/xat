@@ -36,3 +36,7 @@ export function ownerTransition(op: string, current: string): "APPROVED" | "HIDD
   if (op === "hide" && current !== "HIDDEN") return "HIDDEN";
   return null;
 }
+
+/** Selo "Confirmado": depoimentos aprovados de quem conheceu pessoalmente (autores verificados e ativos). */
+export const CONFIRMED_MIN = 3;
+export const isConfirmed = (metInPersonCount: number) => metInPersonCount >= CONFIRMED_MIN;

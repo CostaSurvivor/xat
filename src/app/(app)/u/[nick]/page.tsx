@@ -53,6 +53,8 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
   const top = await weeklyTopRank(u);
   const { storiesOf } = await import("@/server/stories");
   const hasStories = !iBlocked && !hidden && (await storiesOf(u.id, viewer)).length > 0;
+  const met = (await import("@/server/testimonials").then((m) => m.metInPersonCounts([u.id]))).get(u.id) ?? 0;
+  const { isConfirmed } = await import("@/lib/testimonials");
   const km = viewer.lat != null && viewer.lng != null && distanceVisible(u) ? haversineKm({ lat: viewer.lat, lng: viewer.lng }, { lat: u.lat!, lng: u.lng! }) : null;
 
   return (
@@ -67,7 +69,7 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
             <Avatar mediaId={hidden ? null : u.avatarId} nick={u.nick} size={88} style={st} />
           )}
           <div className="min-w-0 flex-1">
-            <h1 className="text-xl"><Nick nick={u.nick} style={st} link={false} /> {u.ageVerification === "APPROVED" && <span title="Perfil verificado" className="text-sm text-gold">✔ verificado</span>} {u.vipUntil && u.vipUntil > new Date() && <span className="rounded bg-gold px-1.5 align-middle text-xs font-bold text-white">VIP</span>}</h1>
+            <h1 className="text-xl"><Nick nick={u.nick} style={st} link={false} /> {u.ageVerification === "APPROVED" && <span title="Perfil verificado" className="text-sm text-gold">✔ verificado</span>} {isConfirmed(met) && <a href="#depoimentos" title={`${met} perfis verificados confirmaram ter conhecido pessoalmente`} className="rounded-full bg-emerald-50 px-2 py-0.5 align-middle text-xs font-semibold text-emerald-800">🤝 Confirmado</a>} {u.vipUntil && u.vipUntil > new Date() && <span className="rounded bg-gold px-1.5 align-middle text-xs font-bold text-white">VIP</span>}</h1>
             <p className="text-sm text-mute">
               {PROFILE_TYPES[u.profileType].label} · {agesLabel(u.persons.map((p) => ({ label: p.label, age: ageOn(p.birthDate) })))}
               {!u.hideCity && u.city ? ` · ${u.city}/${u.state}` : u.state ? ` · ${u.state}` : ""}

@@ -28,3 +28,12 @@ describe("depoimentos", () => {
     expect(ownerTransition("nada", "PENDING")).toBeNull();
   });
 });
+
+import { CONFIRMED_MIN, isConfirmed } from "@/lib/testimonials";
+describe("selo Confirmado", () => {
+  it("precisa de 3 depoimentos presenciais", () => {
+    expect(CONFIRMED_MIN).toBe(3);
+    expect(isConfirmed(2)).toBe(false);
+    expect(isConfirmed(3)).toBe(true);
+  });
+});

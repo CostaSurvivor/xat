@@ -46,6 +46,7 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
     ? withDist.filter((u) => u.km != null && u.km <= raio).sort((a, b) => a.km! - b.km! || (b.lastSeenAt?.getTime() ?? 0) - (a.lastSeenAt?.getTime() ?? 0)).slice(0, 60)
     : withDist;
   const styles = await stylesFor(users.map((u) => u.id));
+  const confirmed = await import("@/server/testimonials").then((m) => m.confirmedIds(users.map((u) => u.id)));
 
   return (
     <div className="space-y-4">
@@ -86,6 +87,7 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
                 {online && <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-panel bg-green-500" />}
               </div>
               <div className="mt-2 max-w-full truncate text-sm"><Nick nick={u.nick} style={styles[u.id]} link={false} />{u.ageVerification === "APPROVED" && <span className="ml-1 text-xs text-gold">✔</span>}</div>
+              {confirmed.has(u.id) && <div title="Confirmado por quem conheceu pessoalmente" className="mt-0.5 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">🤝 Confirmado</div>}
               <div className="text-xs text-mute">{PROFILE_TYPES[u.profileType].label}</div>
               <div className="max-w-full truncate text-xs text-mute">{!u.hideCity && u.city ? `${u.city}/` : ""}{u.state}</div>
               {u.km != null && <div className="mt-1 rounded-full bg-pink-50 px-2 py-0.5 text-[11px] font-semibold text-wine">📍 {distanceLabel(u.km)}</div>}
