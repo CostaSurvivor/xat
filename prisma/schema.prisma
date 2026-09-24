@@ -1,0 +1,722 @@
+// =============================================================================
+// Schema — MySQL/MariaDB (banco gerenciado da Hostinger)
+// - Moeda virtual: Int. Dinheiro real: centavos.
+// - Saldo só muda via src/server/ledger.ts (partidas dobradas, soma zero).
+// - Mídia nunca é pública: servida por /api/media/[id] com checagem de acesso.
+// =============================================================================
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x", "rhel-openssl-3.0.x", "rhel-openssl-1.1.x"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum PlatformRole {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  BANNED
+  DELETED
+}
+
+enum ProfileType {
+  COUPLE_MF
+  COUPLE_MM
+  COUPLE_FF
+  SINGLE_WOMAN
+  SINGLE_MAN
+  TRANS
+  OTHER
+}
+
+enum PmPolicy {
+  EVERYONE
+  FOLLOWING
+  COUPLES
+  NOBODY
+}
+
+enum VerificationStatus {
+  NONE
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum MediaKind {
+  AVATAR
+  POST
+  PRIVATE_ALBUM
+  PM_PHOTO
+  VERIFICATION_SELFIE
+  ROOM_COVER
+}
+
+enum MediaStatus {
+  APPROVED
+  QUARANTINED
+  REMOVED
+}
+
+enum PostVisibility {
+  PUBLIC
+  FOLLOWERS
+}
+
+enum RoomAccess {
+  PUBLIC
+  MEMBERS_ONLY
+  COUPLES_ONLY
+  VERIFIED_ONLY
+}
+
+enum RoomRole {
+  OWNER
+  MODERATOR
+  MEMBER
+}
+
+enum RoomSanctionType {
+  MUTE
+  BAN
+}
+
+enum MessageKind {
+  TEXT
+  SYSTEM
+  GIFT
+  ANNOUNCEMENT
+}
+
+enum ItemCategory {
+  GLOW
+  NICK_COLOR
+  TEXT_COLOR
+  BADGE
+  AVATAR_FRAME
+  ENTRY_EFFECT
+  POWER
+}
+
+enum ItemRarity {
+  COMMON
+  RARE
+  EPIC
+  LEGENDARY
+  LIMITED
+}
+
+enum WalletKind {
+  USER
+  SYSTEM_MINT
+  SYSTEM_SINK
+}
+
+enum LedgerTxType {
+  PURCHASE_CREDIT
+  ITEM_PURCHASE
+  GIFT_COINS
+  GIFT_ITEM
+  ADMIN_ADJUSTMENT
+  REFUND
+}
+
+enum PaymentStatus {
+  PENDING // criado, aguardando o usuário pagar
+  CLAIMED // usuário disse "já paguei"
+  PAID // admin confirmou; moedas creditadas
+  REJECTED
+  EXPIRED
+}
+
+enum ReportTargetType {
+  USER
+  POST
+  COMMENT
+  ROOM_MESSAGE
+  PRIVATE_MESSAGE
+  MEDIA
+  ROOM
+}
+
+enum ReportReason {
+  POSSIBLE_MINOR
+  NON_CONSENSUAL
+  ILLEGAL_CONTENT
+  HARASSMENT
+  FAKE_PROFILE
+  SPAM
+  OTHER
+}
+
+enum ReportStatus {
+  OPEN
+  ESCALATED
+  RESOLVED
+  DISMISSED
+}
+
+enum NotificationKind {
+  FOLLOW
+  POST_REACTION
+  POST_COMMENT
+  MENTION
+  ALBUM_REQUEST
+  ALBUM_GRANTED
+  GIFT
+  COINS_CREDITED
+  VERIFICATION
+  SYSTEM
+}
+
+// -----------------------------------------------------------------------------
+// Usuário + perfil
+// -----------------------------------------------------------------------------
+
+model User {
+  id               String             @id @default(cuid())
+  email            String             @unique
+  passwordHash     String
+  nick             String             @unique @db.VarChar(24)
+  birthDate        DateTime           @db.Date
+  role             PlatformRole       @default(USER)
+  status           UserStatus         @default(ACTIVE)
+  ageVerification  VerificationStatus @default(NONE)
+  ageVerifiedAt    DateTime?
+  // perfil
+  profileType      ProfileType
+  bio              String?            @db.Text
+  city             String?            @db.VarChar(80)
+  state            String?            @db.VarChar(2)
+  hideCity         Boolean            @default(false)
+  hideFromUnverified Boolean          @default(false)
+  likes            Json? // string[]
+  pmPolicy         PmPolicy           @default(EVERYONE)
+  acceptPmPhotos   Boolean            @default(false)
+  avatarId         String?
+  lastSeenAt       DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  persons         ProfilePerson[]
+  sessions        Session[]
+  consents        ConsentRecord[]
+  verifications   VerificationRequest[]
+  media           Media[]
+  posts           Post[]
+  comments        PostComment[]
+  postReactions   PostReaction[]
+  following       Follow[]           @relation("Follower")
+  followers       Follow[]           @relation("Followee")
+  blocking        Block[]            @relation("Blocker")
+  blockedBy       Block[]            @relation("Blocked")
+  roomsOwned      Room[]
+  roomMemberships RoomMember[]
+  messages        Message[]
+  pmSent          PrivateMessage[]
+  wallet          Wallet?
+  inventory       InventoryItem[]
+  payments        Payment[]
+  reportsFiled    Report[]           @relation("Reporter")
+  notifications   Notification[]     @relation("NotifUser")
+  albumOwned      AlbumAccess[]      @relation("AlbumOwner")
+  albumViewing    AlbumAccess[]      @relation("AlbumViewer")
+
+  @@index([state, city])
+  @@index([createdAt])
+}
+
+// 1 pessoa (solteiro) ou 2 (casal). Todas 18+.
+model ProfilePerson {
+  id        String   @id @default(cuid())
+  userId    String
+  label     String   @db.VarChar(20)
+  birthDate DateTime @db.Date
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  ip        String   @db.VarChar(64)
+  userAgent String?  @db.VarChar(255)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model ConsentRecord {
+  id        String   @id @default(cuid())
+  userId    String
+  kind      String   @db.VarChar(32) // TERMS | PRIVACY | SENSITIVE_DATA | AGE_18
+  version   String   @db.VarChar(16)
+  ip        String   @db.VarChar(64)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// Selfie com gesto sorteado, revisada por moderador
+model VerificationRequest {
+  id           String             @id @default(cuid())
+  userId       String
+  gesture      String             @db.VarChar(120)
+  mediaId      String
+  status       VerificationStatus @default(PENDING)
+  reviewerId   String?
+  reviewedAt   DateTime?
+  rejectReason String?            @db.VarChar(255)
+  createdAt    DateTime           @default(now())
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+}
+
+model Follow {
+  followerId String
+  followeeId String
+  createdAt  DateTime @default(now())
+  follower   User     @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followee   User     @relation("Followee", fields: [followeeId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followeeId])
+  @@index([followeeId])
+}
+
+model Block {
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+  blocker   User     @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked   User     @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@id([blockerId, blockedId])
+  @@index([blockedId])
+}
+
+model AlbumAccess {
+  ownerId   String
+  viewerId  String
+  granted   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  owner     User     @relation("AlbumOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  viewer    User     @relation("AlbumViewer", fields: [viewerId], references: [id], onDelete: Cascade)
+
+  @@id([ownerId, viewerId])
+  @@index([viewerId])
+}
+
+// -----------------------------------------------------------------------------
+// Mídia
+// -----------------------------------------------------------------------------
+
+model Media {
+  id          String      @id @default(cuid())
+  ownerId     String
+  kind        MediaKind
+  status      MediaStatus @default(APPROVED)
+  originalKey String      @db.VarChar(255) // nunca servido a terceiros
+  displayKey  String      @db.VarChar(255) // redimensionado + marca d'água
+  blurKey     String      @db.VarChar(255) // prévia borrada
+  width       Int
+  height      Int
+  sha256      String      @db.VarChar(64)
+  createdAt   DateTime    @default(now())
+  owner       User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  postMedia   PostMedia[]
+
+  @@index([ownerId, kind])
+  @@index([sha256])
+}
+
+model MediaHashBlock {
+  sha256    String   @id @db.VarChar(64)
+  reason    String   @db.VarChar(120)
+  createdAt DateTime @default(now())
+}
+
+// -----------------------------------------------------------------------------
+// Feed (estilo Sexlog)
+// -----------------------------------------------------------------------------
+
+model Post {
+  id         String         @id @default(cuid())
+  authorId   String
+  body       String?        @db.Text
+  visibility PostVisibility @default(PUBLIC)
+  createdAt  DateTime       @default(now())
+  deletedAt  DateTime?
+  author     User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  media      PostMedia[]
+  comments   PostComment[]
+  reactions  PostReaction[]
+
+  @@index([createdAt])
+  @@index([authorId, createdAt])
+}
+
+model PostMedia {
+  postId   String
+  mediaId  String
+  position Int
+  post     Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  media    Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@id([postId, mediaId])
+}
+
+model PostReaction {
+  postId    String
+  userId    String
+  emoji     String   @db.VarChar(8)
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([postId, userId])
+}
+
+model PostComment {
+  id        String    @id @default(cuid())
+  postId    String
+  authorId  String
+  body      String    @db.VarChar(1000)
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([postId, createdAt])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  kind      NotificationKind
+  actorId   String?
+  refId     String?
+  text      String           @db.VarChar(255)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+  user      User             @relation("NotifUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+// -----------------------------------------------------------------------------
+// Salas (estilo xat)
+// -----------------------------------------------------------------------------
+
+model Room {
+  id              String     @id @default(cuid())
+  slug            String     @unique @db.VarChar(32)
+  name            String     @db.VarChar(60)
+  description     String?    @db.VarChar(500)
+  rules           String?    @db.Text
+  theme           String     @default("noir") @db.VarChar(20)
+  city            String?    @db.VarChar(80)
+  state           String?    @db.VarChar(2)
+  isOfficial      Boolean    @default(false)
+  ownerId         String?
+  access          RoomAccess @default(PUBLIC)
+  slowModeSeconds Int        @default(0)
+  linksAllowed    Boolean    @default(false)
+  pinnedMessageId BigInt?
+  createdAt       DateTime   @default(now())
+  owner           User?      @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  members         RoomMember[]
+  bannedWords     RoomBannedWord[]
+  sanctions       RoomSanction[]
+  messages        Message[]
+  presence        RoomPresence[]
+
+  @@index([isOfficial])
+}
+
+model RoomMember {
+  roomId   String
+  userId   String
+  role     RoomRole @default(MEMBER)
+  joinedAt DateTime @default(now())
+  room     Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([roomId, userId])
+  @@index([userId])
+}
+
+model RoomBannedWord {
+  roomId String
+  word   String @db.VarChar(60)
+  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@id([roomId, word])
+}
+
+model RoomSanction {
+  id         String           @id @default(cuid())
+  roomId     String
+  userId     String
+  type       RoomSanctionType
+  reason     String?          @db.VarChar(255)
+  issuedById String
+  createdAt  DateTime         @default(now())
+  expiresAt  DateTime?
+  revokedAt  DateTime?
+  room       Room             @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId, userId])
+}
+
+// Presença via heartbeat (substitui Redis no plano sem VPS)
+model RoomPresence {
+  roomId      String
+  userId      String
+  lastSeenAt  DateTime
+  typingUntil DateTime?
+  room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@id([roomId, userId])
+  @@index([roomId, lastSeenAt])
+}
+
+model Message {
+  id        BigInt      @id @default(autoincrement())
+  roomId    String
+  authorId  String?
+  kind      MessageKind @default(TEXT)
+  body      String      @db.VarChar(1000)
+  createdAt DateTime    @default(now())
+  deletedAt DateTime?
+  room      Room        @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  author    User?       @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([roomId, id])
+  @@index([authorId, createdAt])
+}
+
+model Announcement {
+  id        String    @id @default(cuid())
+  body      String    @db.VarChar(500)
+  createdAt DateTime  @default(now())
+  expiresAt DateTime?
+}
+
+// -----------------------------------------------------------------------------
+// PV
+// -----------------------------------------------------------------------------
+
+model Conversation {
+  id            String           @id @default(cuid())
+  userAId       String // menor id do par
+  userBId       String
+  lastMessageAt DateTime         @default(now())
+  lastSenderId  String?
+  aReadAt       DateTime?
+  bReadAt       DateTime?
+  messages      PrivateMessage[]
+
+  @@unique([userAId, userBId])
+  @@index([userBId])
+}
+
+model PrivateMessage {
+  id             BigInt       @id @default(autoincrement())
+  conversationId String
+  senderId       String
+  body           String?      @db.VarChar(2000)
+  mediaId        String?
+  revealedAt     DateTime?
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, id])
+}
+
+// -----------------------------------------------------------------------------
+// Economia
+// -----------------------------------------------------------------------------
+
+model Wallet {
+  id      String        @id @default(cuid())
+  kind    WalletKind    @default(USER)
+  userId  String?       @unique
+  balance Int           @default(0)
+  user    User?         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  entries LedgerEntry[]
+
+  @@index([kind])
+}
+
+model LedgerTransaction {
+  id             String       @id @default(cuid())
+  type           LedgerTxType
+  idempotencyKey String       @unique @db.VarChar(120)
+  note           String?      @db.VarChar(255)
+  actorId        String?
+  createdAt      DateTime     @default(now())
+  entries        LedgerEntry[]
+}
+
+model LedgerEntry {
+  id            String            @id @default(cuid())
+  transactionId String
+  walletId      String
+  amount        Int
+  balanceAfter  Int
+  createdAt     DateTime          @default(now())
+  transaction   LedgerTransaction @relation(fields: [transactionId], references: [id])
+  wallet        Wallet            @relation(fields: [walletId], references: [id])
+
+  @@index([walletId, createdAt])
+}
+
+// config = JSON tipado por categoria, compilado para CSS em src/lib/items.ts
+model Item {
+  id          String       @id @default(cuid())
+  slug        String       @unique @db.VarChar(60)
+  name        String       @db.VarChar(80)
+  description String?      @db.VarChar(255)
+  category    ItemCategory
+  rarity      ItemRarity   @default(COMMON)
+  config      Json
+  powerScore  Int          @default(0)
+  price7      Int? // preço 7 dias
+  price30     Int? // preço 30 dias
+  pricePerm   Int? // preço permanente
+  limitedQty  Int?
+  soldCount   Int          @default(0)
+  active      Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  inventory   InventoryItem[]
+
+  @@index([category, active])
+}
+
+model InventoryItem {
+  id        String    @id @default(cuid())
+  userId    String
+  itemId    String
+  active    Boolean   @default(false)
+  expiresAt DateTime?
+  giftFrom  String?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item      Item      @relation(fields: [itemId], references: [id])
+
+  @@index([userId, active])
+}
+
+model CoinPackage {
+  id         String   @id @default(cuid())
+  name       String   @db.VarChar(60)
+  coins      Int
+  bonusCoins Int      @default(0)
+  priceCents Int
+  active     Boolean  @default(true)
+  sortOrder  Int      @default(0)
+}
+
+// Pagamento manual via Pix: usuário paga no QR da chave, clica "já paguei",
+// admin confere e aprova -> crédito idempotente (payment:<id>).
+model Payment {
+  id          String        @id @default(cuid())
+  userId      String
+  provider    String        @default("pix_manual") @db.VarChar(30)
+  code        String        @unique @db.VarChar(12) // identificador p/ o usuário citar
+  status      PaymentStatus @default(PENDING)
+  amountCents Int
+  coins       Int
+  packageName String        @db.VarChar(60)
+  payerName   String?       @db.VarChar(120)
+  reviewedById String?
+  reviewedAt  DateTime?
+  ledgerTxId  String?       @unique
+  createdAt   DateTime      @default(now())
+  user        User          @relation(fields: [userId], references: [id])
+
+  @@index([status, createdAt])
+  @@index([userId, createdAt])
+}
+
+// -----------------------------------------------------------------------------
+// Denúncias / moderação / legal
+// -----------------------------------------------------------------------------
+
+model Report {
+  id           String           @id @default(cuid())
+  reporterId   String
+  targetType   ReportTargetType
+  targetId     String           @db.VarChar(64)
+  targetUserId String?
+  reason       ReportReason
+  details      String?          @db.VarChar(1000)
+  priority     Int
+  status       ReportStatus     @default(OPEN)
+  evidence     Json?
+  resolution   String?          @db.VarChar(500)
+  resolvedById String?
+  createdAt    DateTime         @default(now())
+  resolvedAt   DateTime?
+  reporter     User             @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([status, priority, createdAt])
+}
+
+model BanFingerprint {
+  id        String    @id @default(cuid())
+  kind      String    @db.VarChar(10) // IP | EMAIL
+  valueHash String    @db.VarChar(64)
+  reason    String?   @db.VarChar(255)
+  createdAt DateTime  @default(now())
+  expiresAt DateTime?
+
+  @@unique([kind, valueHash])
+}
+
+// Marco Civil art. 15 — 6 meses
+model AccessLog {
+  id        BigInt   @id @default(autoincrement())
+  userId    String?
+  event     String   @db.VarChar(32)
+  ip        String   @db.VarChar(64)
+  port      Int?
+  userAgent String?  @db.VarChar(255)
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id         BigInt   @id @default(autoincrement())
+  actorId    String?
+  action     String   @db.VarChar(60)
+  targetType String?  @db.VarChar(30)
+  targetId   String?  @db.VarChar(64)
+  meta       Json?
+  createdAt  DateTime @default(now())
+
+  @@index([actorId, createdAt])
+}
+
+model PlatformSetting {
+  key   String @id @db.VarChar(60)
+  value Json
+}

@@ -1,0 +1,135 @@
+import Link from "next/link";
+import { db } from "@/lib/db";
+import { LIKE_TAGS, UFS } from "@/lib/config";
+import { isVerified, requireUser } from "@/server/auth";
+import { deleteMedia, setAlbumAccess, updateProfile, uploadPhoto } from "@/app/actions/profile";
+import { logout } from "@/app/actions/auth";
+import { ActionForm, AutoSubmitFile } from "@/components/Forms";
+import { Avatar } from "@/components/Avatar";
+import { ProtectedImage } from "@/components/ProtectedImage";
+
+export const metadata = { title: "Meu perfil" };
+
+export default async function MeuPerfil() {
+  const user = await requireUser();
+  const verified = isVerified(user);
+  const [album, requests] = await Promise.all([
+    db.media.findMany({ where: { ownerId: user.id, kind: "PRIVATE_ALBUM", status: "APPROVED" }, orderBy: { createdAt: "desc" } }),
+    db.albumAccess.findMany({ where: { ownerId: user.id }, include: { viewer: { select: { id: true, nick: true } } }, orderBy: { createdAt: "desc" } }),
+  ]);
+  const likes = (user.likes as string[] | null) ?? [];
+
+  return (
+    <div className="mx-auto max-w-2xl space-y-4">
+      <div className="flex items-center gap-3">
+        <h1 className="mr-auto font-[family-name:var(--font-display)] text-2xl font-bold">Meu perfil</h1>
+        <Link href={`/u/${user.nick}`} className="btn-ghost">Ver como os outros veem</Link>
+        <form action={logout}><button className="btn-ghost">Sair</button></form>
+      </div>
+
+      <section className="card flex items-center gap-4 p-5">
+        <Avatar mediaId={user.avatarId} nick={user.nick} size={72} />
+        {verified ? (
+          <ActionForm action={uploadPhoto} okText="Foto atualizada!">
+            <input type="hidden" name="kind" value="AVATAR" />
+            <AutoSubmitFile name="photo" label="📷 Trocar foto de perfil" />
+          </ActionForm>
+        ) : (
+          <Link href="/verificacao" className="text-sm text-gold underline">Verifique-se para colocar foto</Link>
+        )}
+      </section>
+
+      <section className="card p-5">
+        <ActionForm action={updateProfile} className="space-y-4">
+          <div>
+            <label className="label">Sobre vocês</label>
+            <textarea name="bio" maxLength={1500} defaultValue={user.bio ?? ""} className="input h-28" placeholder="Casal liberal de SP, curtimos…" />
+          </div>
+          <div className="grid grid-cols-[80px_1fr] gap-2">
+            <div>
+              <label className="label">UF</label>
+              <select name="state" defaultValue={user.state ?? "SP"} className="input">{UFS.map((u) => <option key={u}>{u}</option>)}</select>
+            </div>
+            <div>
+              <label className="label">Cidade</label>
+              <input name="city" defaultValue={user.city ?? ""} className="input" />
+            </div>
+          </div>
+          <div>
+            <span className="label">O que curtem</span>
+            <div className="flex flex-wrap gap-1.5">
+              {LIKE_TAGS.map((t) => (
+                <label key={t} className="cursor-pointer">
+                  <input type="checkbox" name="likes" value={t} defaultChecked={likes.includes(t)} className="peer sr-only" />
+                  <span className="inline-block rounded-full border border-line px-2.5 py-1 text-xs text-mute peer-checked:border-gold peer-checked:bg-wine/40 peer-checked:text-white">{t}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="label">Quem pode me chamar no PV</label>
+            <select name="pmPolicy" defaultValue={user.pmPolicy} className="input">
+              <option value="EVERYONE">Todos</option>
+              <option value="FOLLOWING">Só quem eu sigo</option>
+              <option value="COUPLES">Só casais</option>
+              <option value="NOBODY">Ninguém</option>
+            </select>
+          </div>
+          <div className="space-y-2 text-sm text-mute">
+            <label className="flex gap-2"><input type="checkbox" name="acceptPmPhotos" defaultChecked={user.acceptPmPhotos} /> Aceito receber fotos no PV (chegam borradas até eu abrir)</label>
+            <label className="flex gap-2"><input type="checkbox" name="hideCity" defaultChecked={user.hideCity} /> Esconder minha cidade</label>
+            <label className="flex gap-2"><input type="checkbox" name="hideFromUnverified" defaultChecked={user.hideFromUnverified} /> Esconder meu perfil e fotos de quem não é verificado</label>
+          </div>
+          <button className="btn-gold">Salvar</button>
+        </ActionForm>
+      </section>
+
+      <section className="card space-y-3 p-5">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-gold">🔒 Álbum privado</h2>
+          {verified && (
+            <ActionForm action={uploadPhoto} okText="Foto adicionada!">
+              <input type="hidden" name="kind" value="PRIVATE_ALBUM" />
+              <AutoSubmitFile name="photo" label="+ Adicionar foto" />
+            </ActionForm>
+          )}
+        </div>
+        <p className="text-xs text-mute">Só quem vocês liberarem vê essas fotos. Os demais veem apenas versões borradas.</p>
+        <div className="grid grid-cols-3 gap-1.5">
+          {album.map((m) => (
+            <div key={m.id} className="relative">
+              <ProtectedImage id={m.id} className="aspect-square rounded-lg" />
+              <form action={deleteMedia.bind(null, m.id)} className="absolute right-1 top-1"><button className="rounded-full bg-black/70 px-2 text-xs">✕</button></form>
+            </div>
+          ))}
+        </div>
+        {requests.length > 0 && (
+          <div className="border-t border-line pt-3">
+            <h3 className="mb-2 text-sm font-semibold">Pedidos de acesso</h3>
+            <ul className="space-y-1.5">
+              {requests.map((r) => (
+                <li key={r.viewerId} className="flex items-center gap-2 text-sm">
+                  <Link href={`/u/${r.viewer.nick}`} className="mr-auto">@{r.viewer.nick}</Link>
+                  {r.granted ? (
+                    <form action={setAlbumAccess.bind(null, r.viewerId, false)}><button className="btn-ghost py-1 text-xs">Revogar</button></form>
+                  ) : (
+                    <form action={setAlbumAccess.bind(null, r.viewerId, true)}><button className="btn-gold py-1 text-xs">Liberar</button></form>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </section>
+
+      <section className="card p-5 text-sm">
+        <h2 className="mb-2 font-semibold text-gold">Conta e privacidade</h2>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/loja/inventario" className="btn-ghost">🎒 Meus itens</Link>
+          <Link href="/carteira" className="btn-ghost">🌶️ Carteira</Link>
+          <Link href="/conta" className="btn-ghost">🛡️ Meus dados (LGPD)</Link>
+        </div>
+      </section>
+    </div>
+  );
+}

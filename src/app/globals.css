@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #0b0708;
+  --color-panel: #161012;
+  --color-panel2: #1f1518;
+  --color-line: #2e2025;
+  --color-wine: #7a1330;
+  --color-wine2: #a01c43;
+  --color-gold: #d4af37;
+  --color-gold2: #f1d77a;
+  --color-mute: #a8979c;
+  --font-display: "Playfair Display", Georgia, serif;
+}
+
+html, body { background: var(--color-ink); color: #f4ecee; }
+body { min-height: 100dvh; -webkit-tap-highlight-color: transparent; }
+::selection { background: var(--color-wine2); color: white; }
+
+@utility btn { @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition disabled:opacity-50; }
+@utility btn-gold { @apply btn bg-gold text-ink hover:bg-gold2; }
+@utility btn-wine { @apply btn bg-wine text-white hover:bg-wine2; }
+@utility btn-ghost { @apply btn border border-line text-mute hover:text-white hover:border-gold/60; }
+@utility card { @apply rounded-2xl border border-line bg-panel; }
+@utility input { @apply w-full rounded-xl border border-line bg-panel2 px-3 py-2 text-sm outline-none focus:border-gold/70 placeholder:text-mute/60; }
+@utility label { @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-mute; }
+.gold-text { background: linear-gradient(90deg, #b8871b, #f1d77a, #b8871b); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* Animações de itens (lista fixa, referenciada por nome) */
+@keyframes fx-pulse { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.6); } }
+@keyframes fx-rainbow { from { filter: hue-rotate(0deg); } to { filter: hue-rotate(360deg); } }
+@keyframes fx-shift { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+@keyframes fx-flicker { 0%,19%,21%,23%,25%,54%,56%,100% { opacity: 1; } 20%,24%,55% { opacity: .55; } }
+.fx-pulse { animation: fx-pulse 1.6s ease-in-out infinite; }
+.fx-rainbow { animation: fx-rainbow 3s linear infinite; }
+.fx-shift { background-size: 200% auto !important; animation: fx-shift 3s linear infinite; }
+.fx-flicker { animation: fx-flicker 2.5s linear infinite; }
+
+@keyframes entry-pop { 0% { transform: scale(.6); opacity: 0; } 60% { transform: scale(1.05); opacity: 1; } 100% { transform: scale(1); } }
+.entry-pop { animation: entry-pop .6s ease-out; }
+
+.protected-img { -webkit-user-drag: none; user-select: none; -webkit-touch-callout: none; }

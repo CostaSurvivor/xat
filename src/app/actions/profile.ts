@@ -1,0 +1,149 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { z } from "zod";
+import { db } from "@/lib/db";
+import { LIKE_TAGS, UFS } from "@/lib/config";
+import { limiter } from "@/lib/ratelimit";
+import { isVerified, requireUser } from "@/server/auth";
+import { MediaError, processUpload } from "@/server/media";
+import { notify } from "@/server/notify";
+
+type R = { ok?: boolean; error?: string } | undefined;
+
+const profileSchema = z.object({
+  bio: z.string().max(1500).optional(),
+  city: z.string().trim().max(80).optional(),
+  state: z.enum(UFS as [string, ...string[]]),
+  pmPolicy: z.enum(["EVERYONE", "FOLLOWING", "COUPLES", "NOBODY"]),
+});
+
+export async function updateProfile(_: R, formData: FormData): Promise<R> {
+  const user = await requireUser();
+  const p = profileSchema.safeParse(Object.fromEntries(formData));
+  if (!p.success) return { error: p.error.issues[0].message };
+  const likes = formData.getAll("likes").map(String).filter((t) => LIKE_TAGS.includes(t));
+  await db.user.update({
+    where: { id: user.id },
+    data: {
+      bio: p.data.bio?.trim() || null,
+      city: p.data.city || null,
+      state: p.data.state,
+      pmPolicy: p.data.pmPolicy,
+      likes,
+      hideCity: formData.get("hideCity") === "on",
+      hideFromUnverified: formData.get("hideFromUnverified") === "on",
+      acceptPmPhotos: formData.get("acceptPmPhotos") === "on",
+    },
+  });
+  revalidatePath("/perfil");
+  return { ok: true };
+}
+
+export async function uploadPhoto(_: R, formData: FormData): Promise<R> {
+  const user = await requireUser();
+  if (!isVerified(user)) return { error: "Verifique seu perfil para enviar fotos." };
+  if (!limiter("photo", 30, 30 / 3600).take(user.id)) return { error: "Muitas fotos em pouco tempo." };
+  const kind = String(formData.get("kind"));
+  const file = formData.get("photo");
+  if (!(file instanceof File)) return { error: "Escolha uma foto" };
+  if (!["AVATAR", "PRIVATE_ALBUM"].includes(kind)) return { error: "Tipo inválido" };
+  if (kind === "PRIVATE_ALBUM" && (await db.media.count({ where: { ownerId: user.id, kind: "PRIVATE_ALBUM", status: "APPROVED" } })) >= 30)
+    return { error: "Álbum privado cheio (máx. 30)." };
+  try {
+    const m = await processUpload({ file, ownerId: user.id, ownerNick: user.nick, kind: kind as "AVATAR" | "PRIVATE_ALBUM" });
+    if (kind === "AVATAR") await db.user.update({ where: { id: user.id }, data: { avatarId: m.id } });
+  } catch (e) {
+    return { error: e instanceof MediaError ? e.message : "Falha ao processar a foto" };
+  }
+  revalidatePath("/perfil");
+  return { ok: true };
+}
+
+export async function deleteMedia(mediaId: string) {
+  const user = await requireUser();
+  const m = await db.media.findUnique({ where: { id: mediaId } });
+  if (!m || m.ownerId !== user.id) return;
+  await db.media.update({ where: { id: mediaId }, data: { status: "REMOVED" } });
+  if (user.avatarId === mediaId) await db.user.update({ where: { id: user.id }, data: { avatarId: null } });
+  revalidatePath("/perfil");
+}
+
+export async function toggleFollow(targetId: string) {
+  const user = await requireUser();
+  if (targetId === user.id) return;
+  const key = { followerId_followeeId: { followerId: user.id, followeeId: targetId } };
+  if (await db.follow.findUnique({ where: key })) await db.follow.delete({ where: key });
+  else {
+    await db.follow.create({ data: { followerId: user.id, followeeId: targetId } });
+    await notify(targetId, "FOLLOW", `@${user.nick} começou a seguir vocês`, user.id);
+  }
+  revalidatePath("/u/[nick]", "page");
+}
+
+export async function toggleBlock(targetId: string) {
+  const user = await requireUser();
+  if (targetId === user.id) return;
+  const key = { blockerId_blockedId: { blockerId: user.id, blockedId: targetId } };
+  if (await db.block.findUnique({ where: key })) await db.block.delete({ where: key });
+  else {
+    await db.block.create({ data: { blockerId: user.id, blockedId: targetId } });
+    await db.follow.deleteMany({ where: { OR: [{ followerId: user.id, followeeId: targetId }, { followerId: targetId, followeeId: user.id }] } });
+  }
+  revalidatePath("/u/[nick]", "page");
+}
+
+export async function requestAlbum(ownerId: string) {
+  const user = await requireUser();
+  if (ownerId === user.id) return;
+  const exists = await db.albumAccess.findUnique({ where: { ownerId_viewerId: { ownerId, viewerId: user.id } } });
+  if (exists) return;
+  await db.albumAccess.create({ data: { ownerId, viewerId: user.id } });
+  await notify(ownerId, "ALBUM_REQUEST", `@${user.nick} pediu para ver seu álbum privado`, user.id, user.id);
+  revalidatePath("/u/[nick]", "page");
+}
+
+export async function setAlbumAccess(viewerId: string, granted: boolean) {
+  const user = await requireUser();
+  await db.albumAccess.upsert({
+    where: { ownerId_viewerId: { ownerId: user.id, viewerId } },
+    create: { ownerId: user.id, viewerId, granted },
+    update: { granted },
+  });
+  if (granted) await notify(viewerId, "ALBUM_GRANTED", `@${user.nick} liberou o álbum privado para vocês 🔓`, user.id);
+  revalidatePath("/perfil");
+  revalidatePath("/notificacoes");
+}
+
+const GESTURES = [
+  "mão aberta ao lado do rosto",
+  "sinal de paz (✌️) com a mão esquerda",
+  "polegar para cima perto do queixo",
+  "três dedos levantados",
+  "mão no topo da cabeça",
+  "apontando para a câmera",
+  "sinal de OK (👌)",
+];
+
+export async function randomGesture() {
+  return GESTURES[Math.floor(Math.random() * GESTURES.length)];
+}
+
+export async function submitVerification(_: R, formData: FormData): Promise<R> {
+  const user = await requireUser();
+  if (user.ageVerification === "APPROVED") return { ok: true };
+  if (!limiter("verif", 3, 3 / 86400).take(user.id)) return { error: "Limite de envios atingido. Tente amanhã." };
+  const gesture = String(formData.get("gesture") || "");
+  if (!GESTURES.includes(gesture)) return { error: "Gesto inválido, recarregue a página." };
+  const file = formData.get("selfie");
+  if (!(file instanceof File) || !file.size) return { error: "Envie a selfie" };
+  try {
+    const m = await processUpload({ file, ownerId: user.id, ownerNick: user.nick, kind: "VERIFICATION_SELFIE", watermark: false });
+    await db.verificationRequest.create({ data: { userId: user.id, gesture, mediaId: m.id } });
+    await db.user.update({ where: { id: user.id }, data: { ageVerification: "PENDING" } });
+  } catch (e) {
+    return { error: e instanceof MediaError ? e.message : "Falha ao processar a foto" };
+  }
+  redirect("/verificacao");
+}
