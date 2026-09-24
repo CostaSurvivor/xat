@@ -60,3 +60,12 @@ body { min-height: 100dvh; -webkit-tap-highlight-color: transparent; }
 /* neon estilo xat: respira e dá leves “falhas” de lâmpada */
 @keyframes fx-neon { 0%, 100% { filter: brightness(1.15) saturate(1.2); } 45% { filter: brightness(1.45) saturate(1.4); } 47% { filter: brightness(.85); } 49% { filter: brightness(1.4); } }
 .fx-neon { animation: fx-neon 2.4s ease-in-out infinite; }
+
+/* Ao vivo */
+@keyframes live-blink { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+.live-dot { animation: live-blink 1.4s ease-in-out infinite; }
+@keyframes tip-float { 0% { transform: translateY(20px) scale(.7); opacity: 0; } 15% { transform: translateY(0) scale(1.08); opacity: 1; } 25% { transform: scale(1); } 80% { opacity: 1; } 100% { transform: translateY(-40px); opacity: 0; } }
+.tip-float { animation: tip-float 4.2s ease-out forwards; }
+/* marca d'água que passeia pelo vídeo */
+@keyframes live-wm { 0% { left: 6%; top: 12%; } 25% { left: 55%; top: 30%; } 50% { left: 20%; top: 70%; } 75% { left: 60%; top: 80%; } 100% { left: 6%; top: 12%; } }
+.live-wm { animation: live-wm 40s linear infinite; transform: rotate(-12deg); text-shadow: 0 0 3px rgba(0,0,0,.6); }

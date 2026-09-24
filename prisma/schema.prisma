@@ -127,6 +127,7 @@ enum WalletKind {
 }
 
 enum LedgerTxType {
+  TIP
   TRADE
   PURCHASE_CREDIT
   VIP_BONUS
@@ -153,6 +154,7 @@ enum ReportTargetType {
   PRIVATE_MESSAGE
   MEDIA
   ROOM
+  LIVE
 }
 
 enum ReportReason {
@@ -173,6 +175,7 @@ enum ReportStatus {
 }
 
 enum NotificationKind {
+  LIVE
   TRADE
   TICKET
   FOLLOW
@@ -196,34 +199,34 @@ enum NotificationKind {
 // -----------------------------------------------------------------------------
 
 model User {
-  id               String             @id @default(cuid())
-  email            String             @unique
-  passwordHash     String
-  nick             String             @unique @db.VarChar(24)
-  birthDate        DateTime           @db.Date
-  role             PlatformRole       @default(USER)
-  status           UserStatus         @default(ACTIVE)
-  ageVerification  VerificationStatus @default(NONE)
-  ageVerifiedAt    DateTime?
+  id                 String             @id @default(cuid())
+  email              String             @unique
+  passwordHash       String
+  nick               String             @unique @db.VarChar(24)
+  birthDate          DateTime           @db.Date
+  role               PlatformRole       @default(USER)
+  status             UserStatus         @default(ACTIVE)
+  ageVerification    VerificationStatus @default(NONE)
+  ageVerifiedAt      DateTime?
   // perfil
-  profileType      ProfileType
-  bio              String?            @db.Text
-  statusText       String?            @db.VarChar(60) // frase curta sob o nick no chat (estilo xat)
-  city             String?            @db.VarChar(80)
-  state            String?            @db.VarChar(2)
-  hideCity         Boolean            @default(false)
-  hideFromUnverified Boolean          @default(false)
-  likes            Json? // string[]
-  pmPolicy         PmPolicy           @default(FRIENDS) // amizade libera o PV
-  acceptPmPhotos   Boolean            @default(false)
-  albumVisibility  String             @default("FRIENDS") @db.VarChar(10) // PRIVATE | FRIENDS | FOLLOWERS
-  avatarId         String?
-  vipUntil         DateTime? // assinante até (cache de Subscription)
-  twoFactorSecret  String?   @db.VarChar(64) // TOTP (base32); ativo quando twoFactorEnabled
-  twoFactorEnabled Boolean   @default(false)
-  lastSeenAt       DateTime?
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
+  profileType        ProfileType
+  bio                String?            @db.Text
+  statusText         String?            @db.VarChar(60) // frase curta sob o nick no chat (estilo xat)
+  city               String?            @db.VarChar(80)
+  state              String?            @db.VarChar(2)
+  hideCity           Boolean            @default(false)
+  hideFromUnverified Boolean            @default(false)
+  likes              Json? // string[]
+  pmPolicy           PmPolicy           @default(FRIENDS) // amizade libera o PV
+  acceptPmPhotos     Boolean            @default(false)
+  albumVisibility    String             @default("FRIENDS") @db.VarChar(10) // PRIVATE | FRIENDS | FOLLOWERS
+  avatarId           String?
+  vipUntil           DateTime? // assinante até (cache de Subscription)
+  twoFactorSecret    String?            @db.VarChar(64) // TOTP (base32); ativo quando twoFactorEnabled
+  twoFactorEnabled   Boolean            @default(false)
+  lastSeenAt         DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 
   persons         ProfilePerson[]
   sessions        Session[]
@@ -233,10 +236,10 @@ model User {
   posts           Post[]
   comments        PostComment[]
   postReactions   PostReaction[]
-  following       Follow[]           @relation("Follower")
-  followers       Follow[]           @relation("Followee")
-  blocking        Block[]            @relation("Blocker")
-  blockedBy       Block[]            @relation("Blocked")
+  following       Follow[]              @relation("Follower")
+  followers       Follow[]              @relation("Followee")
+  blocking        Block[]               @relation("Blocker")
+  blockedBy       Block[]               @relation("Blocked")
   roomsOwned      Room[]
   roomMemberships RoomMember[]
   messages        Message[]
@@ -245,13 +248,15 @@ model User {
   inventory       InventoryItem[]
   payments        Payment[]
   subscriptions   Subscription[]
-  reportsFiled    Report[]           @relation("Reporter")
-  notifications   Notification[]     @relation("NotifUser")
-  albumOwned      AlbumAccess[]      @relation("AlbumOwner")
-  friendsSent     Friendship[]       @relation("FriendRequester")
+  reportsFiled    Report[]              @relation("Reporter")
+  notifications   Notification[]        @relation("NotifUser")
+  albumOwned      AlbumAccess[]         @relation("AlbumOwner")
+  friendsSent     Friendship[]          @relation("FriendRequester")
   tickets         Ticket[]
-  friendsReceived Friendship[]       @relation("FriendAddressee")
-  albumViewing    AlbumAccess[]      @relation("AlbumViewer")
+  friendsReceived Friendship[]          @relation("FriendAddressee")
+  albumViewing    AlbumAccess[]         @relation("AlbumViewer")
+  liveStreams     LiveStream[]
+  liveMessages    LiveMessage[]
 
   @@index([state, city])
   @@index([createdAt])
@@ -273,7 +278,7 @@ model ProfilePerson {
   tattoos     String?  @db.VarChar(30)
   smoker      String?  @db.VarChar(30)
   drinks      String?  @db.VarChar(30)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
@@ -437,15 +442,15 @@ model PostReaction {
 }
 
 model PostComment {
-  id        String    @id @default(cuid())
+  id        String            @id @default(cuid())
   postId    String
   authorId  String
   parentId  String? // resposta a outro comentário (1 nível)
-  body      String    @db.VarChar(1000)
-  createdAt DateTime  @default(now())
+  body      String            @db.VarChar(1000)
+  createdAt DateTime          @default(now())
   deletedAt DateTime?
-  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  post      Post              @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author    User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
   reactions CommentReaction[]
 
   @@index([postId, createdAt])
@@ -466,11 +471,11 @@ model CommentReaction {
 model Friendship {
   requesterId String
   addresseeId String
-  status      String   @default("PENDING") @db.VarChar(10) // PENDING | ACCEPTED
-  createdAt   DateTime @default(now())
+  status      String    @default("PENDING") @db.VarChar(10) // PENDING | ACCEPTED
+  createdAt   DateTime  @default(now())
   acceptedAt  DateTime?
-  requester   User     @relation("FriendRequester", fields: [requesterId], references: [id], onDelete: Cascade)
-  addressee   User     @relation("FriendAddressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+  requester   User      @relation("FriendRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  addressee   User      @relation("FriendAddressee", fields: [addresseeId], references: [id], onDelete: Cascade)
 
   @@id([requesterId, addresseeId])
   @@index([addresseeId, status])
@@ -495,24 +500,24 @@ model Notification {
 // -----------------------------------------------------------------------------
 
 model Room {
-  id              String     @id @default(cuid())
-  slug            String     @unique @db.VarChar(32)
-  name            String     @db.VarChar(60)
-  description     String?    @db.VarChar(500)
-  rules           String?    @db.Text
-  theme           String     @default("noir") @db.VarChar(20)
-  city            String?    @db.VarChar(80)
-  state           String?    @db.VarChar(2)
-  isOfficial      Boolean    @default(false)
+  id              String           @id @default(cuid())
+  slug            String           @unique @db.VarChar(32)
+  name            String           @db.VarChar(60)
+  description     String?          @db.VarChar(500)
+  rules           String?          @db.Text
+  theme           String           @default("noir") @db.VarChar(20)
+  city            String?          @db.VarChar(80)
+  state           String?          @db.VarChar(2)
+  isOfficial      Boolean          @default(false)
   ownerId         String?
-  access          RoomAccess @default(PUBLIC)
-  slowModeSeconds Int        @default(0)
-  linksAllowed    Boolean    @default(false)
-  mediaPolicy     String     @default("NOBODY") @db.VarChar(10) // chat das salas é só texto (fotos ficam no feed/perfil)
+  access          RoomAccess       @default(PUBLIC)
+  slowModeSeconds Int              @default(0)
+  linksAllowed    Boolean          @default(false)
+  mediaPolicy     String           @default("NOBODY") @db.VarChar(10) // chat das salas é só texto (fotos ficam no feed/perfil)
   bgMediaId       String? // foto de fundo/capa enviada pelo dono
   pinnedMessageId BigInt?
-  createdAt       DateTime   @default(now())
-  owner           User?      @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  createdAt       DateTime         @default(now())
+  owner           User?            @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   members         RoomMember[]
   bannedWords     RoomBannedWord[]
   sanctions       RoomSanction[]
@@ -563,23 +568,23 @@ model RoomPresence {
   userId      String
   lastSeenAt  DateTime
   typingUntil DateTime?
-  room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  room        Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
   @@id([roomId, userId])
   @@index([roomId, lastSeenAt])
 }
 
 model Message {
-  id        BigInt      @id @default(autoincrement())
+  id        BigInt            @id @default(autoincrement())
   roomId    String
   authorId  String?
-  kind      MessageKind @default(TEXT)
-  body      String      @db.VarChar(1000)
+  kind      MessageKind       @default(TEXT)
+  body      String            @db.VarChar(1000)
   mediaId   String? // legado: o chat é só texto
-  createdAt DateTime    @default(now())
+  createdAt DateTime          @default(now())
   deletedAt DateTime?
-  room      Room        @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  author    User?       @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  room      Room              @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  author    User?             @relation(fields: [authorId], references: [id], onDelete: SetNull)
   reactions MessageReaction[]
 
   @@index([roomId, id])
@@ -651,12 +656,12 @@ model Wallet {
 }
 
 model LedgerTransaction {
-  id             String       @id @default(cuid())
+  id             String        @id @default(cuid())
   type           LedgerTxType
-  idempotencyKey String       @unique @db.VarChar(120)
-  note           String?      @db.VarChar(255)
+  idempotencyKey String        @unique @db.VarChar(120)
+  note           String?       @db.VarChar(255)
   actorId        String?
-  createdAt      DateTime     @default(now())
+  createdAt      DateTime      @default(now())
   entries        LedgerEntry[]
 }
 
@@ -675,21 +680,21 @@ model LedgerEntry {
 
 // config = JSON tipado por categoria, compilado para CSS em src/lib/items.ts
 model Item {
-  id          String       @id @default(cuid())
-  slug        String       @unique @db.VarChar(60)
-  name        String       @db.VarChar(80)
-  description String?      @db.VarChar(255)
+  id          String          @id @default(cuid())
+  slug        String          @unique @db.VarChar(60)
+  name        String          @db.VarChar(80)
+  description String?         @db.VarChar(255)
   category    ItemCategory
-  rarity      ItemRarity   @default(COMMON)
+  rarity      ItemRarity      @default(COMMON)
   config      Json
-  powerScore  Int          @default(0)
+  powerScore  Int             @default(0)
   price7      Int? // preço 7 dias
   price30     Int? // preço 30 dias
   pricePerm   Int? // preço permanente
   limitedQty  Int?
-  soldCount   Int          @default(0)
-  active      Boolean      @default(true)
-  createdAt   DateTime     @default(now())
+  soldCount   Int             @default(0)
+  active      Boolean         @default(true)
+  createdAt   DateTime        @default(now())
   inventory   InventoryItem[]
 
   @@index([category, active])
@@ -710,37 +715,37 @@ model InventoryItem {
 }
 
 model CoinPackage {
-  id         String   @id @default(cuid())
-  name       String   @db.VarChar(60)
+  id         String  @id @default(cuid())
+  name       String  @db.VarChar(60)
   coins      Int
-  bonusCoins Int      @default(0)
+  bonusCoins Int     @default(0)
   priceCents Int
-  active     Boolean  @default(true)
-  sortOrder  Int      @default(0)
+  active     Boolean @default(true)
+  sortOrder  Int     @default(0)
 }
 
 // Pagamento manual via Pix: usuário paga no QR da chave, clica "já paguei",
 // admin confere e aprova -> crédito idempotente (payment:<id>).
 model Payment {
-  id          String        @id @default(cuid())
-  userId      String
-  kind        String        @default("COINS") @db.VarChar(10) // COINS | VIP
-  vipDays     Int?
-  provider    String        @default("pix_manual") @db.VarChar(30)
-  code        String        @unique @db.VarChar(12) // identificador p/ o usuário citar
-  providerRef String?       @db.VarChar(120) // id da cobrança no gateway (quando não é Pix manual)
-  chargeData  String?       @db.Text // copia-e-cola ou URL devolvidos pelo gateway (criados 1x)
-  status      PaymentStatus @default(PENDING)
-  amountCents Int
-  coins       Int
-  packageName String        @db.VarChar(60)
-  couponCode  String?       @db.VarChar(30)
-  payerName   String?       @db.VarChar(120)
+  id           String        @id @default(cuid())
+  userId       String
+  kind         String        @default("COINS") @db.VarChar(10) // COINS | VIP
+  vipDays      Int?
+  provider     String        @default("pix_manual") @db.VarChar(30)
+  code         String        @unique @db.VarChar(12) // identificador p/ o usuário citar
+  providerRef  String?       @db.VarChar(120) // id da cobrança no gateway (quando não é Pix manual)
+  chargeData   String?       @db.Text // copia-e-cola ou URL devolvidos pelo gateway (criados 1x)
+  status       PaymentStatus @default(PENDING)
+  amountCents  Int
+  coins        Int
+  packageName  String        @db.VarChar(60)
+  couponCode   String?       @db.VarChar(30)
+  payerName    String?       @db.VarChar(120)
   reviewedById String?
-  reviewedAt  DateTime?
-  ledgerTxId  String?       @unique
-  createdAt   DateTime      @default(now())
-  user        User          @relation(fields: [userId], references: [id])
+  reviewedAt   DateTime?
+  ledgerTxId   String?       @unique
+  createdAt    DateTime      @default(now())
+  user         User          @relation(fields: [userId], references: [id])
 
   @@index([status, createdAt])
   @@index([userId, createdAt])
@@ -927,4 +932,97 @@ model TradeItem {
 model PlatformSetting {
   key   String @id @db.VarChar(60)
   value Json
+}
+
+// -----------------------------------------------------------------------------
+// Ao vivo: vídeo WebRTC direto do navegador de quem transmite para cada
+// espectador (sinalização por polling nesta tabela), chat e gorjetas.
+// -----------------------------------------------------------------------------
+
+enum LiveStatus {
+  LIVE
+  ENDED
+}
+
+enum LiveMessageKind {
+  TEXT
+  TIP
+  SYSTEM
+}
+
+model LiveStream {
+  id          String        @id @default(cuid())
+  hostId      String
+  title       String        @db.VarChar(80)
+  audience    String        @default("ALL") @db.VarChar(10) // ALL | VIP (só assinantes assistem)
+  tipGoal     Int?
+  goalLabel   String?       @db.VarChar(60)
+  tipTotal    Int           @default(0)
+  peakViewers Int           @default(0)
+  status      LiveStatus    @default(LIVE)
+  startedAt   DateTime      @default(now())
+  lastBeatAt  DateTime      @default(now()) // heartbeat de quem transmite
+  endedAt     DateTime?
+  endReason   String?       @db.VarChar(120)
+  host        User          @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  viewers     LiveViewer[]
+  messages    LiveMessage[]
+  signals     LiveSignal[]
+  bans        LiveBan[]
+
+  @@index([status, startedAt])
+  @@index([hostId, status])
+}
+
+model LiveViewer {
+  streamId   String
+  userId     String
+  joinedAt   DateTime   @default(now())
+  lastSeenAt DateTime   @default(now())
+  tipped     Int        @default(0)
+  stream     LiveStream @relation(fields: [streamId], references: [id], onDelete: Cascade)
+
+  @@id([streamId, userId])
+  @@index([streamId, lastSeenAt])
+}
+
+model LiveMessage {
+  id        BigInt          @id @default(autoincrement())
+  streamId  String
+  authorId  String?
+  kind      LiveMessageKind @default(TEXT)
+  body      String          @db.VarChar(500)
+  amount    Int?
+  createdAt DateTime        @default(now())
+  deletedAt DateTime?
+  stream    LiveStream      @relation(fields: [streamId], references: [id], onDelete: Cascade)
+  author    User?           @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([streamId, id])
+  @@index([authorId, createdAt])
+}
+
+/// Mensagens de sinalização WebRTC (offer/answer/hello/bye/full). Apagadas após poucos minutos.
+model LiveSignal {
+  id        BigInt     @id @default(autoincrement())
+  streamId  String
+  fromId    String
+  toId      String
+  kind      String     @db.VarChar(10)
+  payload   String?    @db.MediumText
+  createdAt DateTime   @default(now())
+  stream    LiveStream @relation(fields: [streamId], references: [id], onDelete: Cascade)
+
+  @@index([streamId, toId, id])
+  @@index([createdAt])
+}
+
+/// Espectador removido pela pessoa que transmite (ou pela moderação).
+model LiveBan {
+  streamId  String
+  userId    String
+  createdAt DateTime   @default(now())
+  stream    LiveStream @relation(fields: [streamId], references: [id], onDelete: Cascade)
+
+  @@id([streamId, userId])
 }
