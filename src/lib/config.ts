@@ -43,3 +43,22 @@ export const RESERVED_SLUGS = new Set([
 ]);
 
 export const REACTIONS = ["🔥", "❤️", "😈", "👏", "😍"] as const;
+
+/** Características opcionais de cada pessoa do perfil (sobre ela / sobre ele). */
+export const PERSON_FIELDS = {
+  orientation: { label: "Orientação", options: ["Hétero", "Bi", "Bi-curioso(a)", "Gay", "Lésbica", "Pan"] },
+  body: { label: "Corpo", options: ["Magro(a)", "Atlético(a)", "Normal", "Com curvas", "Gordinho(a)", "Plus size", "Musculoso(a)"] },
+  skin: { label: "Pele", options: ["Branca", "Morena", "Parda", "Negra", "Amarela", "Indígena"] },
+  hair: { label: "Cabelo", options: ["Loiro", "Castanho", "Preto", "Ruivo", "Grisalho", "Colorido", "Careca/raspado"] },
+  eyes: { label: "Olhos", options: ["Castanhos", "Pretos", "Verdes", "Azuis", "Mel"] },
+  tattoos: { label: "Tatuagens", options: ["Não", "Poucas", "Várias"] },
+  smoker: { label: "Fuma", options: ["Não", "Socialmente", "Sim"] },
+  drinks: { label: "Bebe", options: ["Não", "Socialmente", "Sim"] },
+} as const;
+export type PersonFieldKey = keyof typeof PERSON_FIELDS;
+
+/** "36 anos" para solteiros; "Ele 34 · Ela 32" para casais. */
+export function agesLabel(persons: { label: string; age: number }[]) {
+  if (persons.length === 1) return `${persons[0].age} anos`;
+  return persons.map((p) => `${p.label} ${p.age}`).join(" · ");
+}

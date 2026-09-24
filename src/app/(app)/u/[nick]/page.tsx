@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { ageOn } from "@/lib/age";
-import { PROFILE_TYPES } from "@/lib/config";
+import { PERSON_FIELDS, PROFILE_TYPES, agesLabel } from "@/lib/config";
 import { isSubscriber, isVerified, requireUser } from "@/server/auth";
 import { isBlockedBetween } from "@/server/access";
 import { getFeed } from "@/server/feed";
@@ -50,7 +50,7 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
           <div className="min-w-0 flex-1">
             <h1 className="text-xl"><Nick nick={u.nick} style={st} link={false} /> {u.ageVerification === "APPROVED" && <span title="Perfil verificado" className="text-sm text-gold">✔ verificado</span>} {u.vipUntil && u.vipUntil > new Date() && <span className="rounded bg-gold px-1.5 align-middle text-xs font-bold text-ink">VIP</span>}</h1>
             <p className="text-sm text-mute">
-              {PROFILE_TYPES[u.profileType].label} · {u.persons.map((p) => `${p.label} ${ageOn(p.birthDate)}`).join(", ")}
+              {PROFILE_TYPES[u.profileType].label} · {agesLabel(u.persons.map((p) => ({ label: p.label, age: ageOn(p.birthDate) })))}
               {!u.hideCity && u.city ? ` · ${u.city}/${u.state}` : u.state ? ` · ${u.state}` : ""}
             </p>
             <p className="mt-1 text-xs text-mute"><b className="text-white">{followers}</b> seguidores · <b className="text-white">{following}</b> seguindo</p>
@@ -67,6 +67,27 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
           </div>
         </div>
         {u.bio && !hidden && <p className="mt-4 whitespace-pre-wrap text-sm">{u.bio}</p>}
+        {!hidden && u.persons.some((p) => p.heightCm || (Object.keys(PERSON_FIELDS) as (keyof typeof PERSON_FIELDS)[]).some((k) => p[k])) && (
+          <div className={`mt-4 grid gap-3 ${u.persons.length > 1 ? "sm:grid-cols-2" : ""}`}>
+            {u.persons.map((p) => {
+              const items = [
+                ...(Object.keys(PERSON_FIELDS) as (keyof typeof PERSON_FIELDS)[]).filter((k) => p[k]).map((k) => [PERSON_FIELDS[k].label, p[k] as string]),
+                ...(p.heightCm ? [["Altura", `${(p.heightCm / 100).toFixed(2).replace(".", ",")} m`]] : []),
+              ];
+              if (!items.length) return null;
+              return (
+                <div key={p.id} className="rounded-xl border border-line bg-panel2/50 p-3 text-sm">
+                  <p className="mb-1 font-semibold text-gold">{u.persons.length > 1 ? `Sobre ${p.label.toLowerCase()}` : "Sobre mim"} · {ageOn(p.birthDate)} anos</p>
+                  <dl className="grid grid-cols-2 gap-x-3 gap-y-0.5">
+                    {items.map(([k, v]) => (
+                      <div key={k} className="flex gap-1"><dt className="text-mute">{k}:</dt><dd>{v}</dd></div>
+                    ))}
+                  </dl>
+                </div>
+              );
+            })}
+          </div>
+        )}
         {likes.length > 0 && !hidden && (
           <div className="mt-3 flex flex-wrap gap-1.5">{likes.map((t) => <span key={t} className="rounded-full border border-wine2/60 bg-wine/20 px-2.5 py-0.5 text-xs">{t}</span>)}</div>
         )}

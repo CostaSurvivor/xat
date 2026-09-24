@@ -147,3 +147,21 @@ export async function submitVerification(_: R, formData: FormData): Promise<R> {
   }
   redirect("/verificacao");
 }
+
+export async function updatePersons(_: R, formData: FormData): Promise<R> {
+  const user = await requireUser();
+  const { PERSON_FIELDS } = await import("@/lib/config");
+  const persons = await db.profilePerson.findMany({ where: { userId: user.id } });
+  for (const p of persons) {
+    const data: Record<string, string | number | null> = {};
+    for (const [key, def] of Object.entries(PERSON_FIELDS)) {
+      const v = String(formData.get(`${p.id}.${key}`) || "");
+      data[key] = (def.options as readonly string[]).includes(v) ? v : null;
+    }
+    const h = Number(formData.get(`${p.id}.heightCm`) || 0);
+    data.heightCm = Number.isInteger(h) && h >= 120 && h <= 230 ? h : null;
+    await db.profilePerson.update({ where: { id: p.id }, data });
+  }
+  revalidatePath("/perfil");
+  return { ok: true };
+}

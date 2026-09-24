@@ -241,10 +241,20 @@ model User {
 
 // 1 pessoa (solteiro) ou 2 (casal). Todas 18+.
 model ProfilePerson {
-  id        String   @id @default(cuid())
-  userId    String
-  label     String   @db.VarChar(20)
-  birthDate DateTime @db.Date
+  id          String   @id @default(cuid())
+  userId      String
+  label       String   @db.VarChar(20)
+  birthDate   DateTime @db.Date
+  // características opcionais (sobre ela / sobre ele)
+  orientation String?  @db.VarChar(30)
+  heightCm    Int?
+  body        String?  @db.VarChar(30)
+  skin        String?  @db.VarChar(30)
+  hair        String?  @db.VarChar(30)
+  eyes        String?  @db.VarChar(30)
+  tattoos     String?  @db.VarChar(30)
+  smoker      String?  @db.VarChar(30)
+  drinks      String?  @db.VarChar(30)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])

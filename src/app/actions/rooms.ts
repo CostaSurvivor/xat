@@ -7,7 +7,7 @@ import { db } from "@/lib/db";
 import { RESERVED_SLUGS, UFS } from "@/lib/config";
 import { can } from "@/lib/permissions";
 import { limiter } from "@/lib/ratelimit";
-import { isVerified, requireUser } from "@/server/auth";
+import { isSubscriber, requireUser } from "@/server/auth";
 import { actorFor, roomBySlug } from "@/server/rooms";
 import { audit } from "@/server/notify";
 
@@ -26,13 +26,14 @@ const roomSchema = z.object({
 
 export async function createRoom(_: R, formData: FormData): Promise<R> {
   const user = await requireUser();
-  if (!isVerified(user)) return { error: "Verifique seu perfil para criar salas." };
-  if (!limiter("room-create", 3, 3 / 86400).take(user.id)) return { error: "Limite de criação de salas atingido hoje." };
+  const isAdmin = user.role === "ADMIN";
+  if (!isAdmin && !isSubscriber(user)) return { error: "Criar sala é exclusivo para assinantes." };
+  if (!isAdmin && !limiter("room-create", 3, 3 / 86400).take(user.id)) return { error: "Limite de criação de salas atingido hoje." };
   const slug = String(formData.get("slug") || "").trim().toLowerCase();
   if (!/^[a-z0-9][a-z0-9-]{2,31}$/.test(slug)) return { error: "Endereço: 3–32 caracteres (letras minúsculas, números e hífen)." };
   if (RESERVED_SLUGS.has(slug)) return { error: "Esse endereço é reservado." };
   if (await roomBySlug(slug)) return { error: "Esse endereço já existe." };
-  if ((await db.room.count({ where: { ownerId: user.id } })) >= 5) return { error: "Máximo de 5 salas por usuário." };
+  if (!isAdmin && (await db.room.count({ where: { ownerId: user.id } })) >= 3) return { error: "Assinantes podem ter até 3 salas." };
   const p = roomSchema.safeParse(Object.fromEntries(formData));
   if (!p.success) return { error: p.error.issues[0].message };
   const d = p.data;
@@ -47,6 +48,7 @@ export async function createRoom(_: R, formData: FormData): Promise<R> {
       access: d.access,
       theme: d.theme,
       linksAllowed: d.linksAllowed === "on",
+      isOfficial: isAdmin && formData.get("official") === "on",
       ownerId: user.id,
       members: { create: { userId: user.id, role: "OWNER" } },
     },

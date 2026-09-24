@@ -10,7 +10,20 @@ import { stylesFor } from "./styles";
 export const ONLINE_WINDOW_MS = 45_000;
 
 export async function roomBySlug(slug: string) {
-  return db.room.findUnique({ where: { slug: slug.toLowerCase() } });
+  return db.room.findUnique({ where: { slug: slug.toLowerCase() }, include: { owner: { select: { id: true, role: true, vipUntil: true, status: true } } } });
+}
+
+type RoomOwnerInfo = { isOfficial: boolean; owner: { role: string; vipUntil: Date | null; status: string } | null };
+
+/**
+ * Sala de usuário só fica ativa enquanto o dono é assinante (estilo xat).
+ * Salas oficiais, da plataforma ou de staff ficam sempre ativas.
+ */
+export function roomIsActive(room: RoomOwnerInfo) {
+  if (room.isOfficial || !room.owner) return true;
+  if (room.owner.status !== "ACTIVE") return false;
+  if (room.owner.role !== "USER") return true;
+  return !!room.owner.vipUntil && room.owner.vipUntil > new Date();
 }
 
 export async function actorFor(user: { id: string; role: string }, roomId: string): Promise<Actor> {
@@ -26,8 +39,12 @@ export async function activeSanction(roomId: string, userId: string, type: "MUTE
 }
 
 /** Pode entrar/ler a sala? Retorna motivo quando não. */
-export async function canEnter(user: CurrentUser, room: Room, actor: Actor): Promise<string | null> {
+export async function canEnter(user: CurrentUser, room: Room & RoomOwnerInfo, actor: Actor): Promise<string | null> {
   if (actor.platformRole !== "USER") return null;
+  if (!roomIsActive(room))
+    return actor.role === "OWNER"
+      ? "Sua sala está inativa porque a assinatura venceu. Renove para reabrir."
+      : "Esta sala está inativa no momento.";
   if (await activeSanction(room.id, user.id, "BAN")) return "Você está banido desta sala.";
   if (room.access === "MEMBERS_ONLY" && actor.role === "GUEST") return "Sala exclusiva para membros.";
   if (room.access === "COUPLES_ONLY" && !isCouple(user.profileType) && actor.role === "GUEST") return "Sala exclusiva para casais.";
@@ -62,6 +79,7 @@ export async function onlineList(roomId: string, viewer: CurrentUser) {
   const roleOf = new Map(members.map((m) => [m.userId, m.role as RoomRoleName]));
   const staffViewer = viewer.role !== "USER";
   const typingNow = new Date();
+  const { chatRole, CHAT_ROLE_RANK } = await import("@/components/RoleIcon");
   const list = users
     .filter((u) => !blocked.includes(u.id))
     .filter((u) => u.id === viewer.id || staffViewer || !styles[u.id]?.powers.includes("INVISIBLE"))
@@ -76,7 +94,8 @@ export async function onlineList(roomId: string, viewer: CurrentUser) {
         invisible: st?.powers.includes("INVISIBLE") ?? false,
         highlight: st?.powers.includes("HIGHLIGHT_ONLINE") ?? false,
         typing: !!p.typingUntil && p.typingUntil > typingNow && u.id !== viewer.id,
-        sort: onlineSortKey(role, st?.power ?? 0),
+        chatRole: chatRole(u.role, role),
+        sort: CHAT_ROLE_RANK[chatRole(u.role, role)] * 10_000_000 + onlineSortKey(role, st?.power ?? 0),
       };
     })
     .sort((a, b) => b.sort - a.sort || a.nick.localeCompare(b.nick));
@@ -96,16 +115,24 @@ export async function messagesView(roomId: string, viewerId: string, opts: { aft
     },
     orderBy: { id: opts.after ? "asc" : "desc" },
     take,
-    include: { author: { select: { id: true, nick: true, avatarId: true } } },
+    include: { author: { select: { id: true, nick: true, avatarId: true, role: true } } },
   });
   if (!opts.after) rows.reverse();
-  const styles = await stylesFor(rows.map((r) => r.authorId).filter(Boolean) as string[]);
+  const authorIds = [...new Set(rows.map((r) => r.authorId).filter(Boolean) as string[])];
+  const [styles, memberRows] = await Promise.all([
+    stylesFor(authorIds),
+    db.roomMember.findMany({ where: { roomId, userId: { in: authorIds } }, select: { userId: true, role: true } }),
+  ]);
+  const { chatRole } = await import("@/components/RoleIcon");
+  const roomRoleOf = new Map(memberRows.map((m) => [m.userId, m.role as string]));
   return rows.map((m) => ({
     id: m.id.toString(),
     kind: m.kind,
     body: m.body,
     createdAt: m.createdAt.toISOString(),
-    author: m.author ? { ...m.author, style: styles[m.author.id] } : null,
+    author: m.author
+      ? { id: m.author.id, nick: m.author.nick, avatarId: m.author.avatarId, style: styles[m.author.id], chatRole: chatRole(m.author.role, roomRoleOf.get(m.author.id)) }
+      : null,
   }));
 }
 export type ChatMessage = Awaited<ReturnType<typeof messagesView>>[number];

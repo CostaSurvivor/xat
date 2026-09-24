@@ -11,16 +11,11 @@ import { hash } from "@node-rs/argon2";
 
 const db = new PrismaClient();
 
+// Salas criadas na primeira instalação; as regionais o admin cria pelo painel.
 const OFFICIAL = [
   ["lobby", "Lobby", "Sala principal: chegue, se apresente e conheça a galera."],
   ["casais", "Só Casais", "Papo entre casais liberais do Brasil todo."],
   ["iniciantes", "Iniciantes no meio", "Dúvidas, primeiras experiências e dicas, sem julgamento."],
-  ["sp", "São Paulo", "Liberais de SP capital e interior."],
-  ["rj", "Rio de Janeiro", "Liberais do RJ."],
-  ["mg", "Minas Gerais", "Liberais de MG."],
-  ["sul", "Região Sul", "PR, SC e RS."],
-  ["nordeste", "Nordeste", "Liberais do Nordeste."],
-  ["df", "Brasília / Centro-Oeste", "DF, GO, MT e MS."],
 ] as const;
 
 type ItemSeed = { slug: string; name: string; category: ItemCategory; rarity?: ItemRarity; config: object; powerScore?: number; price7?: number; price30?: number; pricePerm?: number; limitedQty?: number; description?: string };
@@ -58,12 +53,19 @@ const PACKAGES = [
 ];
 
 async function main() {
-  for (const [slug, name, description] of OFFICIAL) {
-    await db.room.upsert({ where: { slug }, create: { slug, name, description, isOfficial: true, theme: slug === "lobby" ? "vinho" : "noir" }, update: { isOfficial: true } });
+  // Só na primeira instalação: depois disso o admin controla salas e itens pelo painel
+  // (o seed roda a cada deploy e NÃO pode recriar o que foi apagado/editado).
+  const firstRun = (await db.platformSetting.findUnique({ where: { key: "seeded" } })) === null;
+  if (firstRun && (await db.room.count()) === 0) {
+    for (const [slug, name, description] of OFFICIAL) {
+      await db.room.create({ data: { slug, name, description, isOfficial: true, theme: slug === "lobby" ? "vinho" : "noir" } });
+    }
   }
-  for (const it of ITEMS) {
-    const { slug, ...data } = it;
-    await db.item.upsert({ where: { slug }, create: { slug, ...data }, update: data });
+  if (firstRun) {
+    for (const it of ITEMS) {
+      const { slug, ...data } = it;
+      await db.item.upsert({ where: { slug }, create: { slug, ...data }, update: {} });
+    }
   }
   if ((await db.coinPackage.count()) === 0) await db.coinPackage.createMany({ data: PACKAGES });
   if ((await db.vipPlan.count()) === 0)
@@ -77,7 +79,8 @@ async function main() {
   for (const kind of ["SYSTEM_MINT", "SYSTEM_SINK"] as const) {
     if (!(await db.wallet.findFirst({ where: { kind } }))) await db.wallet.create({ data: { kind } });
   }
-  console.log("Seed base ok");
+  await db.platformSetting.upsert({ where: { key: "seeded" }, create: { key: "seeded", value: { at: new Date().toISOString() } }, update: {} });
+  console.log(firstRun ? "Seed base ok (primeira instalação)" : "Seed: nada a fazer (já instalado)");
   if (process.env.SEED_DEMO === "1") await demo();
 }
 

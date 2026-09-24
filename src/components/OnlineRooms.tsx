@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { roomOnlineCounts } from "@/server/rooms";
+import { roomIsActive, roomOnlineCounts } from "@/server/rooms";
 
 export async function OnlineRooms() {
   const counts = await roomOnlineCounts();
-  const rooms = await db.room.findMany({ where: { OR: [{ isOfficial: true }, { id: { in: [...counts.keys()] } }] }, take: 30 });
+  const rooms = (await db.room.findMany({ where: { OR: [{ isOfficial: true }, { id: { in: [...counts.keys()] } }] }, include: { owner: { select: { role: true, vipUntil: true, status: true } } }, take: 30 })).filter(roomIsActive);
   rooms.sort((a, b) => (counts.get(b.id) ?? 0) - (counts.get(a.id) ?? 0) || Number(b.isOfficial) - Number(a.isOfficial));
   return (
     <div className="card sticky top-20 p-4">

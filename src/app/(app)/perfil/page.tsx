@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { LIKE_GROUPS, UFS } from "@/lib/config";
+import { LIKE_GROUPS, PERSON_FIELDS, UFS } from "@/lib/config";
+import { ageOn } from "@/lib/age";
 import { isVerified, requireUser } from "@/server/auth";
-import { deleteMedia, setAlbumAccess, updateProfile, uploadPhoto } from "@/app/actions/profile";
+import { deleteMedia, setAlbumAccess, updatePersons, updateProfile, uploadPhoto } from "@/app/actions/profile";
 import { logout } from "@/app/actions/auth";
 import { ActionForm, AutoSubmitFile } from "@/components/Forms";
 import { Avatar } from "@/components/Avatar";
@@ -13,6 +14,7 @@ export const metadata = { title: "Meu perfil" };
 export default async function MeuPerfil() {
   const user = await requireUser();
   const verified = isVerified(user);
+  const persons = await db.profilePerson.findMany({ where: { userId: user.id }, orderBy: { label: "asc" } });
   const [album, requests] = await Promise.all([
     db.media.findMany({ where: { ownerId: user.id, kind: "PRIVATE_ALBUM", status: "APPROVED" }, orderBy: { createdAt: "desc" } }),
     db.albumAccess.findMany({ where: { ownerId: user.id }, include: { viewer: { select: { id: true, nick: true } } }, orderBy: { createdAt: "desc" } }),
@@ -86,6 +88,36 @@ export default async function MeuPerfil() {
             <label className="flex gap-2"><input type="checkbox" name="hideFromUnverified" defaultChecked={user.hideFromUnverified} /> Esconder meu perfil e fotos de quem não é verificado</label>
           </div>
           <button className="btn-gold">Salvar</button>
+        </ActionForm>
+      </section>
+
+      <section className="card p-5">
+        <h2 className="mb-1 font-semibold text-gold">{persons.length > 1 ? "Sobre ele e sobre ela" : "Sobre você"}</h2>
+        <p className="mb-3 text-xs text-mute">Tudo opcional: preencha só o que quiser mostrar.</p>
+        <ActionForm action={updatePersons} className="space-y-4">
+          <div className={`grid gap-4 ${persons.length > 1 ? "md:grid-cols-2" : ""}`}>
+            {persons.map((p) => (
+              <fieldset key={p.id} className="space-y-2 rounded-xl border border-line p-3">
+                <legend className="px-1 text-sm font-semibold">{p.label} · {ageOn(p.birthDate)} anos</legend>
+                <div className="grid grid-cols-2 gap-2">
+                  {(Object.keys(PERSON_FIELDS) as (keyof typeof PERSON_FIELDS)[]).map((k) => (
+                    <label key={k} className="text-xs text-mute">
+                      {PERSON_FIELDS[k].label}
+                      <select name={`${p.id}.${k}`} defaultValue={p[k] ?? ""} className="input mt-0.5 py-1.5">
+                        <option value="">—</option>
+                        {PERSON_FIELDS[k].options.map((o) => <option key={o}>{o}</option>)}
+                      </select>
+                    </label>
+                  ))}
+                  <label className="text-xs text-mute">
+                    Altura (cm)
+                    <input type="number" min={120} max={230} name={`${p.id}.heightCm`} defaultValue={p.heightCm ?? ""} className="input mt-0.5 py-1.5" placeholder="170" />
+                  </label>
+                </div>
+              </fieldset>
+            ))}
+          </div>
+          <button className="btn-gold">Salvar características</button>
         </ActionForm>
       </section>
 

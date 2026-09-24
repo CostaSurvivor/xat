@@ -6,14 +6,13 @@ import type { ChatMessage, OnlineUser } from "@/server/rooms";
 import { Avatar } from "./Avatar";
 import { Nick } from "./Nick";
 import { ReportButton } from "./ReportButton";
+import { CHAT_ROLES, RoleIcon, type ChatRole } from "./RoleIcon";
 
 type Me = { id: string; nick: string };
 type PollMe = { role: string; platformRole: string; mutedUntil: string | null };
 
 const EMOJIS = ["😈", "🔥", "😍", "😘", "😏", "🍑", "🍆", "💦", "👅", "💋", "🥂", "😂", "❤️", "👀", "🙈", "👏"];
 const ENTRY_FX: Record<string, string> = { sparkle: "✨", fire: "🔥", hearts: "💞", gold: "👑" };
-const ROLE_LABEL: Record<string, string> = { OWNER: "Dono", MODERATOR: "Moderador", MEMBER: "Membro", GUEST: "Convidado" };
-const ROLE_ICON: Record<string, string> = { OWNER: "★", MODERATOR: "◆", MEMBER: "●", GUEST: "" };
 
 function renderBody(body: string, myNick: string) {
   return body.split(/(@[A-Za-z0-9_.]{3,20})/g).map((part, i) =>
@@ -166,6 +165,7 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
               <div key={m.id} className="group flex items-start gap-2 rounded-lg px-1 py-0.5 hover:bg-white/[0.03]">
                 <Avatar mediaId={m.author.avatarId} nick={m.author.nick} size={28} style={m.author.style} />
                 <div className="min-w-0 flex-1 text-[15px] leading-snug">
+                  <span className="mr-1 inline-block align-[-2px]"><RoleIcon role={m.author.chatRole as ChatRole} size={15} /></span>
                   <Nick nick={m.author.nick} style={m.author.style} />
                   <span className="text-mute">: </span>
                   <span className="break-words" style={m.author.style?.text}>{renderBody(m.body, me.nick)}</span>
@@ -223,14 +223,19 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
             {online.map((u) => (
               <li key={u.id}>
                 <button onClick={() => setSelected(u)} className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-white/5 ${u.highlight ? "bg-gradient-to-r from-gold/20 to-transparent" : ""}`}>
-                  <Avatar mediaId={u.avatarId} nick={u.nick} size={26} style={u.style} />
+                  <RoleIcon role={u.chatRole as ChatRole} size={18} />
+                  <Avatar mediaId={u.avatarId} nick={u.nick} size={24} style={u.style} />
                   <span className="min-w-0 flex-1 truncate"><Nick nick={u.nick} style={u.style} link={false} /></span>
                   {u.invisible && <span title="Invisível">👻</span>}
-                  <span className="text-xs text-gold" title={ROLE_LABEL[u.roomRole]}>{ROLE_ICON[u.roomRole]}</span>
                 </button>
               </li>
             ))}
           </ul>
+          <div className="grid grid-cols-2 gap-x-2 gap-y-1 border-t border-line px-3 py-2 text-[11px] text-mute">
+            {(Object.keys(CHAT_ROLES) as ChatRole[]).map((r) => (
+              <span key={r} className="flex items-center gap-1"><RoleIcon role={r} size={13} />{CHAT_ROLES[r].label}</span>
+            ))}
+          </div>
         </div>
       </aside>
 
@@ -241,7 +246,7 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
               <Avatar mediaId={selected.avatarId} nick={selected.nick} size={48} style={selected.style} />
               <div>
                 <Nick nick={selected.nick} style={selected.style} />
-                <div className="text-xs text-mute">{ROLE_LABEL[selected.roomRole]}</div>
+                <div className="flex items-center gap-1 text-xs text-mute"><RoleIcon role={selected.chatRole as ChatRole} size={13} />{CHAT_ROLES[selected.chatRole as ChatRole].label}</div>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
