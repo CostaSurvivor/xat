@@ -272,6 +272,7 @@ model User {
   testimonialsReceived Testimonial[]         @relation("TestimonialsReceived")
   testimonialsWritten  Testimonial[]         @relation("TestimonialsWritten")
   stories              Story[]               @relation("StoriesAuthored")
+  albums               Album[]               @relation("AlbumsOwned")
 
   @@index([state, city])
   @@index([createdAt])
@@ -403,11 +404,14 @@ model Media {
   sha256      String      @db.VarChar(64)
   mime        String      @default("image/webp") @db.VarChar(40) // vídeo: mime do arquivo em originalKey
   sizeBytes   Int         @default(0)
+  /// álbum por tema (null = álbum privado padrão)
+  albumId     String?
   createdAt   DateTime    @default(now())
   owner       User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   postMedia   PostMedia[]
 
   @@index([ownerId, kind])
+  @@index([albumId])
   @@index([sha256])
 }
 
@@ -1200,4 +1204,22 @@ model StoryView {
 
   @@id([storyId, viewerId])
   @@index([viewerId])
+}
+
+// -----------------------------------------------------------------------------
+// Álbuns por tema: cada um com quem pode ver definido separadamente
+// -----------------------------------------------------------------------------
+
+model Album {
+  id         String   @id @default(cuid())
+  ownerId    String
+  name       String   @db.VarChar(40)
+  emoji      String   @default("📁") @db.VarChar(8)
+  /// VERIFIED | FOLLOWERS | FRIENDS | PRIVATE (só quem o dono liberar)
+  visibility String   @default("PRIVATE") @db.VarChar(10)
+  position   Int      @default(0)
+  createdAt  DateTime @default(now())
+  owner      User     @relation("AlbumsOwned", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId, position])
 }
