@@ -13,6 +13,7 @@ const db = new PrismaClient();
 
 import { COUPLES_ROOM, GENERAL_ROOM, STAFF_ONLY_ROOMS, UFS, stateRoom } from "../src/lib/config";
 import { cityCoords } from "../src/lib/geo";
+import { DEFAULT_GROUPS } from "../src/lib/groups";
 
 type ItemSeed = { slug: string; name: string; category: ItemCategory; rarity?: ItemRarity; config: object; powerScore?: number; price7?: number; price30?: number; pricePerm?: number; limitedQty?: number; description?: string };
 
@@ -121,6 +122,12 @@ async function main() {
     await db.platformSetting.upsert({ where: { key: "rooms-v2" }, create: { key: "rooms-v2", value: { at: new Date().toISOString() } }, update: {} });
   }
   await migrateRoomsV2();
+  // grupos iniciais: criados uma vez (depois a equipe cria/arquiva pelo painel)
+  if (!(await db.platformSetting.findUnique({ where: { key: "groups-v1" } }))) {
+    for (const g of DEFAULT_GROUPS) await db.group.upsert({ where: { slug: g.slug }, create: { ...g }, update: {} });
+    await db.platformSetting.create({ data: { key: "groups-v1", value: { at: new Date().toISOString() } } });
+    console.log(`Grupos iniciais: ${DEFAULT_GROUPS.length}`);
+  }
   // proximidade: preenche coordenadas pela cidade de quem ainda não tem (idempotente, barato)
   const semCoord = await db.user.findMany({ where: { lat: null, geoSource: null, city: { not: null } }, select: { id: true, city: true, state: true }, take: 5000 });
   let geo = 0;

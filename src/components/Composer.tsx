@@ -25,7 +25,8 @@ async function capturePoster(file: File): Promise<Blob | null> {
   });
 }
 
-export function Composer({ verified }: { verified: boolean }) {
+/** groupId: posta dentro do grupo (sem escolha de visibilidade). */
+export function Composer({ verified, groupId, placeholder }: { verified: boolean; groupId?: string; placeholder?: string }) {
   const [state, action, pending] = useActionState(createPost, undefined);
   const [previews, setPreviews] = useState<string[]>([]);
   const [poster, setPoster] = useState<Blob | null>(null);
@@ -48,7 +49,8 @@ export function Composer({ verified }: { verified: boolean }) {
       }}
       className="card space-y-3 p-4"
     >
-      <textarea name="body" maxLength={3000} placeholder="O que vocês estão a fim hoje? 😈" className="input h-20 resize-none" />
+      {groupId && <input type="hidden" name="groupId" value={groupId} />}
+      <textarea name="body" maxLength={3000} placeholder={placeholder ?? "O que vocês estão a fim hoje? 😈"} className="input h-20 resize-none" />
       {previews.length > 0 && (
         <div className="flex gap-2 overflow-x-auto">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -88,10 +90,12 @@ export function Composer({ verified }: { verified: boolean }) {
         ) : (
           <a href="/verificacao" className="text-xs text-mute underline">Verifique-se para postar fotos e vídeos</a>
         )}
-        <select name="visibility" className="input w-auto py-1.5 text-xs">
-          <option value="PUBLIC">🌎 Todos</option>
-          <option value="FRIENDS">🤝 Só amigos</option>
-        </select>
+        {!groupId && (
+          <select name="visibility" className="input w-auto py-1.5 text-xs">
+            <option value="PUBLIC">🌎 Todos</option>
+            <option value="FRIENDS">🤝 Só amigos</option>
+          </select>
+        )}
         <div className="flex-1" />
         <button disabled={pending} className="btn-gold">{pending ? "Publicando…" : "Publicar"}</button>
       </div>

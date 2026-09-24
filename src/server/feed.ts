@@ -7,7 +7,7 @@ import { stylesFor } from "./styles";
 
 export type FeedTab = "todos" | "seguindo" | "regiao";
 
-export async function getFeed(viewer: CurrentUser, opts: { tab?: FeedTab; before?: string; authorId?: string; take?: number; ids?: string[] }) {
+export async function getFeed(viewer: CurrentUser, opts: { tab?: FeedTab; before?: string; authorId?: string; take?: number; ids?: string[]; groupId?: string }) {
   const take = opts.take ?? 15;
   const blocked = await blockedIds(viewer.id);
   const following = (await db.follow.findMany({ where: { followerId: viewer.id }, select: { followeeId: true } })).map((f) => f.followeeId);
@@ -25,11 +25,21 @@ export async function getFeed(viewer: CurrentUser, opts: { tab?: FeedTab; before
       { visibility: "FOLLOWERS", authorId: { in: following } },
     ],
   };
+  // posts de grupo só aparecem no grupo (ou pelo link, para quem pode ver o grupo)
+  const { isCouple } = await import("@/lib/config");
+  const groupScope: Prisma.PostWhereInput = opts.groupId
+    ? { groupId: opts.groupId }
+    : opts.ids
+      ? { OR: [{ groupId: null }, { group: { archivedAt: null, audience: isCouple(viewer.profileType) || viewer.role !== "USER" ? { in: ["ALL", "COUPLES"] } : "ALL" } }] }
+      : { groupId: null };
+  where.AND = [groupScope];
   // posts específicos (página do post, destaques): mesmas regras de visibilidade e bloqueio
-  if (opts.ids) where.AND = [{ id: { in: opts.ids } }];
-  else if (opts.authorId) where.AND = [{ authorId: opts.authorId }];
-  else if (opts.tab === "seguindo") where.AND = [{ authorId: { in: [...following, viewer.id] } }];
-  else if (opts.tab === "regiao" && viewer.state) where.AND = [{ author: { state: viewer.state } }];
+  if (opts.ids) where.AND.push({ id: { in: opts.ids } });
+  else if (!opts.groupId) {
+    if (opts.authorId) where.AND.push({ authorId: opts.authorId });
+    else if (opts.tab === "seguindo") where.AND.push({ authorId: { in: [...following, viewer.id] } });
+    else if (opts.tab === "regiao" && viewer.state) where.AND.push({ author: { state: viewer.state } });
+  }
   if (opts.before) where.createdAt = { lt: new Date(opts.before) };
 
   const include = {
@@ -39,7 +49,7 @@ export async function getFeed(viewer: CurrentUser, opts: { tab?: FeedTab; before
   } as const;
   // Prioridade: na 1ª página de "Todos", posts recentes (72h) de quem eu sigo vêm primeiro
   const prioritized =
-    !opts.before && !opts.authorId && !opts.ids && (opts.tab ?? "todos") === "todos" && following.length
+    !opts.before && !opts.authorId && !opts.ids && !opts.groupId && (opts.tab ?? "todos") === "todos" && following.length
       ? await db.post.findMany({
           where: { AND: [where, { authorId: { in: following } }, { createdAt: { gt: new Date(Date.now() - 72 * 3600_000) } }] },
           orderBy: { createdAt: "desc" },
@@ -103,4 +113,21 @@ export async function getComments(viewerId: string, postId: string) {
   });
   const roots = rows.filter((r) => !r.parentId || !rows.some((x) => x.id === r.parentId));
   return roots.map((r) => ({ ...view(r), replies: rows.filter((x) => x.parentId === r.id).map(view) }));
+}
+
+/**
+ * Pode ler/interagir com o post? Reaproveita as regras do feed (visibilidade, bloqueio, grupo).
+ * Escrever (comentar/reagir) em post de grupo exige ser membro do grupo.
+ */
+export async function canAccessPost(viewer: CurrentUser, postId: string, write = false) {
+  const [post] = await getFeed(viewer, { ids: [postId], take: 1 });
+  if (!post) return false;
+  if (write) {
+    const p = await db.post.findUnique({ where: { id: postId }, select: { groupId: true } });
+    if (p?.groupId && viewer.role === "USER") {
+      const m = await db.groupMember.findUnique({ where: { groupId_userId: { groupId: p.groupId, userId: viewer.id } } });
+      if (!m) return false;
+    }
+  }
+  return true;
 }
