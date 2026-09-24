@@ -8,9 +8,9 @@ import type { CSSProperties } from "react";
  */
 const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/);
 const anim = z.enum(["none", "pulse", "rainbow", "shift", "flicker", "neon"]);
-export const DOLL_KINDS = ["cowboy", "horns", "cuckqueen", "wand", "tophat", "halo", "devil", "bunny", "mask", "whip", "champagne"] as const;
+export const DOLL_KINDS = ["cowboy", "horns", "cuckqueen", "wand", "tophat", "halo", "devil", "bunny", "mask", "whip", "champagne", "gaucho", "chimarrao"] as const;
 
-export const BADGE_EMOJIS = ["👑", "🔥", "💎", "⛓️", "🎭", "🌶️", "💋", "🍑", "🍒", "😈", "⭐", "🦋", "🐍", "🍾", "🗝️", "💜"] as const;
+export const BADGE_EMOJIS = ["👑", "🔥", "💎", "⛓️", "🎭", "🌶️", "💋", "🍑", "🍒", "😈", "⭐", "🦋", "🐍", "🍾", "🗝️", "💜", "🧉"] as const;
 
 export const itemConfigSchemas = {
   DOLL: z.object({ accessory: z.enum(DOLL_KINDS) }),

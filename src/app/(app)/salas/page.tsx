@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { COUPLES_ROOM, GENERAL_ROOM, isCouple } from "@/lib/config";
+import { COUPLES_ROOM, GENERAL_ROOM, REGIONS, isCouple, regionOf } from "@/lib/config";
 import { requireUser } from "@/server/auth";
 import { roomOnlineCounts } from "@/server/rooms";
 
@@ -18,6 +18,14 @@ export default async function Salas() {
   const states = rooms
     .filter((r) => r !== general && r !== couples)
     .sort((a, b) => Number(b.state === user.state) - Number(a.state === user.state) || on(b.id) - on(a.id) || a.name.localeCompare(b.name, "pt-BR"));
+  // salas agrupadas por região: a região de quem está vendo primeiro, depois a mais movimentada
+  const mine = regionOf(user.state)?.key;
+  const regions = REGIONS.map((region, order) => {
+    const list = states.filter((r) => (region.ufs as readonly string[]).includes(r.state ?? ""));
+    return { region, order, rooms: list, online: list.reduce((n, r) => n + on(r.id), 0) };
+  })
+    .filter((g) => g.rooms.length)
+    .sort((a, b) => Number(b.region.key === mine) - Number(a.region.key === mine) || b.online - a.online || a.order - b.order);
   const Pill = ({ id }: { id: string }) => (
     <span className={`shrink-0 rounded-full px-3 py-1 text-sm ${on(id) ? "bg-green-100 text-green-700" : "bg-panel2 text-mute"}`}>{on(id)} on</span>
   );
@@ -47,11 +55,15 @@ export default async function Salas() {
           </Link>
         )}
       </div>
-      {states.length > 0 && (
-        <section>
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-wine">Estados</h2>
+      {regions.map(({ region, rooms: list, online }) => (
+        <section key={region.key} className={region.key === "SUL" ? "rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 via-white to-red-50 p-3" : ""}>
+          <div className="mb-2 flex flex-wrap items-baseline gap-x-2">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-wine">{region.emoji} {region.name}</h2>
+            <span className="text-xs text-mute">{region.tagline}</span>
+            {online > 0 && <span className="text-xs text-green-600">· {online} on</span>}
+          </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-            {states.map((r) => (
+            {list.map((r) => (
               <Link key={r.id} href={`/${r.slug}`} className={`card flex items-center gap-2 px-3 py-2.5 transition hover:border-wine/50 ${r.state === user.state ? "border-wine/40" : ""}`}>
                 <span className="w-8 shrink-0 rounded bg-panel2 py-0.5 text-center text-xs font-bold text-wine">{r.state ?? r.slug.toUpperCase()}</span>
                 <span className="min-w-0 flex-1 truncate text-sm">{r.name}</span>
@@ -60,7 +72,7 @@ export default async function Salas() {
             ))}
           </div>
         </section>
-      )}
+      ))}
     </div>
   );
 }
