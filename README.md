@@ -14,9 +14,10 @@ Comunidade liberal 18+ (casais, solteiras e solteiros): **salas de chat estilo x
 | Social | Seguir (prioridade no feed), **amizade** (libera PV, álbum e posts "só amigos"), central de Avisos com pedidos de amizade |
 | Feed | Até 6 fotos **ou** 1 vídeo por post, reações, comentários com **respostas e reações** |
 | Vídeos | Qualquer perfil verificado posta; **só assinantes assistem** (streaming protegido, marca d'água com o nick de quem assiste) |
-| Salas (estilo xat) | Só **admin e assinantes** criam (a sala fica inativa se a assinatura vencer). Bonequinho por cargo + acessórios, glow neon, fundador exclusivo, moderação completa, reações, presentes animados, @menções com aviso, **só texto** (fotos ficam no feed e no perfil), fundo personalizado, som de entrada, histórico |
+| Salas (estilo xat) | Só **admin e assinantes** criam (a sala fica inativa se a assinatura vencer). Visual estilo xat: bonequinho por cargo (cores do xat) + acessórios, frase de status, lista Online/Offline, mini-perfil com ações, **PC em abas dentro da sala**, glow neon, fundador exclusivo, moderação completa, reações, presentes animados, @menções com aviso, **só texto** (fotos ficam no feed e no perfil), fundo personalizado, som de entrada, histórico |
 | PV | Estilo WhatsApp (lista + conversa), exige verificação, só amigos por padrão; foto só se os dois aceitarem, chega **borrada** até clicar |
-| Economia | Pimentas com **ledger de partidas dobradas**, loja com prévia ao vivo (glow, neon, cores, ícones, molduras, entradas, poderes, **acessórios do boneco**), presentes, cupons |
+| Economia | Pimentas com **ledger de partidas dobradas**, loja com abas, busca, raridade, destaques e prévia ao vivo (glow, neon, cores, ícones, molduras, entradas, poderes, **acessórios do boneco**), presentes, cupons |
+| Trocas (estilo xat) | Troca segura de Pimentas, **itens permanentes** e dias de assinatura: oferta dos dois lados, mudança zera aceites + trava de 5 s, aceite duplo e **confirmação com senha**, execução atômica |
 | Pagamento | **Pix manual** com QR Code gerado da chave cadastrada no admin; o usuário clica "Já paguei" e o admin aprova. Recibo por e-mail |
 | Suporte | Tickets (troca de nick, tipo de perfil, pagamento…) com conversa e aprovação no admin |
 | Admin | Painel, Pix, verificações, denúncias (possível menor no topo + procedimento SaferNet/PF), tickets, usuários (banir por e-mail/IP/dispositivo, cargo, moedas, VIP, resetar senha, histórico), salas, loja, planos, cupons, anúncios, configurações (Pix e foto de fundo) |
@@ -39,7 +40,7 @@ Cadastre-se com um e-mail listado em `ADMIN_EMAILS`: essa conta vira admin já v
 ## Testes
 
 ```bash
-npm test      # 41 testes: age gate, permissões de sala, salas inativas, rate-limit/flood, ledger (concorrência e idempotência), webhook de pagamento, CSAM, Pix, itens (anti-XSS), vídeo
+npm test      # 45 testes: age gate, permissões de sala, salas inativas, rate-limit/flood, ledger (concorrência e idempotência), trocas, webhook de pagamento, CSAM, Pix, itens (anti-XSS), vídeo
 npm run lint  # checagem de tipos
 ```
 

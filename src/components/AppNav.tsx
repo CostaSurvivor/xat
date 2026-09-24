@@ -11,6 +11,10 @@ const LINKS = [
   { href: "/mensagens", label: "PV", icon: "✉️", badge: "pm" as const },
   { href: "/notificacoes", label: "Avisos", icon: "🔔", badge: "notif" as const },
 ];
+const EXTRA = [
+  { href: "/loja", label: "Loja" },
+  { href: "/trocas", label: "Trocas" },
+];
 
 export function AppNav({ variant }: { variant: "top" | "bottom" }) {
   const path = usePathname();
@@ -23,6 +27,9 @@ export function AppNav({ variant }: { variant: "top" | "bottom" }) {
             {l.label}
             {l.badge && <Dot n={b[l.badge]} />}
           </Link>
+        ))}
+        {EXTRA.map((l) => (
+          <Link key={l.href} href={l.href} className={`rounded-full px-3 py-1.5 text-sm ${path.startsWith(l.href) ? "bg-wine/50 text-white" : "text-mute hover:text-white"}`}>{l.label}</Link>
         ))}
       </nav>
     );
