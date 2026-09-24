@@ -83,6 +83,14 @@ export const getCurrentUser = cache(async () => {
   return u;
 });
 
+/** Id da sessão atual (para prender a inscrição de push ao login deste aparelho). */
+export async function currentSessionId() {
+  const token = (await cookies()).get(COOKIE)?.value;
+  if (!token) return null;
+  const s = await db.session.findUnique({ where: { tokenHash: sha256(token) }, select: { id: true, expiresAt: true } });
+  return s && s.expiresAt > new Date() ? s.id : null;
+}
+
 export type CurrentUser = NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;
 
 export async function requireUser() {
