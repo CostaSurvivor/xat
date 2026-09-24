@@ -26,13 +26,18 @@ export async function purchaseItem(itemId: string, duration: Duration, giftToNic
   if (giftToNick) {
     const to = await db.user.findFirst({ where: { nick: giftToNick, status: "ACTIVE" } });
     if (!to || to.id === user.id) return { ok: false, error: "Destinatário inválido" };
+    const { isBlockedBetween } = await import("@/server/access");
+    if (await isBlockedBetween(user.id, to.id)) return { ok: false, error: "Destinatário indisponível" };
     recipientId = to.id;
   }
+  let bought;
   try {
-    await buyItem(user.id, itemId, duration, `buy:${user.id}:${idem || opKey()}`, recipientId);
+    // a chave inclui item/duração/destinatário: repetir a chave com outros dados não vira "presente fantasma"
+    bought = await buyItem(user.id, itemId, duration, `buy:${user.id}:${itemId}:${duration}:${recipientId ?? "-"}:${idem || opKey()}`, recipientId);
   } catch (e) {
     return fail(e);
   }
+  if (bought === null) return { ok: true }; // repetição da mesma compra: nada novo aconteceu
   if (recipientId) {
     const item = await db.item.findUnique({ where: { id: itemId } });
     await notify(recipientId, "GIFT", `🎁 @${user.nick} te deu de presente: ${item?.name}`, user.id);
@@ -47,16 +52,24 @@ export async function sendCoins(toId: string, amount: number, idem?: string, roo
   if (!limiter("gift", 10, 10 / 600).take(user.id)) return { ok: false, error: "Muitos presentes seguidos." };
   const to = await db.user.findUnique({ where: { id: toId } });
   if (!to || to.status !== "ACTIVE") return { ok: false, error: "Usuário indisponível" };
+  const { isBlockedBetween } = await import("@/server/access");
+  if (await isBlockedBetween(user.id, toId)) return { ok: false, error: "Usuário indisponível" };
+  const amt = Math.floor(Number(amount));
+  let created = false;
   try {
-    await giftCoins(user.id, toId, Math.floor(amount), `gift:${user.id}:${idem || opKey()}`);
+    // chave com destinatário e valor: reusar a chave só repete o MESMO presente (no-op)
+    created = (await giftCoins(user.id, toId, amt, `gift:${user.id}:${toId}:${amt}:${idem || opKey()}`)).created;
   } catch (e) {
     return fail(e);
   }
-  await notify(toId, "GIFT", `🎁 @${user.nick} te deu ${amount} ${CURRENCY_NAME}!`, user.id);
+  if (!created) return { ok: true }; // repetição: não avisa nem anima de novo
+  await notify(toId, "GIFT", `🎁 @${user.nick} te deu ${amt} ${CURRENCY_NAME}!`, user.id);
   if (roomSlug) {
-    // animação na sala: mensagem especial GIFT (texto montado aqui, sem input do usuário)
-    const room = await db.room.findUnique({ where: { slug: roomSlug } });
-    if (room) await db.message.create({ data: { roomId: room.id, authorId: user.id, kind: "GIFT", body: `${amount}|${to.nick}` } });
+    // animação na sala só se quem deu pode falar nela (entrou, não banido, não silenciado)
+    const { actorFor, activeSanction, canEnter, roomBySlug } = await import("@/server/rooms");
+    const room = await roomBySlug(roomSlug);
+    if (room && !(await canEnter(user, room, await actorFor(user, room.id))) && !(await activeSanction(room.id, user.id, "MUTE")))
+      await db.message.create({ data: { roomId: room.id, authorId: user.id, kind: "GIFT", body: `${amt}|${to.nick}` } });
   }
   revalidatePath("/", "layout");
   return { ok: true };

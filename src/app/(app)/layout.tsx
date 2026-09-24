@@ -6,6 +6,7 @@ import { Logo } from "@/components/Logo";
 import { AppNav } from "@/components/AppNav";
 import { Avatar } from "@/components/Avatar";
 import { db } from "@/lib/db";
+import { InstallApp } from "@/components/InstallApp";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser();
@@ -19,6 +20,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5">
           <Link href="/feed" aria-label="Feed"><Logo size={28} /></Link>
           <div className="flex-1"><AppNav variant="top" /></div>
+          <InstallApp />
           {!isSubscriber(user) && <Link href="/assinar" className="hidden rounded-full bg-gradient-to-r from-gold to-gold2 px-3 py-1 text-xs font-bold text-ink sm:inline">⭐ Assine</Link>}
           <Link href="/loja" className="rounded-full border border-gold/40 px-3 py-1 text-sm text-gold hover:bg-gold/10">{CURRENCY_ICON} {balance.toLocaleString("pt-BR")}</Link>
           {(user.role === "ADMIN" || user.role === "MODERATOR") && <Link href="/admin" className="hidden rounded-full bg-wine px-3 py-1 text-xs font-bold sm:inline">ADMIN</Link>}

@@ -6,6 +6,9 @@ export const metadata: Metadata = {
   title: { default: `${SITE_NAME} · chat liberal 18+`, template: `%s · ${SITE_NAME}` },
   description: "Comunidade liberal 18+: salas de chat, fotos e casais.",
   robots: { index: false, follow: false },
+  applicationName: SITE_NAME,
+  appleWebApp: { capable: true, title: SITE_NAME, statusBarStyle: "black-translucent" },
+  icons: { icon: "/icon.svg", apple: "/icons/apple-touch-icon.png" },
 };
 
 export const viewport: Viewport = { themeColor: "#0b0708", width: "device-width", initialScale: 1 };

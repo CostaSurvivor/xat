@@ -142,16 +142,19 @@ async function executeTrade(tx: Tx, tradeId: string) {
     await tx.inventoryItem.update({ where: { id: inv.id }, data: { userId: to, active: false, giftFrom: null } });
   }
 
-  // 3) Dias de assinatura: quem dá precisa ter os dias restantes
-  const giveVip = async (fromUser: typeof ua, toId: string, days: number) => {
+  // 3) Dias de assinatura: quem dá precisa ter os dias restantes (conferido com os valores
+  // de ANTES da troca), e cada ajuste relê o usuário para não sobrescrever o outro lado.
+  const hasDays = (u: typeof ua, days: number) => !days || (u.vipUntil ? (u.vipUntil.getTime() - Date.now()) / 86400_000 : 0) >= days;
+  if (!hasDays(ua, t.aVipDays)) throw new TradeError(`@${ua.nick} não tem ${t.aVipDays} dias de assinatura para trocar`);
+  if (!hasDays(ub, t.bVipDays)) throw new TradeError(`@${ub.nick} não tem ${t.bVipDays} dias de assinatura para trocar`);
+  const giveVip = async (fromId: string, toId: string, days: number) => {
     if (!days) return;
-    const left = fromUser.vipUntil ? (fromUser.vipUntil.getTime() - Date.now()) / 86400_000 : 0;
-    if (left < days) throw new TradeError(`@${fromUser.nick} não tem ${days} dias de assinatura para trocar`);
-    await tx.user.update({ where: { id: fromUser.id }, data: { vipUntil: new Date(fromUser.vipUntil!.getTime() - days * 86400_000) } });
+    const fresh = await tx.user.findUniqueOrThrow({ where: { id: fromId }, select: { vipUntil: true } });
+    await tx.user.update({ where: { id: fromId }, data: { vipUntil: new Date(fresh.vipUntil!.getTime() - days * 86400_000) } });
     await extendVip(tx, toId, days, "TRADE");
   };
-  await giveVip(ua, t.bId, t.aVipDays);
-  await giveVip(ub, t.aId, t.bVipDays);
+  await giveVip(t.aId, t.bId, t.aVipDays);
+  await giveVip(t.bId, t.aId, t.bVipDays);
 
   return tx.trade.update({ where: { id: t.id }, data: { status: "COMPLETED", completedAt: new Date() } });
 }

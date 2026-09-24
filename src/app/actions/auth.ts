@@ -14,7 +14,8 @@ export type FormState = { error?: string; ok?: string; need2fa?: boolean } | und
 export async function acceptAgeGate(formData: FormData) {
   const next = String(formData.get("next") || "/");
   (await cookies()).set("age_ok", "1", { httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 180, secure: process.env.NODE_ENV === "production" });
-  redirect(next.startsWith("/") && !next.startsWith("//") ? next : "/");
+  const { safeNext } = await import("@/lib/oauth");
+  redirect(safeNext(next, "/"));
 }
 
 let _dummy: Promise<string> | undefined;
@@ -55,7 +56,9 @@ export async function signup(_: FormState, formData: FormData): Promise<FormStat
   if (nickTaken) return { error: "Nick já está em uso" };
 
   const admins = (process.env.ADMIN_EMAILS || "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
-  const isAdmin = admins.includes(d.email);
+  // ADMIN_EMAILS só cria o PRIMEIRO admin (instalação nova). Depois, novos admins são
+  // promovidos pelo painel: o cadastro não confirma posse do e-mail.
+  const isAdmin = admins.includes(d.email) && (await db.user.count({ where: { role: "ADMIN" } })) === 0;
 
   const user = await db.user.create({
     data: {
@@ -164,7 +167,8 @@ export async function login(_: FormState, formData: FormData): Promise<FormState
   if (user.status === "DELETED") return { error: "Conta excluída." };
   await createSession(user.id);
   const next = String(formData.get("next") || "/feed");
-  redirect(next.startsWith("/") && !next.startsWith("//") ? next : "/feed");
+  const { safeNext } = await import("@/lib/oauth");
+  redirect(safeNext(next));
 }
 
 export async function logout() {

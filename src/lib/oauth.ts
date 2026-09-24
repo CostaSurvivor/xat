@@ -30,6 +30,17 @@ export function checkIdClaims(c: IdClaims | null, clientId: string, nonce: strin
   return { sub: c.sub, email: c.email.toLowerCase(), name: c.name };
 }
 
+/**
+ * Só caminhos do próprio site. Interpreta como o navegador faria (que ignora TAB/quebra
+ * de linha e trata "\\" como "/"), então "/\\evil.com" ou "/\t/evil.com" são recusados.
+ */
 export function safeNext(next: string | null | undefined, fallback = "/feed") {
-  return next && next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\") ? next : fallback;
+  if (!next || !next.startsWith("/") || /[\u0000-\u001f\u007f\\]/.test(next)) return fallback;
+  try {
+    const u = new URL(next, "http://base.invalid");
+    if (u.origin !== "http://base.invalid") return fallback;
+    return u.pathname + u.search + u.hash;
+  } catch {
+    return fallback;
+  }
 }

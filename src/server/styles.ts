@@ -15,8 +15,9 @@ export async function stylesFor(userIds: string[]): Promise<Record<string, NickS
   });
   const by: Record<string, typeof inv> = {};
   for (const i of inv) (by[i.userId] ??= []).push(i);
-  const infos = await db.user.findMany({ where: { id: { in: ids } }, select: { id: true, email: true, vipUntil: true } });
-  const founders = new Set(infos.filter((u) => FOUNDER_EMAILS.includes(u.email)).map((u) => u.id));
+  const infos = await db.user.findMany({ where: { id: { in: ids } }, select: { id: true, email: true, vipUntil: true, role: true } });
+  // fundador = e-mail do fundador E cargo admin (só o e-mail não basta: cadastro não confirma e-mail)
+  const founders = new Set(infos.filter((u) => u.role === "ADMIN" && FOUNDER_EMAILS.includes(u.email)).map((u) => u.id));
   const vips = new Set(infos.filter((u) => u.vipUntil && u.vipUntil > new Date()).map((u) => u.id));
   const out: Record<string, NickStyleJSON> = {};
   for (const id of ids) {
