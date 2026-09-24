@@ -22,6 +22,7 @@ Comunidade liberal 18+ (casais, solteiras e solteiros): **salas de chat estilo x
 | Pagamento | **Pix manual** com QR Code gerado da chave cadastrada no admin; o usuário clica "Já paguei" e o admin aprova. Recibo por e-mail |
 | Suporte | Tickets (troca de nick, tipo de perfil, pagamento…) com conversa e aprovação no admin |
 | Admin | Painel, Pix, verificações, denúncias (possível menor no topo + procedimento SaferNet/PF), tickets, usuários (banir por e-mail/IP/dispositivo, cargo, moedas, VIP, resetar senha, histórico), salas, loja, planos, cupons, anúncios, configurações (Pix e foto de fundo) |
+| App no celular | **PWA instalável**: botão "📲 Instalar app" (Android/PC) e instruções para iPhone; abre em tela cheia com ícone próprio. Por privacidade, nada de fotos, mensagens ou páginas fica salvo no aparelho; só a tela "sem conexão" |
 | LGPD | Consentimentos versionados, exportar dados, excluir conta, registros de acesso por 6 meses com expurgo automático |
 
 ## Rodar local
@@ -36,14 +37,16 @@ SEED_DEMO=1 npm run db:seed   # (opcional) usuários e posts de demonstração, 
 npm run dev                   # http://localhost:3000
 ```
 
-Cadastre-se com um e-mail listado em `ADMIN_EMAILS`: essa conta vira admin já verificada.
+Cadastre-se com um e-mail listado em `ADMIN_EMAILS`: essa conta vira admin já verificada (só enquanto não existir nenhum admin; depois, promova pelo painel).
 
 ## Testes
 
 ```bash
-npm test      # 58 testes (+2 de S3 com S3_TEST_ENDPOINT): login com Google, age gate, ao vivo (gorjetas, sinalização), permissões de sala, salas inativas, rate-limit/flood, ledger (concorrência e idempotência), trocas, webhook de pagamento, CSAM, Pix, itens (anti-XSS), vídeo
+npm test      # 60 testes (+2 de S3 com S3_TEST_ENDPOINT): login com Google, age gate, ao vivo (gorjetas, sinalização), permissões de sala, salas inativas, rate-limit/flood, ledger (concorrência e idempotência), trocas, webhook de pagamento, CSAM, Pix, itens (anti-XSS), vídeo
 npm run lint  # checagem de tipos
 ```
+
+A cada PR e push na `main`, o GitHub Actions (`.github/workflows/ci.yml`) sobe um MySQL, roda tipagem, testes e build.
 
 Os testes do ledger usam o banco do `.env`.
 
