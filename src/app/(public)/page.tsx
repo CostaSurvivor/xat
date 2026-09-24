@@ -6,7 +6,7 @@ import { SITE_NAME, CURRENCY_NAME } from "@/lib/config";
 export default async function Landing() {
   if (await getCurrentUser()) redirect("/feed");
   const features = [
-    ["💬", "Salas ao vivo", "Crie sua sala com endereço próprio, como /casaisSP, com moderadores, regras e o seu estilo."],
+    ["💬", "Salas de chat", "Sala Geral com o Brasil todo, sala só para casais e uma sala para cada estado, com moderação."],
     ["📸", "Fotos protegidas", "Toda foto recebe marca d’água com o nick. No PV, a foto chega borrada e só abre com consentimento."],
     ["✅", "Perfis verificados", "Verificação por selfie com gesto: menos fake, mais gente real."],
     ["✨", "Brilhe no chat", `Glow no nick, coroas, molduras e efeitos de entrada com ${CURRENCY_NAME}.`],

@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { can } from "@/lib/permissions";
-import { deleteRoom, manageMember, setRoomBackground, updateRoom } from "@/app/actions/rooms";
+import { manageMember, setRoomBackground, updateRoom } from "@/app/actions/rooms";
+import { STAFF_ONLY_ROOMS } from "@/lib/config";
 import { ActionForm } from "@/components/Forms";
 import { requireUser } from "@/server/auth";
 import { actorFor, roomBySlug } from "@/server/rooms";
@@ -60,7 +61,7 @@ export default async function RoomConfig({ params }: { params: Promise<{ slug: s
         <ul className="text-sm">
           {staff.map((s) => <li key={s.userId}>{s.role === "OWNER" ? "★ Dono" : "◆ Moderador"}: @{s.user.nick}</li>)}
         </ul>
-        <MemberManager action={manageMember.bind(null, slug)} isOwner={isOwner} />
+        <MemberManager action={manageMember.bind(null, slug)} canPromote={actor.platformRole !== "USER" && !STAFF_ONLY_ROOMS.has(slug)} />
       </section>
       <section className="card p-5">
         <h2 className="mb-2 font-semibold text-gold">Punições ativas</h2>
@@ -72,11 +73,6 @@ export default async function RoomConfig({ params }: { params: Promise<{ slug: s
           </ul>
         )}
       </section>
-      {isOwner && !room.isOfficial && (
-        <form action={deleteRoom.bind(null, slug)} className="text-right">
-          <button className="text-sm text-red-300 underline">Excluir sala definitivamente</button>
-        </form>
-      )}
     </div>
   );
 }

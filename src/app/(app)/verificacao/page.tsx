@@ -24,7 +24,7 @@ export default async function Verificacao({ searchParams }: { searchParams: Prom
           {last?.status === "REJECTED" && <p className="rounded-xl bg-wine/40 p-3 text-sm">Sua última verificação foi recusada{last.rejectReason ? `: ${last.rejectReason}` : ""}. Tente novamente.</p>}
           <p className="text-sm text-mute">
             A verificação confirma que {isCouple(user.profileType) ? "vocês dois são maiores de 18 anos e reais" : "você é maior de 18 anos e real"}. Ela libera: postar e ver fotos,
-            foto de perfil, álbum privado, fotos no PV, criar salas e a loja. A selfie é vista <b className="text-white">apenas pela moderação</b> e nunca aparece no perfil.
+            foto de perfil, álbum privado, fotos no PV, ao vivo e a loja. A selfie é vista <b className="text-white">apenas pela moderação</b> e nunca aparece no perfil.
           </p>
           <div className="rounded-xl border border-gold/40 bg-gold/10 p-4 text-center">
             <p className="text-xs uppercase tracking-wide text-mute">Tire uma selfie fazendo este gesto</p>

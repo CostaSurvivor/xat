@@ -1,7 +1,7 @@
 import "server-only";
 import type { Room } from "@prisma/client";
 import { db } from "@/lib/db";
-import { isCouple } from "@/lib/config";
+import { isCouple, STAFF_ONLY_ROOMS } from "@/lib/config";
 import { onlineSortKey, type Actor, type RoomRoleName } from "@/lib/permissions";
 import { isVerified, type CurrentUser } from "./auth";
 import { blockedIds } from "./access";
@@ -27,8 +27,11 @@ export function roomIsActive(room: RoomOwnerInfo) {
 }
 
 export async function actorFor(user: { id: string; role: string }, roomId: string): Promise<Actor> {
-  const m = await db.roomMember.findUnique({ where: { roomId_userId: { roomId, userId: user.id } } });
-  return { role: (m?.role ?? "GUEST") as RoomRoleName, platformRole: user.role as Actor["platformRole"] };
+  const m = await db.roomMember.findUnique({ where: { roomId_userId: { roomId, userId: user.id } }, include: { room: { select: { slug: true } } } });
+  let role = (m?.role ?? "GUEST") as RoomRoleName;
+  // Geral e Só Casais: cargo de sala não vale (só a equipe do site modera)
+  if (m && STAFF_ONLY_ROOMS.has(m.room.slug) && (role === "OWNER" || role === "MODERATOR")) role = "MEMBER";
+  return { role, platformRole: user.role as Actor["platformRole"] };
 }
 
 export async function activeSanction(roomId: string, userId: string, type: "MUTE" | "BAN") {
@@ -47,7 +50,9 @@ export async function canEnter(user: CurrentUser, room: Room & RoomOwnerInfo, ac
       : "Esta sala está inativa no momento.";
   if (await activeSanction(room.id, user.id, "BAN")) return "Você está banido desta sala.";
   if (room.access === "MEMBERS_ONLY" && actor.role === "GUEST") return "Sala exclusiva para membros.";
-  if (room.access === "COUPLES_ONLY" && !isCouple(user.profileType) && actor.role === "GUEST") return "Sala exclusiva para casais.";
+  // só casais: vale até para quem já é membro (o tipo de perfil só muda por ticket); dono e moderadores da sala passam
+  if (room.access === "COUPLES_ONLY" && !isCouple(user.profileType) && actor.role !== "OWNER" && actor.role !== "MODERATOR")
+    return "Sala exclusiva para perfis de casal (H/M, H/H ou M/M).";
   if (room.access === "VERIFIED_ONLY" && !isVerified(user)) return "Sala exclusiva para perfis verificados.";
   return null;
 }

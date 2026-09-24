@@ -11,12 +11,7 @@ import { hash } from "@node-rs/argon2";
 
 const db = new PrismaClient();
 
-// Salas criadas na primeira instalação; as regionais o admin cria pelo painel.
-const OFFICIAL = [
-  ["lobby", "Lobby", "Sala principal: chegue, se apresente e conheça a galera."],
-  ["casais", "Só Casais", "Papo entre casais liberais do Brasil todo."],
-  ["iniciantes", "Iniciantes no meio", "Dúvidas, primeiras experiências e dicas, sem julgamento."],
-] as const;
+import { COUPLES_ROOM, GENERAL_ROOM, STAFF_ONLY_ROOMS, UFS, stateRoom } from "../src/lib/config";
 
 type ItemSeed = { slug: string; name: string; category: ItemCategory; rarity?: ItemRarity; config: object; powerScore?: number; price7?: number; price30?: number; pricePerm?: number; limitedQty?: number; description?: string };
 
@@ -72,15 +67,54 @@ const PACKAGES = [
   { name: "Vulcão", coins: 1600, bonusCoins: 400, priceCents: 9990, sortOrder: 4 },
 ];
 
+/**
+ * Migração única (instalações antigas): salas oficiais passam a ser Geral + uma por estado.
+ * - "lobby" vira "geral" (mantém mensagens e membros)
+ * - oficiais antigas sem dono e fora do novo formato (casais, iniciantes, sul, nordeste) saem
+ * - estados que faltam são criados
+ * Marca "rooms-v2" para não repetir: depois disso o admin manda nas salas pelo painel.
+ */
+async function migrateRoomsV2() {
+  if (await db.platformSetting.findUnique({ where: { key: "rooms-v2" } })) return;
+  const lobby = await db.room.findUnique({ where: { slug: "lobby" } });
+  if (lobby && !(await db.room.findUnique({ where: { slug: GENERAL_ROOM.slug } })))
+    await db.room.update({ where: { id: lobby.id }, data: { ...GENERAL_ROOM, isOfficial: true } });
+  const stateSlugs = new Set(UFS.map((u) => u.toLowerCase()));
+  // sala só para casais: aproveita a "casais" antiga (mantém mensagens) e trava o acesso
+  const casais = await db.room.findUnique({ where: { slug: COUPLES_ROOM.slug } });
+  if (!casais) await db.room.create({ data: { ...COUPLES_ROOM, isOfficial: true, theme: "vinho" } });
+  else if (casais.isOfficial && !casais.ownerId) await db.room.update({ where: { id: casais.id }, data: { name: COUPLES_ROOM.name, description: COUPLES_ROOM.description, access: COUPLES_ROOM.access } });
+  const legacy = await db.room.findMany({ where: { isOfficial: true, ownerId: null, slug: { in: ["iniciantes", "sul", "nordeste", "sudeste", "norte", "centro-oeste"] } } });
+  const removed: string[] = [];
+  for (const r of legacy) {
+    // só apaga se estiver vazia: sala com conversa fica (o admin decide pelo painel)
+    if ((await db.message.count({ where: { roomId: r.id } })) > 0) continue;
+    await db.room.delete({ where: { id: r.id } });
+    removed.push(r.slug);
+  }
+  for (const uf of UFS) {
+    const data = stateRoom(uf);
+    const cur = await db.room.findUnique({ where: { slug: data.slug } });
+    if (!cur) await db.room.create({ data: { ...data, isOfficial: true, theme: "noir" } });
+    else if (cur.isOfficial && !cur.ownerId) await db.room.update({ where: { id: cur.id }, data: { name: data.name, state: data.state, description: data.description } });
+  }
+  await db.platformSetting.upsert({ where: { key: "rooms-v2" }, create: { key: "rooms-v2", value: { at: new Date().toISOString(), removed } }, update: {} });
+  console.log(`Salas: Geral + Só Casais + ${stateSlugs.size} estados (removidas: ${removed.join(", ") || "nenhuma"})`);
+}
+
 async function main() {
   // Só na primeira instalação: depois disso o admin controla salas e itens pelo painel
   // (o seed roda a cada deploy e NÃO pode recriar o que foi apagado/editado).
   const firstRun = (await db.platformSetting.findUnique({ where: { key: "seeded" } })) === null;
   if (firstRun && (await db.room.count()) === 0) {
-    for (const [slug, name, description] of OFFICIAL) {
-      await db.room.create({ data: { slug, name, description, isOfficial: true, theme: slug === "lobby" ? "vinho" : "noir" } });
-    }
+    await db.room.create({ data: { ...GENERAL_ROOM, isOfficial: true, theme: "vinho" } });
+    await db.room.create({ data: { ...COUPLES_ROOM, isOfficial: true, theme: "vinho" } });
+    for (const uf of UFS) await db.room.create({ data: { ...stateRoom(uf), isOfficial: true, theme: "noir" } });
+    await db.platformSetting.upsert({ where: { key: "rooms-v2" }, create: { key: "rooms-v2", value: { at: new Date().toISOString() } }, update: {} });
   }
+  await migrateRoomsV2();
+  // Geral e Só Casais não têm cargos de sala (a equipe do site modera)
+  await db.roomMember.updateMany({ where: { role: { in: ["OWNER", "MODERATOR"] }, room: { slug: { in: [...STAFF_ONLY_ROOMS] } } }, data: { role: "MEMBER" } });
   // Itens novos do catálogo entram a cada deploy; os existentes NÃO são alterados
   // (preço/ativação editados pelo admin são preservados).
   for (const it of ITEMS) {
@@ -177,7 +211,7 @@ async function demo() {
     for (const p of posts) for (const [j, u] of users.entries()) if (u.id !== p.authorId && j % 2 === 0) await db.postReaction.create({ data: { postId: p.id, userId: u.id, emoji: ["🔥", "😈", "❤️"][j % 3] } });
     await db.postComment.create({ data: { postId: posts[0].id, authorId: users[1].id, body: "Que delícia! Da próxima me chamem 😏" } });
   }
-  const lobby = await db.room.findUniqueOrThrow({ where: { slug: "lobby" } });
+  const lobby = await db.room.findUniqueOrThrow({ where: { slug: GENERAL_ROOM.slug } });
   if ((await db.message.count({ where: { roomId: lobby.id } })) === 0) {
     const chat = [
       [0, "Boa noite, galera! 🥂"],

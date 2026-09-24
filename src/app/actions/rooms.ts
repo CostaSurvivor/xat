@@ -1,13 +1,11 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { RESERVED_SLUGS, UFS } from "@/lib/config";
+import { STAFF_ONLY_ROOMS, UFS } from "@/lib/config";
 import { can } from "@/lib/permissions";
-import { limiter } from "@/lib/ratelimit";
-import { isSubscriber, requireUser } from "@/server/auth";
+import { requireUser } from "@/server/auth";
 import { actorFor, canEnter, roomBySlug } from "@/server/rooms";
 import { audit } from "@/server/notify";
 
@@ -23,38 +21,6 @@ const roomSchema = z.object({
   theme: z.enum(["noir", "vinho", "ouro", "neon"]),
   linksAllowed: z.string().optional(),
 });
-
-export async function createRoom(_: R, formData: FormData): Promise<R> {
-  const user = await requireUser();
-  const isAdmin = user.role === "ADMIN";
-  if (!isAdmin && !isSubscriber(user)) return { error: "Criar sala é exclusivo para assinantes." };
-  if (!isAdmin && !limiter("room-create", 3, 3 / 86400).take(user.id)) return { error: "Limite de criação de salas atingido hoje." };
-  const slug = String(formData.get("slug") || "").trim().toLowerCase();
-  if (!/^[a-z0-9][a-z0-9-]{2,31}$/.test(slug)) return { error: "Endereço: 3–32 caracteres (letras minúsculas, números e hífen)." };
-  if (RESERVED_SLUGS.has(slug)) return { error: "Esse endereço é reservado." };
-  if (await roomBySlug(slug)) return { error: "Esse endereço já existe." };
-  if (!isAdmin && (await db.room.count({ where: { ownerId: user.id } })) >= 3) return { error: "Assinantes podem ter até 3 salas." };
-  const p = roomSchema.safeParse(Object.fromEntries(formData));
-  if (!p.success) return { error: p.error.issues[0].message };
-  const d = p.data;
-  await db.room.create({
-    data: {
-      slug,
-      name: d.name,
-      description: d.description || null,
-      rules: d.rules || null,
-      state: d.state || null,
-      city: d.city || null,
-      access: d.access,
-      theme: d.theme,
-      linksAllowed: d.linksAllowed === "on",
-      isOfficial: isAdmin && formData.get("official") === "on",
-      ownerId: user.id,
-      members: { create: { userId: user.id, role: "OWNER" } },
-    },
-  });
-  redirect(`/${slug}`);
-}
 
 export async function updateRoom(slug: string, _: R, formData: FormData): Promise<R> {
   const user = await requireUser();
@@ -109,6 +75,8 @@ export async function manageMember(slug: string, _: R, formData: FormData): Prom
     if (!can(actor, "kick")) return { error: "Sem permissão" };
     await db.roomMember.upsert({ where: { roomId_userId: { roomId: room.id, userId: target.id } }, create: { roomId: room.id, userId: target.id }, update: {} });
   } else if (op === "promote") {
+    if (actor.platformRole === "USER") return { error: "Só a equipe do site escolhe moderadores." };
+    if (STAFF_ONLY_ROOMS.has(room.slug)) return { error: "Esta sala é moderada só pela equipe do site." };
     if (tActor.role !== "GUEST" && tActor.role !== "MEMBER") return { error: "Já é moderador ou dono" };
     // convidado é tratado como membro para fins de promoção
     if (!can(actor, "promote_moderator", { ...tActor, role: "MEMBER" })) return { error: "Sem permissão" };
@@ -118,7 +86,7 @@ export async function manageMember(slug: string, _: R, formData: FormData): Prom
       update: { role: "MODERATOR" },
     });
   } else if (op === "demote") {
-    if (!can(actor, "demote_moderator", tActor)) return { error: "Sem permissão" };
+    if (actor.platformRole === "USER") return { error: "Só a equipe do site muda moderadores." };
     await db.roomMember.update({ where: { roomId_userId: { roomId: room.id, userId: target.id } }, data: { role: "MEMBER" } });
   } else if (op === "remove") {
     if (!can(actor, "kick", tActor)) return { error: "Sem permissão" };
@@ -130,16 +98,6 @@ export async function manageMember(slug: string, _: R, formData: FormData): Prom
   await audit(user.id, `room.member.${op}`, "Room", room.id, { target: target.id });
   revalidatePath(`/${slug}/config`);
   return { ok: true };
-}
-
-export async function deleteRoom(slug: string) {
-  const user = await requireUser();
-  const room = await roomBySlug(slug);
-  if (!room || room.isOfficial) return;
-  if (!can(await actorFor(user, room.id), "delete_room")) return;
-  await db.room.delete({ where: { id: room.id } });
-  await audit(user.id, "room.delete", "Room", room.id, { slug });
-  redirect("/salas");
 }
 
 /** Dono (ou staff) define a foto de fundo da sala. */

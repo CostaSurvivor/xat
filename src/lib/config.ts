@@ -34,13 +34,32 @@ export const LIKE_GROUPS: { title: string; tags: string[] }[] = [
 
 export const LIKE_TAGS = LIKE_GROUPS.flatMap((g) => g.tags);
 
+export const UF_NAMES: Record<string, string> = {
+  AC: "Acre", AL: "Alagoas", AP: "Amapá", AM: "Amazonas", BA: "Bahia", CE: "Ceará", DF: "Distrito Federal",
+  ES: "Espírito Santo", GO: "Goiás", MA: "Maranhão", MT: "Mato Grosso", MS: "Mato Grosso do Sul", MG: "Minas Gerais",
+  PA: "Pará", PB: "Paraíba", PR: "Paraná", PE: "Pernambuco", PI: "Piauí", RJ: "Rio de Janeiro", RN: "Rio Grande do Norte",
+  RS: "Rio Grande do Sul", RO: "Rondônia", RR: "Roraima", SC: "Santa Catarina", SP: "São Paulo", SE: "Sergipe", TO: "Tocantins",
+};
+
+/** Salas oficiais: uma Geral para o Brasil todo + uma por estado (slug = UF minúscula). */
+export const GENERAL_ROOM = { slug: "geral", name: "Geral", description: "O chat de todo o Brasil: chegue, se apresente e conheça a galera." };
+export const COUPLES_ROOM = { slug: "casais", name: "Só Casais", description: "Sala exclusiva para perfis de casal (H/M, H/H e M/M).", access: "COUPLES_ONLY" as const };
+/** Salas principais: só a equipe do site (admin/moderador) modera; ninguém recebe cargo de sala nelas. */
+export const STAFF_ONLY_ROOMS = new Set([GENERAL_ROOM.slug, COUPLES_ROOM.slug]);
+export const stateRoom = (uf: string) => ({
+  slug: uf.toLowerCase(),
+  name: UF_NAMES[uf],
+  state: uf,
+  description: `Chat de ${UF_NAMES[uf]}: casais, solteiras e solteiros de ${uf}.`,
+});
+
 export const UFS = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
 
 export const RESERVED_SLUGS = new Set([
   "admin", "api", "login", "sair", "cadastro", "entrada", "feed", "u", "salas", "mensagens",
   "loja", "carteira", "perfil", "conta", "verificacao", "notificacoes", "termos", "privacidade",
   "regras", "_next", "static", "favicon.ico", "robots.txt", "denunciar", "busca", "pessoas",
-  "ao-vivo", "live", "trocas", "suporte", "assinar",
+  "ao-vivo", "live", "trocas", "suporte", "assinar", "geral", "lobby",
 ]);
 
 export const REACTIONS = ["🔥", "❤️", "😈", "😂", "👏", "😍"] as const;

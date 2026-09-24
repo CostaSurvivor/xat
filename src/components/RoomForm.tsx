@@ -6,19 +6,11 @@ import { UFS } from "@/lib/config";
 type Room = { name: string; description: string | null; rules: string | null; state: string | null; city: string | null; access: string; theme: string; linksAllowed: boolean };
 type Act = (state: { ok?: boolean; error?: string } | undefined, fd: FormData) => Promise<{ ok?: boolean; error?: string } | undefined>;
 
-export function RoomForm({ action, room, bannedWords, isNew, canOfficial }: { action: Act; room?: Room; bannedWords?: string; isNew?: boolean; canOfficial?: boolean }) {
+/** Edição de sala (as salas são fixas da plataforma; não há criação). */
+export function RoomForm({ action, room, bannedWords }: { action: Act; room?: Room; bannedWords?: string }) {
   const [state, formAction, pending] = useActionState(action, undefined);
   return (
     <form action={formAction} className="space-y-4">
-      {isNew && (
-        <div>
-          <label className="label">Endereço da sala</label>
-          <div className="flex items-center rounded-xl border border-line bg-panel2 pl-3 text-sm text-mute">
-            site/
-            <input name="slug" required pattern="[a-z0-9][a-z0-9-]{2,31}" className="flex-1 bg-transparent px-1 py-2 text-white outline-none" placeholder="casaissp" />
-          </div>
-        </div>
-      )}
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
           <label className="label">Nome</label>
@@ -64,16 +56,13 @@ export function RoomForm({ action, room, bannedWords, isNew, canOfficial }: { ac
         </div>
       </div>
       <label className="flex items-center gap-2 text-sm text-mute"><input type="checkbox" name="linksAllowed" defaultChecked={room?.linksAllowed} /> Permitir links no chat</label>
-      {isNew && canOfficial && <label className="flex items-center gap-2 text-sm text-gold"><input type="checkbox" name="official" defaultChecked /> ⭐ Sala oficial (fica sempre ativa e aparece no topo)</label>}
-      {!isNew && (
-        <div>
-          <label className="label">Palavras bloqueadas (separe por vírgula)</label>
-          <textarea name="bannedWords" defaultValue={bannedWords} className="input h-20" />
-        </div>
-      )}
+      <div>
+        <label className="label">Palavras bloqueadas (separe por vírgula)</label>
+        <textarea name="bannedWords" defaultValue={bannedWords} className="input h-20" />
+      </div>
       {state?.error && <p className="text-sm text-red-300">{state.error}</p>}
       {state?.ok && <p className="text-sm text-gold">Salvo!</p>}
-      <button disabled={pending} className="btn-gold">{isNew ? "Criar sala" : "Salvar"}</button>
+      <button disabled={pending} className="btn-gold">Salvar</button>
     </form>
   );
 }

@@ -8,7 +8,7 @@ const LINKS = [
   ["/admin/tickets", "🎫 Tickets", false],
   ["/admin/pagamentos", "Pix", true],
   ["/admin/usuarios", "Usuários", true],
-  ["/admin/salas", "Salas", true],
+  ["/admin/salas", "Salas", false],
   ["/admin/ao-vivo", "🔴 Ao vivo", false],
   ["/admin/loja", "Loja", true],
   ["/admin/avisos", "Anúncios", true],
