@@ -56,6 +56,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
     }
   }
   const myStyle = (await stylesFor([user.id]))[user.id];
+  const { roomPollView } = await import("@/server/roompolls");
+  const enquete = await roomPollView(room.id, user.id);
   const pinned = fresh?.pinnedMessageId ? await db.message.findFirst({ where: { id: fresh.pinnedMessageId, roomId: room.id }, include: { author: { select: { nick: true } } } }) : null;
 
   return NextResponse.json({
@@ -67,6 +69,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
     reactions,
     me: { role: actor.role, platformRole: actor.platformRole, mutedUntil: mute ? (mute.expiresAt?.toISOString() ?? "sempre") : null, canPinOwn: !!myStyle?.powers.includes("PIN_MESSAGE") },
     slowMode: fresh?.slowModeSeconds ?? 0,
+    enquete,
     pinned: pinned && !pinned.deletedAt ? { id: pinned.id.toString(), body: pinned.body, nick: pinned.author?.nick ?? "" } : null,
   });
 }

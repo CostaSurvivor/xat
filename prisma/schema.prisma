@@ -1250,3 +1250,33 @@ model PushSubscription {
   @@index([userId])
   @@index([sessionId])
 }
+
+// -----------------------------------------------------------------------------
+// Enquetes nas salas (moderador/dono/equipe abre; cada pessoa tem 1 voto, pode trocar)
+// -----------------------------------------------------------------------------
+
+model RoomPoll {
+  id        String         @id @default(cuid())
+  roomId    String
+  creatorId String
+  question  String         @db.VarChar(140)
+  /// lista de opções (2 a 5 textos)
+  options   Json
+  endsAt    DateTime
+  closedAt  DateTime?
+  createdAt DateTime       @default(now())
+  votes     RoomPollVote[]
+
+  @@index([roomId, createdAt])
+}
+
+model RoomPollVote {
+  pollId    String
+  userId    String
+  option    Int
+  createdAt DateTime @default(now())
+  poll      RoomPoll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+
+  @@id([pollId, userId])
+  @@index([userId])
+}
