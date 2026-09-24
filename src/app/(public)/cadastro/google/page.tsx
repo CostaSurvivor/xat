@@ -21,7 +21,7 @@ export default async function CadastroGoogle() {
     <div className="mx-auto mt-4 max-w-2xl card p-6 sm:p-8">
       <h1 className="font-[family-name:var(--font-display)] text-3xl font-bold">Quase lá!</h1>
       <p className="mb-6 mt-1 text-sm text-mute">
-        Conectado como <b className="text-white">{pending.data.email}</b>. Complete o perfil: as datas de nascimento de todos são obrigatórias (18+).
+        Conectado como <b className="text-fg">{pending.data.email}</b>. Complete o perfil: as datas de nascimento de todos são obrigatórias (18+).
       </p>
       <SignupForm google={{ email: pending.data.email }} />
     </div>

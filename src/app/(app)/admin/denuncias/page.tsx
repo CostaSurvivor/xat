@@ -24,10 +24,10 @@ export default async function Denuncias({ searchParams }: { searchParams: Promis
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <h1 className="mr-auto text-xl font-bold">Denúncias</h1>
-        {["OPEN", "ESCALATED", "RESOLVED", "DISMISSED"].map((s) => <Link key={s} href={`?status=${s}`} className={`rounded-full px-3 py-1 text-xs ${s === status ? "bg-wine" : "border border-line"}`}>{s}</Link>)}
+        {["OPEN", "ESCALATED", "RESOLVED", "DISMISSED"].map((s) => <Link key={s} href={`?status=${s}`} className={`rounded-full px-3 py-1 text-xs ${s === status ? "bg-wine text-white" : "border border-line"}`}>{s}</Link>)}
       </div>
       <details className="card p-4 text-sm text-mute">
-        <summary className="cursor-pointer font-semibold text-white">📋 Procedimento para possível abuso sexual infantil (CSAM)</summary>
+        <summary className="cursor-pointer font-semibold text-fg">📋 Procedimento para possível abuso sexual infantil (CSAM)</summary>
         <ol className="mt-2 list-decimal space-y-1 pl-5">
           <li>Não baixe, não encaminhe e não compartilhe o conteúdo. Posse e distribuição são crimes (ECA, arts. 241-A e 241-B).</li>
           <li>Clique em <b>“Escalar”</b>: a mídia fica em quarentena, o hash entra na blocklist, a conta é banida e as evidências ficam preservadas.</li>
@@ -39,7 +39,7 @@ export default async function Denuncias({ searchParams }: { searchParams: Promis
       {reports.map((r) => (
         <div key={r.id} className={`card space-y-2 p-4 ${r.reason === "POSSIBLE_MINOR" ? "border-red-500/70" : ""}`}>
           <div className="flex flex-wrap items-center gap-2 text-sm">
-            <b className={r.reason === "POSSIBLE_MINOR" ? "text-red-300" : "text-gold"}>{REASON_PT[r.reason]}</b>
+            <b className={r.reason === "POSSIBLE_MINOR" ? "text-red-700" : "text-gold"}>{REASON_PT[r.reason]}</b>
             <span className="text-mute">· {r.targetType} · alvo: {r.targetUserId ? <Link href={`/u/${nickOf.get(r.targetUserId)}`} className="underline">@{nickOf.get(r.targetUserId)}</Link> : "—"} · por @{r.reporter.nick} · {r.createdAt.toLocaleString("pt-BR")}</span>
             <span className="ml-auto font-mono text-xs text-mute">{r.id}</span>
           </div>

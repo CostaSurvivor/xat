@@ -12,7 +12,7 @@ export default async function Verificacoes() {
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-bold">Verificações pendentes ({list.length})</h1>
-      <p className="text-sm text-mute">Confira: pessoa(s) real(is), gesto pedido, papel com o nick, <b className="text-white">aparência claramente adulta</b> e, em casais, as duas pessoas. Em dúvida sobre idade, recuse.</p>
+      <p className="text-sm text-mute">Confira: pessoa(s) real(is), gesto pedido, papel com o nick, <b className="text-fg">aparência claramente adulta</b> e, em casais, as duas pessoas. Em dúvida sobre idade, recuse.</p>
       <div className="grid gap-4 md:grid-cols-2">
         {list.map((v) => (
           <div key={v.id} className="card space-y-2 p-4">

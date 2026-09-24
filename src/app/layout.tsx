@@ -7,11 +7,11 @@ export const metadata: Metadata = {
   description: "Comunidade liberal 18+: salas de chat, fotos e casais.",
   robots: { index: false, follow: false },
   applicationName: SITE_NAME,
-  appleWebApp: { capable: true, title: SITE_NAME, statusBarStyle: "black-translucent" },
+  appleWebApp: { capable: true, title: SITE_NAME, statusBarStyle: "default" },
   icons: { icon: "/icon.svg", apple: "/icons/apple-touch-icon.png" },
 };
 
-export const viewport: Viewport = { themeColor: "#0b0708", width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { themeColor: "#ffffff", width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

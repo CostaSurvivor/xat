@@ -96,14 +96,17 @@ d("ledger", async () => {
 
   it("edição limitada: compras simultâneas da última unidade não vendem a mais", async () => {
     const lim = await db.item.create({ data: { slug: `lim-${tag}`, name: "L", category: "BADGE", config: { emoji: "💎" }, price30: 1, limitedQty: 1 } });
-    await L.adminAdjust(b.id, 50, a.id, "t", `lim-seed-${tag}`);
-    const before = await L.balanceOf(b.id);
-    const rs = await Promise.allSettled(Array.from({ length: 6 }, (_, i) => L.buyItem(b.id, lim.id, "30", `lim-${tag}-${i}`)));
-    expect(rs.filter((r) => r.status === "fulfilled").length).toBe(1);
-    expect((await db.item.findUniqueOrThrow({ where: { id: lim.id } })).soldCount).toBe(1);
-    expect(await L.balanceOf(b.id)).toBe(before - 1); // só uma cobrança
-    await db.inventoryItem.deleteMany({ where: { itemId: lim.id } });
-    await db.item.delete({ where: { id: lim.id } });
+    try {
+      await L.adminAdjust(b.id, 50, a.id, "t", `lim-seed-${tag}`);
+      const before = await L.balanceOf(b.id);
+      const rs = await Promise.allSettled(Array.from({ length: 6 }, (_, i) => L.buyItem(b.id, lim.id, "30", `lim-${tag}-${i}`)));
+      expect(rs.filter((r) => r.status === "fulfilled").length).toBe(1);
+      expect((await db.item.findUniqueOrThrow({ where: { id: lim.id } })).soldCount).toBe(1);
+      expect(await L.balanceOf(b.id)).toBe(before - 1); // só uma cobrança
+    } finally {
+      await db.inventoryItem.deleteMany({ where: { itemId: lim.id } });
+      await db.item.delete({ where: { id: lim.id } });
+    }
   });
 
   it("assinatura: aprovar 2x estende uma vez e dá o bônus uma vez", async () => {

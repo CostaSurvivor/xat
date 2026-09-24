@@ -60,7 +60,7 @@ export function RoomForm({ action, room, bannedWords }: { action: Act; room?: Ro
         <label className="label">Palavras bloqueadas (separe por vírgula)</label>
         <textarea name="bannedWords" defaultValue={bannedWords} className="input h-20" />
       </div>
-      {state?.error && <p className="text-sm text-red-300">{state.error}</p>}
+      {state?.error && <p className="text-sm text-red-700">{state.error}</p>}
       {state?.ok && <p className="text-sm text-gold">Salvo!</p>}
       <button disabled={pending} className="btn-gold">Salvar</button>
     </form>

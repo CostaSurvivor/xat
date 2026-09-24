@@ -393,14 +393,14 @@ export function LiveRoom({ live, me, ice, maxViewers, presets }: { live: LiveInf
           {/* marca d'água com quem assiste (desencoraja gravação/print) */}
           {!isHost && !ended && videoState === "playing" && (
             <div className="pointer-events-none absolute inset-0 select-none overflow-hidden">
-              <span className="live-wm absolute text-sm font-semibold text-white/25">@{me.nick} · {new Date(now).toLocaleDateString("pt-BR")}</span>
+              <span className="live-wm absolute text-sm font-semibold text-white/30">@{me.nick} · {new Date(now).toLocaleDateString("pt-BR")}</span>
             </div>
           )}
           <div className="absolute left-2 top-2 flex items-center gap-1.5 text-xs">
-            {ended ? <span className="rounded bg-zinc-700 px-2 py-0.5 font-bold">ENCERRADA</span> : <span className="live-dot rounded bg-red-600 px-2 py-0.5 font-bold">● AO VIVO</span>}
-            {!ended && elapsed && <span className="rounded bg-black/60 px-2 py-0.5">{elapsed}</span>}
-            <span className="rounded bg-black/60 px-2 py-0.5">👁 {stats.viewers}</span>
-            {live.audience === "VIP" && <span className="rounded bg-fuchsia-700/80 px-2 py-0.5">💎 assinantes</span>}
+            {ended ? <span className="rounded bg-zinc-700 px-2 py-0.5 font-bold">ENCERRADA</span> : <span className="live-dot rounded bg-red-600 text-white px-2 py-0.5 font-bold">● AO VIVO</span>}
+            {!ended && elapsed && <span className="rounded bg-black/60 text-white px-2 py-0.5">{elapsed}</span>}
+            <span className="rounded bg-black/60 text-white px-2 py-0.5">👁 {stats.viewers}</span>
+            {live.audience === "VIP" && <span className="rounded bg-fuchsia-700/80 text-white px-2 py-0.5">💎 assinantes</span>}
           </div>
           {/* gorjetas flutuando */}
           <div className="pointer-events-none absolute bottom-3 right-3 flex flex-col items-end gap-1">
@@ -434,7 +434,7 @@ export function LiveRoom({ live, me, ice, maxViewers, presets }: { live: LiveInf
             </div>
           )}
           {ended && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/80 p-4 text-center">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/80 text-white p-4 text-center">
               <p className="text-lg font-semibold">Transmissão encerrada</p>
               {endReason && <p className="text-sm text-mute">{endReason}</p>}
               <p className="text-sm">Pico de {stats.peak} espectadores · {stats.tipTotal} {CURRENCY_NAME} em gorjetas</p>
@@ -442,10 +442,10 @@ export function LiveRoom({ live, me, ice, maxViewers, presets }: { live: LiveInf
             </div>
           )}
           {!isHost && videoState === "playing" && muted && !ended && (
-            <button onClick={() => { setMuted(false); void videoRef.current?.play(); }} className="absolute bottom-3 left-3 rounded-full bg-black/70 px-3 py-1.5 text-sm">🔇 Ativar som</button>
+            <button onClick={() => { setMuted(false); void videoRef.current?.play(); }} className="absolute bottom-3 left-3 rounded-full bg-black/70 text-white px-3 py-1.5 text-sm">🔇 Ativar som</button>
           )}
           {!isHost && videoState === "playing" && !muted && !ended && (
-            <button onClick={() => setMuted(true)} className="absolute bottom-3 left-3 rounded-full bg-black/50 px-3 py-1.5 text-sm">🔊</button>
+            <button onClick={() => setMuted(true)} className="absolute bottom-3 left-3 rounded-full bg-black/50 text-white px-3 py-1.5 text-sm">🔊</button>
           )}
         </div>
 
@@ -492,8 +492,8 @@ export function LiveRoom({ live, me, ice, maxViewers, presets }: { live: LiveInf
       {/* ------------------------------------------------ chat */}
       <div className="card flex h-[60dvh] flex-col overflow-hidden lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:h-[calc(100dvh-8rem)]">
         <div className="flex border-b border-line text-sm">
-          <button onClick={() => setTab("chat")} className={`flex-1 py-2 ${tab === "chat" ? "border-b-2 border-gold text-white" : "text-mute"}`}>💬 Chat</button>
-          <button onClick={() => setTab("gente")} className={`flex-1 py-2 ${tab === "gente" ? "border-b-2 border-gold text-white" : "text-mute"}`}>👁 Assistindo ({stats.viewers})</button>
+          <button onClick={() => setTab("chat")} className={`flex-1 py-2 ${tab === "chat" ? "border-b-2 border-gold text-fg" : "text-mute"}`}>💬 Chat</button>
+          <button onClick={() => setTab("gente")} className={`flex-1 py-2 ${tab === "gente" ? "border-b-2 border-gold text-fg" : "text-mute"}`}>👁 Assistindo ({stats.viewers})</button>
           <button onClick={() => setSoundFx((s) => !s)} className="px-3 text-mute" title="Som das gorjetas">{soundFx ? "🔔" : "🔕"}</button>
         </div>
 
@@ -504,7 +504,7 @@ export function LiveRoom({ live, me, ice, maxViewers, presets }: { live: LiveInf
               <div key={v.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-panel2">
                 <Avatar mediaId={v.avatarId} nick={v.nick} size={28} />
                 <Link href={`/u/${encodeURIComponent(v.nick)}`} className="flex-1 truncate text-sm hover:underline">{v.nick}</Link>
-                {meInfo.canMod && v.id !== me.id && <button onClick={() => void mod("kick", v.id)} className="text-xs text-red-300 hover:underline">Remover</button>}
+                {meInfo.canMod && v.id !== me.id && <button onClick={() => void mod("kick", v.id)} className="text-xs text-red-700 hover:underline">Remover</button>}
               </div>
             ))}
           </div>
@@ -517,7 +517,7 @@ export function LiveRoom({ live, me, ice, maxViewers, presets }: { live: LiveInf
                   <div key={m.id} className="entry-pop rounded-xl border border-gold/40 bg-gradient-to-r from-gold/20 via-wine/30 to-transparent px-3 py-2">
                     <span className="mr-1">{CURRENCY_ICON}</span>
                     <Nick nick={m.author.nick} style={m.author.style} /> deu <b className="text-gold2">{m.amount} {CURRENCY_NAME}</b>
-                    {m.body && <p className="mt-0.5 break-words text-white/90">“{m.body}”</p>}
+                    {m.body && <p className="mt-0.5 break-words text-fg/90">“{m.body}”</p>}
                   </div>
                 );
               if (!m.author) return null;
@@ -528,11 +528,11 @@ export function LiveRoom({ live, me, ice, maxViewers, presets }: { live: LiveInf
                   <p className="min-w-0 flex-1 break-words">
                     <button onClick={() => setMenu(isMine ? null : { id: m.author!.id, nick: m.author!.nick })} className="mr-1">
                       <Nick nick={m.author.nick} style={m.author.style} link={false} />
-                      {m.author.id === live.hostId && <span className="ml-1 rounded bg-red-600 px-1 text-[9px] font-bold align-middle">HOST</span>}
+                      {m.author.id === live.hostId && <span className="ml-1 rounded bg-red-600 text-white px-1 text-[9px] font-bold align-middle">HOST</span>}
                     </button>
                     {m.body}
                   </p>
-                  {meInfo.canMod && <button onClick={() => void mod("delete", m.id)} className="hidden text-xs text-mute hover:text-red-300 group-hover:inline" title="Apagar">✕</button>}
+                  {meInfo.canMod && <button onClick={() => void mod("delete", m.id)} className="hidden text-xs text-mute hover:text-red-700 group-hover:inline" title="Apagar">✕</button>}
                 </div>
               );
             })}
@@ -544,12 +544,12 @@ export function LiveRoom({ live, me, ice, maxViewers, presets }: { live: LiveInf
             <span className="flex-1 truncate font-semibold">@{menu.nick}</span>
             <Link href={`/u/${encodeURIComponent(menu.nick)}`} className="text-gold hover:underline">Perfil</Link>
             <button onClick={() => { setText((t) => `@${menu.nick} ${t}`); setMenu(null); }} className="text-gold hover:underline">Responder</button>
-            {meInfo.canMod && menu.id !== live.hostId && <button onClick={() => void mod("kick", menu.id)} className="text-red-300 hover:underline">Remover</button>}
+            {meInfo.canMod && menu.id !== live.hostId && <button onClick={() => void mod("kick", menu.id)} className="text-red-700 hover:underline">Remover</button>}
             <button onClick={() => setMenu(null)} className="text-mute">✕</button>
           </div>
         )}
 
-        {err && <p className="border-t border-line px-3 py-1.5 text-xs text-red-300" onClick={() => setErr(null)}>{err}</p>}
+        {err && <p className="border-t border-line px-3 py-1.5 text-xs text-red-700" onClick={() => setErr(null)}>{err}</p>}
 
         {!ended && (
           <div className="border-t border-line p-2">
@@ -571,7 +571,7 @@ export function LiveRoom({ live, me, ice, maxViewers, presets }: { live: LiveInf
             )}
             <form onSubmit={send} className="flex items-center gap-1.5">
               {!isHost && (
-                <button type="button" onClick={() => setTipOpen((o) => !o)} className={`shrink-0 rounded-full px-3 py-2 text-sm font-semibold ${tipOpen ? "bg-gold text-ink" : "bg-wine text-white"}`} title="Dar gorjeta">{CURRENCY_ICON}</button>
+                <button type="button" onClick={() => setTipOpen((o) => !o)} className={`shrink-0 rounded-full px-3 py-2 text-sm font-semibold ${tipOpen ? "bg-gold text-white" : "bg-wine text-white"}`} title="Dar gorjeta">{CURRENCY_ICON}</button>
               )}
               <input value={text} onChange={(e) => setText(e.target.value)} maxLength={300} placeholder="Diga algo…" className="input flex-1" />
               <button className="btn-gold shrink-0 px-3">➤</button>

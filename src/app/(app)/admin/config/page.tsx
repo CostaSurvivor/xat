@@ -20,7 +20,7 @@ export default async function Config() {
       <div className="space-y-3">
         <h2 className="text-xl font-bold">Foto de fundo da tela inicial</h2>
         <p className="text-sm text-mute">
-          Aparece bem opaca atrás do texto da página de entrada. Use uma foto sensual <b className="text-white">sem nudez explícita</b>, de
+          Aparece bem opaca atrás do texto da página de entrada. Use uma foto sensual <b className="text-fg">sem nudez explícita</b>, de
           pessoas adultas, que você tenha direito de usar (sua própria sessão de fotos ou banco de imagens com licença comercial).
         </p>
         <ActionForm action={saveHeroImage} className="space-y-2" okText="Fundo atualizado!">

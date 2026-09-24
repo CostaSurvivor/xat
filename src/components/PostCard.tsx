@@ -39,9 +39,9 @@ function CommentItem({ c, onReply, onDelete, small = false }: { c: CommentView; 
         </div>
         <div className="relative mt-0.5 flex flex-wrap items-center gap-3 pl-2 text-[11px] text-mute">
           <span>{timeAgo(c.createdAt)}</span>
-          <button onClick={() => setPicker((v) => !v)} className={mine ? "font-semibold text-gold" : "hover:text-white"}>{mine ? `${mine} Reagiu` : "Reagir"}</button>
-          <button onClick={onReply} className="hover:text-white">Responder</button>
-          {c.canDelete ? <button className="hover:text-red-300" onClick={onDelete}>apagar</button> : <ReportButton targetType="COMMENT" targetId={c.id} label="" />}
+          <button onClick={() => setPicker((v) => !v)} className={mine ? "font-semibold text-gold" : "hover:text-fg"}>{mine ? `${mine} Reagiu` : "Reagir"}</button>
+          <button onClick={onReply} className="hover:text-fg">Responder</button>
+          {c.canDelete ? <button className="hover:text-red-700" onClick={onDelete}>apagar</button> : <ReportButton targetType="COMMENT" targetId={c.id} label="" />}
           {total.length > 0 && <span className="rounded-full bg-panel2 px-1.5">{total.map(([e]) => e).join("")} {total.reduce((s, [, n]) => s + n, 0)}</span>}
           {picker && (
             <div className="absolute -top-9 left-8 z-10 flex gap-1 rounded-full border border-line bg-panel px-2 py-1 shadow-xl">
@@ -87,7 +87,7 @@ export function PostCard({ post, viewer }: { post: FeedPost; viewer: { nick: str
           <div className="truncate">
             <Nick nick={a.nick} style={a.style} />
             {a.ageVerification === "APPROVED" && <span title="Verificado" className="ml-1 text-xs text-gold">✔</span>}
-            {a.vip && <span title="Assinante" className="ml-1 rounded bg-gold px-1 text-[10px] font-bold text-ink">VIP</span>}
+            {a.vip && <span title="Assinante" className="ml-1 rounded bg-gold px-1 text-[10px] font-bold text-white">VIP</span>}
           </div>
           <div className="text-xs text-mute">
             {PROFILE_TYPES[a.profileType as keyof typeof PROFILE_TYPES]?.label}
@@ -98,7 +98,7 @@ export function PostCard({ post, viewer }: { post: FeedPost; viewer: { nick: str
           </div>
         </div>
         {post.canDelete ? (
-          <button onClick={() => start(async () => { if (confirm("Apagar post?")) { await deletePost(post.id); router.refresh(); } })} className="text-xs text-mute hover:text-red-300">Apagar</button>
+          <button onClick={() => start(async () => { if (confirm("Apagar post?")) { await deletePost(post.id); router.refresh(); } })} className="text-xs text-mute hover:text-red-700">Apagar</button>
         ) : (
           <ReportButton targetType="POST" targetId={post.id} label="" />
         )}
@@ -113,9 +113,9 @@ export function PostCard({ post, viewer }: { post: FeedPost; viewer: { nick: str
           )}
           {post.media.length > 1 && (
             <>
-              <div className="absolute right-2 top-2 rounded-full bg-black/60 px-2 text-xs">{idx + 1}/{post.media.length}</div>
-              {idx > 0 && <button onClick={() => setIdx(idx - 1)} className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/60 px-3 py-1">‹</button>}
-              {idx < post.media.length - 1 && <button onClick={() => setIdx(idx + 1)} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/60 px-3 py-1">›</button>}
+              <div className="absolute right-2 top-2 rounded-full bg-black/60 text-white px-2 text-xs">{idx + 1}/{post.media.length}</div>
+              {idx > 0 && <button onClick={() => setIdx(idx - 1)} className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/60 text-white px-3 py-1">‹</button>}
+              {idx < post.media.length - 1 && <button onClick={() => setIdx(idx + 1)} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/60 text-white px-3 py-1">›</button>}
             </>
           )}
         </div>
@@ -128,7 +128,7 @@ export function PostCard({ post, viewer }: { post: FeedPost; viewer: { nick: str
             </button>
           ))}
           <div className="flex-1" />
-          <button onClick={openComments} className="text-sm text-mute hover:text-white">💬 {count}</button>
+          <button onClick={openComments} className="text-sm text-mute hover:text-fg">💬 {count}</button>
         </div>
         {comments && (
           <div className="space-y-3 border-t border-line pt-3">
@@ -175,7 +175,7 @@ export function PostCard({ post, viewer }: { post: FeedPost; viewer: { nick: str
               <input value={text} onChange={(e) => setText(e.target.value)} maxLength={1000} placeholder={replyTo ? "Sua resposta…" : "Comentar…"} className="input py-1.5" />
               <button disabled={pending || !text.trim()} className="btn-wine py-1.5">Enviar</button>
             </form>
-            {err && <p className="text-xs text-red-300">{err}</p>}
+            {err && <p className="text-xs text-red-700">{err}</p>}
           </div>
         )}
       </footer>

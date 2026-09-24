@@ -13,10 +13,10 @@ export default async function Landing() {
   ];
   return (
     <div className="py-10 text-center sm:py-16 sm:text-left">
-      <h1 className="max-w-3xl font-[family-name:var(--font-display)] text-5xl font-extrabold leading-tight drop-shadow-[0_2px_12px_rgba(0,0,0,.8)] sm:text-7xl">
+      <h1 className="max-w-3xl font-[family-name:var(--font-display)] text-5xl font-extrabold leading-tight sm:text-7xl">
         O lugar dos <span className="gold-text italic">casais liberais</span><br />que gostam de conversar.
       </h1>
-      <p className="mx-auto mt-5 max-w-xl text-lg text-white/75 sm:mx-0">Salas de chat, fotos, casais, solteiras e solteiros do meio liberal. Discreto, verificado e 18+.</p>
+      <p className="mx-auto mt-5 max-w-xl text-lg text-fg/75 sm:mx-0">Salas de chat, fotos, casais, solteiras e solteiros do meio liberal. Discreto, verificado e 18+.</p>
       <div className="mt-8 flex justify-center gap-3 sm:justify-start">
         <Link href="/cadastro" className="btn-gold px-6 py-3 text-base">Entrar no {SITE_NAME}</Link>
         <Link href="/login" className="btn-ghost px-6 py-3 text-base">Já tenho conta</Link>

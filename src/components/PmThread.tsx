@@ -51,12 +51,12 @@ export function PmThread({ nick, initial, canPhoto, blockedReason }: { nick: str
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-[radial-gradient(ellipse_at_top,_rgba(122,19,48,.12),_transparent_60%)]">
+    <div className="flex min-h-0 flex-1 flex-col bg-[#f4eff1]">
       <div ref={box} className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
         {msgs.length === 0 && <p className="mt-10 text-center text-sm text-mute">Diga oi! 👋 Seja gentil: respeito é a regra número um.</p>}
         {msgs.map((m) => (
           <div key={m.id} className={`group flex ${m.mine ? "justify-end" : "justify-start"}`}>
-            <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-[15px] ${m.mine ? "rounded-br-sm bg-wine" : "rounded-bl-sm bg-panel2"}`}>
+            <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-[15px] ${m.mine ? "rounded-br-sm bg-pink-100" : "rounded-bl-sm border border-line bg-panel"}`}>
               {m.mediaId && (
                 <ProtectedImage
                   id={m.mediaId}
@@ -67,7 +67,7 @@ export function PmThread({ nick, initial, canPhoto, blockedReason }: { nick: str
                 />
               )}
               {m.body && <p className="whitespace-pre-wrap break-words">{m.body}</p>}
-              <div className="mt-0.5 flex items-center gap-2 text-[10px] text-white/50">
+              <div className="mt-0.5 flex items-center gap-2 text-[10px] text-fg/50">
                 {new Date(m.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                 {!m.mine && <ReportButton targetType="PRIVATE_MESSAGE" targetId={m.id} label="" className="hidden group-hover:inline" />}
               </div>
@@ -75,7 +75,7 @@ export function PmThread({ nick, initial, canPhoto, blockedReason }: { nick: str
           </div>
         ))}
       </div>
-      {err && <p className="px-3 text-xs text-red-300">{err}</p>}
+      {err && <p className="px-3 text-xs text-red-700">{err}</p>}
       {blockedReason ? (
         <p className="border-t border-line p-3 text-center text-sm text-mute">{blockedReason}</p>
       ) : (

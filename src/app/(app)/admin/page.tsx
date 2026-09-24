@@ -30,9 +30,9 @@ export default async function Dashboard() {
   const topItems = await db.item.findMany({ where: { id: { in: top.map((t) => t.itemId) } } });
   const Stat = ({ label, value, href, alert }: { label: string; value: string | number; href?: string; alert?: boolean }) => {
     const inner = (
-      <div className={`card p-4 ${alert ? "border-red-500/60 bg-red-950/30" : ""}`}>
+      <div className={`card p-4 ${alert ? "border-red-500/60 bg-red-100" : ""}`}>
         <p className="text-xs uppercase text-mute">{label}</p>
-        <p className={`text-2xl font-bold ${alert ? "text-red-300" : "text-gold"}`}>{value}</p>
+        <p className={`text-2xl font-bold ${alert ? "text-red-700" : "text-gold"}`}>{value}</p>
       </div>
     );
     return href ? <Link href={href}>{inner}</Link> : inner;
@@ -40,7 +40,7 @@ export default async function Dashboard() {
   return (
     <div className="space-y-4">
       <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold">Painel</h1>
-      {minorReports > 0 && <Link href="/admin/denuncias" className="block rounded-xl bg-red-900/60 p-3 font-semibold">🚨 {minorReports} denúncia(s) de POSSÍVEL MENOR aguardando análise. Prioridade máxima.</Link>}
+      {minorReports > 0 && <Link href="/admin/denuncias" className="block rounded-xl bg-red-100 p-3 font-semibold">🚨 {minorReports} denúncia(s) de POSSÍVEL MENOR aguardando análise. Prioridade máxima.</Link>}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Stat label="Online agora" value={online} />
         <Stat label="Salas ativas" value={counts.size} />

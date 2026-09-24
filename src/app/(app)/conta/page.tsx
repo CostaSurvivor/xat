@@ -34,7 +34,7 @@ export default async function Conta({ searchParams }: { searchParams: Promise<{ 
           {googleMsg && GOOGLE_MSG[googleMsg] && <p className="text-sm text-gold2">{GOOGLE_MSG[googleMsg]}</p>}
           {user.googleSub ? (
             <>
-              <p className="text-sm text-green-300">Vinculado. Você pode entrar com o Google{hasPassword(user) ? " ou com e-mail e senha" : ""}.</p>
+              <p className="text-sm text-green-700">Vinculado. Você pode entrar com o Google{hasPassword(user) ? " ou com e-mail e senha" : ""}.</p>
               {hasPassword(user) ? (
                 <ActionForm action={unlinkGoogle} className="flex flex-wrap gap-2" okText="Google desvinculado.">
                   <input name="password" type="password" required placeholder="Sua senha" className="input w-48" autoComplete="current-password" />
@@ -56,7 +56,7 @@ export default async function Conta({ searchParams }: { searchParams: Promise<{ 
         <h2 className="font-semibold text-gold">🛡️ Verificação em duas etapas (2FA)</h2>
         {user.twoFactorEnabled ? (
           <>
-            <p className="text-sm text-green-300">Ativada. Ao entrar, será pedido o código do app autenticador.</p>
+            <p className="text-sm text-green-700">Ativada. Ao entrar, será pedido o código do app autenticador.</p>
             <ActionForm action={disable2fa} className="flex flex-wrap gap-2" okText="2FA desativada.">
               <input name="code" inputMode="numeric" required placeholder="código atual" className="input w-36" />
               <button className="btn-ghost">Desativar</button>
@@ -83,7 +83,7 @@ export default async function Conta({ searchParams }: { searchParams: Promise<{ 
         <a href="/api/me/export" className="btn-gold">⬇️ Baixar (JSON)</a>
       </section>
       <section className="card space-y-2 p-5">
-        <h2 className="font-semibold text-red-300">Excluir conta</h2>
+        <h2 className="font-semibold text-red-700">Excluir conta</h2>
         <p className="text-sm text-mute">
           Apaga perfil, fotos, posts, comentários e mensagens. Saldo e itens são perdidos. Por obrigação legal mantemos registros de acesso por 6 meses
           (Marco Civil), registros de pagamentos e evidências de denúncias encaminhadas às autoridades. Veja a <Link href="/privacidade" className="underline">Política de Privacidade</Link>.

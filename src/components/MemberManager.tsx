@@ -18,7 +18,7 @@ export function MemberManager({ action, canPromote }: { action: Act; canPromote:
         <option value="unban">Desbanir / dessilenciar</option>
       </select>
       <button disabled={pending} className="btn-wine">Aplicar</button>
-      {state?.error && <span className="text-sm text-red-300">{state.error}</span>}
+      {state?.error && <span className="text-sm text-red-700">{state.error}</span>}
       {state?.ok && <span className="text-sm text-gold">Feito!</span>}
     </form>
   );

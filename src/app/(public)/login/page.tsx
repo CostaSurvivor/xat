@@ -25,7 +25,7 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
     <div className="mx-auto mt-10 max-w-sm card p-8">
       <h1 className="font-[family-name:var(--font-display)] text-3xl font-bold">Entrar</h1>
       <p className="mb-6 mt-1 text-sm text-mute">Novo por aqui? <Link href="/cadastro" className="text-gold underline">Criar conta</Link></p>
-      {erro && ERROS[erro] && <p className="mb-4 rounded-xl bg-wine/30 px-3 py-2 text-sm text-red-200">{ERROS[erro]}</p>}
+      {erro && ERROS[erro] && <p className="mb-4 rounded-xl bg-wine/30 px-3 py-2 text-sm text-red-700">{ERROS[erro]}</p>}
       {google && (
         <>
           <GoogleButton next={next} />

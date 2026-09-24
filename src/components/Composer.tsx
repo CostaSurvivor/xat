@@ -95,7 +95,7 @@ export function Composer({ verified }: { verified: boolean }) {
         <div className="flex-1" />
         <button disabled={pending} className="btn-gold">{pending ? "Publicando…" : "Publicar"}</button>
       </div>
-      {state?.error && <p className="text-sm text-red-300">{state.error}</p>}
+      {state?.error && <p className="text-sm text-red-700">{state.error}</p>}
       <p className="text-[11px] text-mute">Só publique fotos e vídeos seus ou com consentimento de todos que aparecem. Toda mídia recebe marca d’água com seu nick.</p>
     </form>
   );

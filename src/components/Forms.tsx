@@ -14,7 +14,7 @@ export function ActionForm({ action, children, className = "", okText = "Salvo!"
   return (
     <form ref={ref} action={formAction} className={className} aria-busy={pending}>
       <fieldset disabled={pending} className="contents">{children}</fieldset>
-      {state?.error && <p className="mt-2 text-sm text-red-300">{state.error}</p>}
+      {state?.error && <p className="mt-2 text-sm text-red-700">{state.error}</p>}
       {state?.ok && <p className="mt-2 text-sm text-gold">{okText}</p>}
     </form>
   );

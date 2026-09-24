@@ -24,7 +24,7 @@ export function LoginForm({ next }: { next?: string }) {
           <input name="code" inputMode="numeric" autoComplete="one-time-code" maxLength={7} required autoFocus className="input text-center text-lg tracking-[0.4em]" placeholder="000000" />
         </div>
       )}
-      {state?.error && <p className="rounded-xl bg-wine/30 px-3 py-2 text-sm text-red-200">{state.error}</p>}
+      {state?.error && <p className="rounded-xl bg-wine/30 px-3 py-2 text-sm text-red-700">{state.error}</p>}
       <button disabled={pending} className="btn-gold w-full py-3">{pending ? "Entrando…" : state?.need2fa ? "Confirmar código" : "Entrar"}</button>
       <a href="/esqueci" className="block text-center text-xs text-mute underline">Esqueci minha senha</a>
     </form>

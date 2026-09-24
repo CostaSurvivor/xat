@@ -17,7 +17,7 @@ export default async function NovaLive() {
   const denied = canBroadcast(user);
   return (
     <div className="mx-auto max-w-lg space-y-4">
-      <Link href="/ao-vivo" className="text-sm text-mute hover:text-white">← Ao vivo</Link>
+      <Link href="/ao-vivo" className="text-sm text-mute hover:text-fg">← Ao vivo</Link>
       <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold">🎥 Transmitir ao vivo</h1>
       {denied ? (
         <div className="card p-5">

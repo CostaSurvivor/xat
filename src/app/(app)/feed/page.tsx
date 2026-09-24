@@ -19,8 +19,8 @@ export default async function Feed({ searchParams }: { searchParams: Promise<{ t
         {lives.length > 0 && (
           <div className="flex gap-2 overflow-x-auto pb-1 lg:hidden">
             {lives.slice(0, 10).map((l) => (
-              <Link key={l.id} href={`/ao-vivo/${l.id}`} className="shrink-0 rounded-full border border-red-500/60 bg-red-950/40 px-3 py-1 text-xs">
-                <span className="live-dot text-red-400">●</span> @{l.host.nick} <span className="text-mute">👁 {l.viewers}</span>
+              <Link key={l.id} href={`/ao-vivo/${l.id}`} className="shrink-0 rounded-full border border-red-500/60 bg-red-100 px-3 py-1 text-xs">
+                <span className="live-dot text-red-600">●</span> @{l.host.nick} <span className="text-mute">👁 {l.viewers}</span>
               </Link>
             ))}
           </div>
@@ -28,7 +28,7 @@ export default async function Feed({ searchParams }: { searchParams: Promise<{ t
         <Composer verified={isVerified(user)} />
         <div className="flex gap-2">
           {tabs.map(([k, l]) => (
-            <Link key={k} href={`/feed?tab=${k}`} className={`rounded-full px-3 py-1 text-sm ${tab === k ? "bg-wine text-white" : "text-mute hover:text-white"}`}>{l}</Link>
+            <Link key={k} href={`/feed?tab=${k}`} className={`rounded-full px-3 py-1 text-sm ${tab === k ? "bg-wine text-white" : "text-mute hover:text-fg"}`}>{l}</Link>
           ))}
         </div>
         {posts.length === 0 && <p className="card p-8 text-center text-mute">Nada por aqui ainda. Que tal postar algo? 🔥</p>}

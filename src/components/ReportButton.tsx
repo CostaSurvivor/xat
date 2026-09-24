@@ -19,7 +19,7 @@ export function ReportButton({ targetType, targetId, label = "Denunciar", classN
   const [pending, start] = useTransition();
   return (
     <>
-      <button type="button" onClick={() => { setOpen(true); setMsg(null); }} className={`text-xs text-mute hover:text-red-300 ${className}`}>⚑ {label}</button>
+      <button type="button" onClick={() => { setOpen(true); setMsg(null); }} className={`text-xs text-mute hover:text-red-700 ${className}`}>⚑ {label}</button>
       {open && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-4 sm:items-center" onClick={() => setOpen(false)}>
           <form

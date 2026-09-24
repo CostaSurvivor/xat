@@ -27,7 +27,7 @@ export default async function Salas() {
       <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold">Salas</h1>
       <div className="grid gap-3 md:grid-cols-2">
         {general && (
-          <Link href={`/${general.slug}`} className="card flex items-center gap-4 border-wine/30 p-5 transition hover:border-wine">
+          <Link href={`/${general.slug}`} className="card flex min-w-0 items-center gap-4 border-wine/30 p-5 transition hover:border-wine">
             <span className="text-4xl">🇧🇷</span>
             <div className="min-w-0 flex-1">
               <h2 className="font-[family-name:var(--font-display)] text-xl font-bold">Geral <span className="text-sm font-normal text-mute">· todo o Brasil</span></h2>
@@ -37,7 +37,7 @@ export default async function Salas() {
           </Link>
         )}
         {couples && (
-          <Link href={`/${couples.slug}`} className="card flex items-center gap-4 border-pink-300 p-5 transition hover:border-pink-500">
+          <Link href={`/${couples.slug}`} className="card flex min-w-0 items-center gap-4 border-pink-300 p-5 transition hover:border-pink-500">
             <span className="text-4xl">💑</span>
             <div className="min-w-0 flex-1">
               <h2 className="font-[family-name:var(--font-display)] text-xl font-bold">Só Casais</h2>

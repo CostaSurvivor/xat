@@ -11,7 +11,7 @@ import { RoleIcon } from "./RoleIcon";
 
 type Item = { id: string; name: string; description: string | null; category: string; rarity: string; config: unknown; powerScore: number; price7: number | null; price30: number | null; pricePerm: number | null; soldOut: boolean; left: number | null; owned?: string | null };
 
-const RARITY: Record<string, string> = { COMMON: "text-mute", RARE: "text-sky-300", EPIC: "text-fuchsia-300", LEGENDARY: "text-gold", LIMITED: "text-red-300" };
+const RARITY: Record<string, string> = { COMMON: "text-mute", RARE: "text-sky-700", EPIC: "text-fuchsia-700", LEGENDARY: "text-gold", LIMITED: "text-red-700" };
 const RARITY_PT: Record<string, string> = { COMMON: "comum", RARE: "raro", EPIC: "épico", LEGENDARY: "lendário", LIMITED: "edição limitada" };
 const POWER_PT: Record<string, string> = { INVISIBLE: "👻 some da lista de online", BIG_NICK: "🔠 nick maior no chat", HIGHLIGHT_ONLINE: "✨ destaque na lista de online", PRIORITY_PM: "⚡ PV no topo da caixa", PIN_MESSAGE: "📌 fixa sua mensagem no topo da sala" };
 const ENTRY_PT: Record<string, string> = { fire: "🔥 entrada em chamas", gold: "👑 entrada real", hearts: "💞 entrada com corações", sparkle: "✨ entrada brilhante" };
@@ -35,7 +35,7 @@ export function ShopItem({ item, nick, avatarId, canBuy }: { item: Item; nick: s
 
   return (
     <div className={`card relative flex flex-col p-4 ${item.owned ? "border-green-600/50" : ""}`}>
-      {item.owned && <span className="absolute right-2 top-2 z-10 rounded-full bg-green-900/80 px-2 py-0.5 text-[10px] text-green-200">✔ Você tem · {item.owned}</span>}
+      {item.owned && <span className="absolute right-2 top-2 z-10 rounded-full bg-green-100 px-2 py-0.5 text-[10px] text-green-700">✔ Você tem · {item.owned}</span>}
       <div className="mb-3 flex h-20 items-center justify-center gap-3 rounded-xl bg-ink/70">
         {item.category === "AVATAR_FRAME" && <Avatar mediaId={avatarId} nick={nick} size={48} style={style} />}
         {item.category === "DOLL" ? (
@@ -55,7 +55,7 @@ export function ShopItem({ item, nick, avatarId, canBuy }: { item: Item; nick: s
         <span className={`text-[11px] uppercase ${RARITY[item.rarity]}`}>{RARITY_PT[item.rarity]}</span>
       </div>
       {item.description && <p className="text-xs text-mute">{item.description}</p>}
-      {item.left !== null && <p className="text-xs text-red-300">{item.soldOut ? "Esgotado" : `Restam ${item.left}`}</p>}
+      {item.left !== null && <p className="text-xs text-red-700">{item.soldOut ? "Esgotado" : `Restam ${item.left}`}</p>}
       {item.pricePerm != null && <p className="text-[10px] text-mute">Permanente = pode ser trocado com outros usuários</p>}
       <div className="mt-auto space-y-2 pt-3">
         <div className="flex flex-wrap gap-1.5">

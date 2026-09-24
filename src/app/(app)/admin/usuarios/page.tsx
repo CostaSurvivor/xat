@@ -35,10 +35,10 @@ export default async function Usuarios({ searchParams }: { searchParams: Promise
             <Link href={`/u/${u.nick}`} className="font-semibold">@{u.nick}</Link>
             <span className="text-xs text-mute">{u.email}</span>
             <span className="text-xs">{u.role}</span>
-            <span className={`text-xs ${u.status === "ACTIVE" ? "text-green-300" : "text-red-300"}`}>{u.status}</span>
+            <span className={`text-xs ${u.status === "ACTIVE" ? "text-green-700" : "text-red-700"}`}>{u.status}</span>
             <span className="text-xs text-mute">verif: {u.ageVerification}</span>
             <span className="text-xs text-gold">🌶️{u.wallet?.balance ?? 0}</span>
-            {u.vipUntil && u.vipUntil > new Date() && <span className="rounded bg-gold px-1 text-[10px] font-bold text-ink">VIP até {u.vipUntil.toLocaleDateString("pt-BR")}</span>}
+            {u.vipUntil && u.vipUntil > new Date() && <span className="rounded bg-gold px-1 text-[10px] font-bold text-white">VIP até {u.vipUntil.toLocaleDateString("pt-BR")}</span>}
             <div className="ml-auto flex flex-wrap gap-1">
               <form action={adminUserAction.bind(null, u.id)} className="flex gap-1">
                 <input type="hidden" name="op" value="coins" />

@@ -8,7 +8,7 @@ export default async function AgeGate({ searchParams }: { searchParams: Promise<
       <div className="text-5xl">🔞</div>
       <h1 className="mt-4 font-[family-name:var(--font-display)] text-3xl font-bold">Conteúdo adulto</h1>
       <p className="mt-3 text-sm text-mute">
-        O {SITE_NAME} é uma comunidade liberal exclusiva para <b className="text-white">maiores de 18 anos</b>, com conversas e imagens de
+        O {SITE_NAME} é uma comunidade liberal exclusiva para <b className="text-fg">maiores de 18 anos</b>, com conversas e imagens de
         natureza sexual entre adultos que consentem. Ao entrar você declara ter 18 anos ou mais e concorda com os termos de uso.
       </p>
       <form action={acceptAgeGate} className="mt-6 flex flex-col gap-3">

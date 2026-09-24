@@ -1,6 +1,6 @@
 # SexPapo
 
-Comunidade liberal 18+ (casais, solteiras e solteiros): **salas de chat estilo xat**, **feed de fotos e vídeos** estilo Sexlog, **PV**, **loja de itens** para o nick e **perfil assinante** (assiste vídeos).
+Comunidade liberal 18+ (casais, solteiras e solteiros), com **visual claro (fundo branco) no estilo do Sexlog**: **salas de chat estilo xat**, **feed de fotos e vídeos** estilo Sexlog, **PV**, **loja de itens** para o nick e **perfil assinante** (assiste vídeos).
 
 > O nome e a moeda são configuráveis: `NEXT_PUBLIC_SITE_NAME` e `NEXT_PUBLIC_CURRENCY_NAME`.
 

@@ -81,7 +81,7 @@ export default async function Loja({ searchParams }: { searchParams: Promise<{ c
 
       <nav className="flex gap-1.5 overflow-x-auto pb-1">
         {CATS.map(([k, l]) => (
-          <Link key={k} href={`/loja?${new URLSearchParams({ cat: k }).toString()}`} className={`shrink-0 rounded-full px-3 py-1.5 text-sm ${cat === k ? "bg-wine text-white" : "border border-line text-mute hover:text-white"}`}>{l}</Link>
+          <Link key={k} href={`/loja?${new URLSearchParams({ cat: k }).toString()}`} className={`shrink-0 rounded-full px-3 py-1.5 text-sm ${cat === k ? "bg-wine text-white" : "border border-line text-mute hover:text-fg"}`}>{l}</Link>
         ))}
       </nav>
       <form className="flex flex-wrap gap-2">
@@ -93,7 +93,7 @@ export default async function Loja({ searchParams }: { searchParams: Promise<{ c
 
       {featured ? (
         <>
-          {limited.length > 0 && (<section><h2 className="mb-2 font-semibold text-red-300">⏳ Edição limitada</h2><Grid list={limited} /></section>)}
+          {limited.length > 0 && (<section><h2 className="mb-2 font-semibold text-red-700">⏳ Edição limitada</h2><Grid list={limited} /></section>)}
           <section><h2 className="mb-2 font-semibold text-gold">🔥 Mais vendidos</h2><Grid list={top} /></section>
           <section><h2 className="mb-2 font-semibold text-gold">✨ Novidades</h2><Grid list={news} /></section>
           <p className="text-center text-sm text-mute">Veja todos os itens nas abas acima.</p>
