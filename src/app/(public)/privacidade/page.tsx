@@ -12,6 +12,7 @@ export default function Privacidade() {
       <ul className="list-disc pl-5">
         <li>Cadastro: e-mail, nick, datas de nascimento, cidade/UF, senha (armazenada apenas como hash argon2).</li>
         <li><b className="text-white">Dados sensíveis</b> (art. 11): tipo de perfil, preferências e fotos, tratados somente com seu consentimento específico.</li>
+        <li>Login com Google (opcional): recebemos do Google apenas seu e-mail e um identificador da conta. Não publicamos nada no seu Google nem acessamos contatos ou outros dados. Você pode desvincular em Conta.</li>
         <li>Selfie de verificação: usada apenas para confirmar maioridade e autenticidade; acesso restrito à moderação.</li>
         <li>Registros de acesso (IP, porta, data e hora): guardados por 6 meses, conforme o art. 15 do Marco Civil da Internet.</li>
       </ul>

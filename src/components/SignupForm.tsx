@@ -2,11 +2,11 @@
 
 import { useActionState, useState } from "react";
 import Link from "next/link";
-import { signup } from "@/app/actions/auth";
+import { completeGoogleSignup, signup } from "@/app/actions/auth";
 import { PROFILE_TYPES, UFS, type ProfileTypeKey } from "@/lib/config";
 
-export function SignupForm() {
-  const [state, action, pending] = useActionState(signup, undefined);
+export function SignupForm({ google }: { google?: { email: string } }) {
+  const [state, action, pending] = useActionState(google ? completeGoogleSignup : signup, undefined);
   const [type, setType] = useState<ProfileTypeKey>("COUPLE_MF");
   const persons = PROFILE_TYPES[type].persons;
   return (
@@ -35,14 +35,23 @@ export function SignupForm() {
           <label className="label">Nick</label>
           <input name="nick" required minLength={3} maxLength={20} pattern="[A-Za-z0-9_.]+" className="input" placeholder="casal_liberal" />
         </div>
-        <div>
-          <label className="label">E-mail</label>
-          <input name="email" type="email" required className="input" autoComplete="email" />
-        </div>
-        <div>
-          <label className="label">Senha</label>
-          <input name="password" type="password" required minLength={8} className="input" autoComplete="new-password" />
-        </div>
+        {google ? (
+          <div>
+            <label className="label">E-mail (Google)</label>
+            <input value={google.email} readOnly disabled className="input opacity-70" />
+          </div>
+        ) : (
+          <>
+            <div>
+              <label className="label">E-mail</label>
+              <input name="email" type="email" required className="input" autoComplete="email" />
+            </div>
+            <div>
+              <label className="label">Senha</label>
+              <input name="password" type="password" required minLength={8} className="input" autoComplete="new-password" />
+            </div>
+          </>
+        )}
         <div className="grid grid-cols-[80px_1fr] gap-2">
           <div>
             <label className="label">UF</label>
@@ -60,7 +69,7 @@ export function SignupForm() {
         <label className="flex gap-2"><input type="checkbox" name="sensitive" required /> Consinto com o tratamento de dados sensíveis sobre minha vida sexual (preferências e tipo de perfil), conforme o art. 11 da LGPD, para funcionamento da comunidade.</label>
       </div>
       {state?.error && <p className="rounded-xl bg-wine/30 px-3 py-2 text-sm text-red-200">{state.error}</p>}
-      <button disabled={pending} className="btn-gold w-full py-3">{pending ? "Criando…" : "Criar conta"}</button>
+      <button disabled={pending} className="btn-gold w-full py-3">{pending ? "Criando…" : google ? "Concluir cadastro" : "Criar conta"}</button>
     </form>
   );
 }

@@ -224,6 +224,7 @@ model User {
   vipUntil           DateTime? // assinante até (cache de Subscription)
   twoFactorSecret    String?            @db.VarChar(64) // TOTP (base32); ativo quando twoFactorEnabled
   twoFactorEnabled   Boolean            @default(false)
+  googleSub          String?            @db.VarChar(64) // login com Google (unicidade garantida no código)
   lastSeenAt         DateTime?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
@@ -260,6 +261,7 @@ model User {
 
   @@index([state, city])
   @@index([createdAt])
+  @@index([googleSub])
 }
 
 // 1 pessoa (solteiro) ou 2 (casal). Todas 18+.
@@ -1025,4 +1027,15 @@ model LiveBan {
   stream    LiveStream @relation(fields: [streamId], references: [id], onDelete: Cascade)
 
   @@id([streamId, userId])
+}
+
+/// Etapa pendente de login social (completar cadastro / código 2FA). Cookie guarda só o token.
+model OAuthPending {
+  id        String   @id @db.VarChar(64) // sha256 do token do cookie
+  kind      String   @db.VarChar(10) // SIGNUP | TWOFA
+  data      Json
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
 }

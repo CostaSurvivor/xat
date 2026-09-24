@@ -80,6 +80,65 @@ export async function signup(_: FormState, formData: FormData): Promise<FormStat
   redirect(isAdmin ? "/feed" : "/verificacao?novo=1");
 }
 
+/** Conclui o cadastro de quem entrou pelo Google (sem senha; datas, 18+ e consentimentos continuam obrigatórios). */
+export async function completeGoogleSignup(_: FormState, formData: FormData): Promise<FormState> {
+  const { getPending, clearPending } = await import("@/server/google");
+  const { NO_PASSWORD } = await import("@/lib/oauth");
+  const pending = await getPending<import("@/server/google").PendingSignup>("SIGNUP");
+  if (!pending) return { error: "Sua sessão do Google expirou. Clique em “Continuar com Google” de novo." };
+  const { ip, deviceId } = await clientInfo();
+  if (!limiter("signup", 5, 5 / 3600).take(ip)) return { error: "Muitas tentativas. Tente mais tarde." };
+
+  const parsed = signupSchema.omit({ email: true, password: true }).safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const d = parsed.data;
+  const labels = PROFILE_TYPES[d.profileType].persons;
+  const births = labels.map((_, i) => parseBirthDate(String(formData.get(`birth${i}`) || "")));
+  if (births.some((b) => !b)) return { error: "Informe a data de nascimento de todas as pessoas do perfil" };
+  if (!allAdults(births as Date[])) return { error: "Todas as pessoas do perfil precisam ter 18 anos ou mais." };
+
+  const { sub, email } = pending.data;
+  if (await isFingerprintBanned({ email, ip, deviceId })) return { error: "Cadastro não permitido." };
+  if (await db.user.findFirst({ where: { OR: [{ email }, { googleSub: sub }] }, select: { id: true } })) return { error: "Já existe uma conta com esse Google/e-mail. Entre pela tela de login." };
+  if (await db.user.findFirst({ where: { nick: d.nick } })) return { error: "Nick já está em uso" };
+
+  // Cadastro pelo Google nunca vira admin sozinho (admin é criado com e-mail e senha).
+  const user = await db.user.create({
+    data: {
+      email,
+      passwordHash: NO_PASSWORD,
+      googleSub: sub,
+      nick: d.nick,
+      birthDate: births[0]!,
+      profileType: d.profileType,
+      city: d.city,
+      state: d.state,
+      persons: { create: labels.map((label, i) => ({ label, birthDate: births[i]! })) },
+      consents: { create: ["TERMS", "PRIVACY", "SENSITIVE_DATA", "AGE_18"].map((kind) => ({ kind, version: TERMS_VERSION, ip })) },
+      wallet: { create: { kind: "USER" } },
+    },
+  });
+  await clearPending(pending.id);
+  await createSession(user.id);
+  redirect("/verificacao?novo=1");
+}
+
+/** Segunda etapa do login pelo Google para contas com 2FA. */
+export async function googleTwoFactor(_: { ok?: boolean; error?: string } | undefined, formData: FormData): Promise<{ ok?: boolean; error?: string } | undefined> {
+  const { getPending, clearPending } = await import("@/server/google");
+  const { safeNext } = await import("@/lib/oauth");
+  const pending = await getPending<import("@/server/google").PendingTwoFa>("TWOFA");
+  if (!pending) return { error: "Sessão expirada. Entre com o Google de novo." };
+  const user = await db.user.findUnique({ where: { id: pending.data.userId } });
+  if (!user || user.status !== "ACTIVE" || !user.twoFactorSecret) return { error: "Conta indisponível." };
+  if (!limiter("2fa", 6, 6 / 300).take(user.id)) return { error: "Muitas tentativas. Aguarde alguns minutos." };
+  const { verifyTotp } = await import("@/server/totp");
+  if (!verifyTotp(user.twoFactorSecret, String(formData.get("code") || ""))) return { error: "Código inválido" };
+  await clearPending(pending.id);
+  await createSession(user.id);
+  redirect(safeNext(pending.data.next));
+}
+
 export async function login(_: FormState, formData: FormData): Promise<FormState> {
   const email = String(formData.get("email") || "").trim().toLowerCase();
   const password = String(formData.get("password") || "");
@@ -88,6 +147,7 @@ export async function login(_: FormState, formData: FormData): Promise<FormState
     return { error: "Muitas tentativas. Aguarde alguns minutos." };
   const user = await db.user.findUnique({ where: { email } });
   const ok = user ? await verifyPassword(user.passwordHash, password) : await verifyPassword(await dummyHash(), password);
+  if (user && user.passwordHash === "!oauth") return { error: "Essa conta entra com o Google. Use o botão “Continuar com Google” ou defina uma senha em Conta depois de entrar." };
   if (!user || !ok) {
     await logAccess(user?.id ?? null, "LOGIN_FAIL");
     return { error: "E-mail ou senha incorretos" };

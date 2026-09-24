@@ -52,6 +52,7 @@ export async function acceptTradeAction(tradeId: string, version: number): Promi
 export async function confirmTradeAction(tradeId: string, version: number, password: string): Promise<R> {
   const user = await requireUser();
   if (!limiter("trade-confirm", 6, 6 / 300).take(user.id)) return { ok: false, error: "Muitas tentativas. Aguarde alguns minutos." };
+  if (user.passwordHash === "!oauth") return { ok: false, error: "Defina uma senha em Conta → Trocar senha para confirmar trocas." };
   if (!(await verifyPassword(user.passwordHash, password))) return { ok: false, error: "Senha incorreta" };
   try {
     const t = await acceptTrade(tradeId, user.id, version, "confirm");

@@ -14,6 +14,8 @@ import { audit } from "@/server/notify";
  */
 export async function deleteAccount(_: { error?: string } | undefined, formData: FormData) {
   const user = await requireUser();
+  const { hasPassword } = await import("@/lib/oauth");
+  if (!hasPassword(user)) return { error: "Defina uma senha em Conta → Trocar senha antes de excluir a conta." };
   if (!(await verifyPassword(user.passwordHash, String(formData.get("password") || "")))) return { error: "Senha incorreta" };
   if (formData.get("confirm") !== "EXCLUIR") return { error: "Digite EXCLUIR para confirmar" };
 
@@ -59,7 +61,9 @@ export async function changePassword(_: { ok?: boolean; error?: string } | undef
   const user = await requireUser();
   const current = String(formData.get("current") || "");
   const next = String(formData.get("next") || "");
-  if (!(await verifyPassword(user.passwordHash, current))) return { error: "Senha atual incorreta" };
+  const { hasPassword } = await import("@/lib/oauth");
+  // conta criada pelo Google ainda sem senha: define a primeira senha sem pedir a atual
+  if (hasPassword(user) && !(await verifyPassword(user.passwordHash, current))) return { error: "Senha atual incorreta" };
   if (next.length < 8) return { error: "A nova senha precisa ter 8+ caracteres" };
   if (next !== String(formData.get("confirm") || "")) return { error: "As senhas não conferem" };
   const { hashPassword, sha256 } = await import("@/server/auth");
@@ -102,5 +106,18 @@ export async function disable2fa(_: { ok?: boolean; error?: string } | undefined
   await audit(user.id, "account.2fa_off", "User", user.id);
   const { revalidatePath } = await import("next/cache");
   revalidatePath("/conta");
+  return { ok: true };
+}
+
+// ---------------- Google ----------------
+/** Desvincula o Google. Exige senha definida (senão a pessoa perderia o acesso). */
+export async function unlinkGoogle(_: { ok?: boolean; error?: string } | undefined, formData: FormData) {
+  const user = await requireUser();
+  const { hasPassword } = await import("@/lib/oauth");
+  if (!user.googleSub) return { error: "Nenhuma conta Google vinculada." };
+  if (!hasPassword(user)) return { error: "Defina uma senha antes de desvincular o Google." };
+  if (!(await verifyPassword(user.passwordHash, String(formData.get("password") || "")))) return { error: "Senha incorreta" };
+  await db.user.update({ where: { id: user.id }, data: { googleSub: null } });
+  await audit(user.id, "account.google.unlink", "User", user.id);
   return { ok: true };
 }
