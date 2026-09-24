@@ -48,6 +48,8 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
   const { canSeeAlbum: albumCheck } = await import("@/server/access");
   const canSeeAlbum = me || (await albumCheck(viewer.id, u.id, u.albumVisibility));
   const hidden = u.hideFromUnverified && !isVerified(viewer) && !me;
+  const { weeklyTopRank } = await import("@/server/ranking");
+  const top = await weeklyTopRank(u);
   const km = viewer.lat != null && viewer.lng != null && distanceVisible(u) ? haversineKm({ lat: viewer.lat, lng: viewer.lng }, { lat: u.lat!, lng: u.lng! }) : null;
 
   return (
@@ -60,6 +62,7 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
             <p className="text-sm text-mute">
               {PROFILE_TYPES[u.profileType].label} · {agesLabel(u.persons.map((p) => ({ label: p.label, age: ageOn(p.birthDate) })))}
               {!u.hideCity && u.city ? ` · ${u.city}/${u.state}` : u.state ? ` · ${u.state}` : ""}
+              {top && <Link href="/destaques?aba=perfis" className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">🏆 Top {top.rank <= 3 ? top.rank : 10} da semana · {top.group}</Link>}
               {!me && km != null && <span className="ml-1 rounded-full bg-pink-50 px-2 py-0.5 text-xs font-semibold text-wine">📍 {distanceLabel(km)}</span>}
             </p>
             <p className="mt-1 text-xs text-mute"><b className="text-fg">{friends.length}</b> amigos · <b className="text-fg">{followers}</b> seguidores · <b className="text-fg">{following}</b> seguindo</p>

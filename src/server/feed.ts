@@ -7,7 +7,7 @@ import { stylesFor } from "./styles";
 
 export type FeedTab = "todos" | "seguindo" | "regiao";
 
-export async function getFeed(viewer: CurrentUser, opts: { tab?: FeedTab; before?: string; authorId?: string; take?: number }) {
+export async function getFeed(viewer: CurrentUser, opts: { tab?: FeedTab; before?: string; authorId?: string; take?: number; ids?: string[] }) {
   const take = opts.take ?? 15;
   const blocked = await blockedIds(viewer.id);
   const following = (await db.follow.findMany({ where: { followerId: viewer.id }, select: { followeeId: true } })).map((f) => f.followeeId);
@@ -25,7 +25,9 @@ export async function getFeed(viewer: CurrentUser, opts: { tab?: FeedTab; before
       { visibility: "FOLLOWERS", authorId: { in: following } },
     ],
   };
-  if (opts.authorId) where.AND = [{ authorId: opts.authorId }];
+  // posts específicos (página do post, destaques): mesmas regras de visibilidade e bloqueio
+  if (opts.ids) where.AND = [{ id: { in: opts.ids } }];
+  else if (opts.authorId) where.AND = [{ authorId: opts.authorId }];
   else if (opts.tab === "seguindo") where.AND = [{ authorId: { in: [...following, viewer.id] } }];
   else if (opts.tab === "regiao" && viewer.state) where.AND = [{ author: { state: viewer.state } }];
   if (opts.before) where.createdAt = { lt: new Date(opts.before) };
@@ -37,7 +39,7 @@ export async function getFeed(viewer: CurrentUser, opts: { tab?: FeedTab; before
   } as const;
   // Prioridade: na 1ª página de "Todos", posts recentes (72h) de quem eu sigo vêm primeiro
   const prioritized =
-    !opts.before && !opts.authorId && (opts.tab ?? "todos") === "todos" && following.length
+    !opts.before && !opts.authorId && !opts.ids && (opts.tab ?? "todos") === "todos" && following.length
       ? await db.post.findMany({
           where: { AND: [where, { authorId: { in: following } }, { createdAt: { gt: new Date(Date.now() - 72 * 3600_000) } }] },
           orderBy: { createdAt: "desc" },

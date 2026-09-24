@@ -4,6 +4,7 @@ import { getFeed, type FeedTab } from "@/server/feed";
 import { Composer } from "@/components/Composer";
 import { PostCard } from "@/components/PostCard";
 import { OnlineRooms } from "@/components/OnlineRooms";
+import { HotPhotos } from "@/components/HotPhotos";
 import { liveList } from "@/server/live";
 
 export const metadata = { title: "Feed" };
@@ -26,7 +27,8 @@ export default async function Feed({ searchParams }: { searchParams: Promise<{ t
           </div>
         )}
         <Composer verified={isVerified(user)} />
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Link href="/destaques" className="rounded-full px-3 py-1 text-sm text-wine lg:hidden">🔥 Em alta</Link>
           {tabs.map(([k, l]) => (
             <Link key={k} href={`/feed?tab=${k}`} className={`rounded-full px-3 py-1 text-sm ${tab === k ? "bg-wine text-white" : "text-mute hover:text-fg"}`}>{l}</Link>
           ))}
@@ -37,7 +39,7 @@ export default async function Feed({ searchParams }: { searchParams: Promise<{ t
           <Link href={`/feed?tab=${tab}&antes=${encodeURIComponent(posts[posts.length - 1].createdAt)}`} className="btn-ghost w-full">Carregar mais</Link>
         )}
       </div>
-      <aside className="hidden lg:block"><OnlineRooms /></aside>
+      <aside className="hidden space-y-4 lg:block"><HotPhotos user={user} /><OnlineRooms /></aside>
     </div>
   );
 }
