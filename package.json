@@ -44,9 +44,11 @@
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
+    "web-push": "^3.6.7",
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@types/web-push": "^3.6.4",
     "vitest": "^3.2.7"
   }
 }

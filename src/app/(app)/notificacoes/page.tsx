@@ -61,7 +61,10 @@ export default async function Notificacoes({ searchParams }: { searchParams: Pro
 
   return (
     <div className="mx-auto max-w-xl space-y-4">
-      <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold">Avisos</h1>
+      <div className="flex flex-wrap items-center gap-2">
+        <h1 className="mr-auto font-[family-name:var(--font-display)] text-2xl font-bold">Avisos</h1>
+        {!(await db.pushSubscription.count({ where: { userId: user.id } })) && <Link href="/perfil#notificacoes-celular" className="btn-ghost py-1 text-xs">📲 Receber no celular</Link>}
+      </div>
       <div className="flex flex-wrap gap-2">
         {tabs.map(([k, l]) => (
           <Link key={k} href={`/notificacoes?aba=${k}`} className={`rounded-full px-3 py-1 text-sm ${aba === k ? "bg-wine text-white" : "border border-line text-mute hover:text-fg"}`}>{l}</Link>

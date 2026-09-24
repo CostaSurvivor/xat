@@ -14,6 +14,8 @@ import { ActionForm, AutoSubmitFile } from "@/components/Forms";
 import { Avatar } from "@/components/Avatar";
 import { ProtectedImage } from "@/components/ProtectedImage";
 import { ThemedAlbumsOwner } from "@/components/ThemedAlbums";
+import { PushSettings } from "@/components/PushSettings";
+import { readPrefs } from "@/lib/push";
 
 export const metadata = { title: "Meu perfil" };
 
@@ -199,6 +201,8 @@ export default async function MeuPerfil() {
       </section>
 
       <ThemedAlbumsOwner ownerId={user.id} verified={verified} />
+
+      <PushSettings prefs={readPrefs(user.pushPrefs)} devices={await db.pushSubscription.count({ where: { userId: user.id } })} />
 
       <section className="card p-5">
         <h2 className="mb-3 font-semibold text-gold">🔑 {hasPassword(user) ? "Trocar senha" : "Definir senha"}</h2>

@@ -36,5 +36,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ nick: s
   const conv = await db.conversation.upsert({ where: { userAId_userBId: pair }, create: pair, update: {} });
   const m = await db.privateMessage.create({ data: { conversationId: conv.id, senderId: user.id, body } });
   await db.conversation.update({ where: { id: conv.id }, data: { lastMessageAt: m.createdAt, lastSenderId: user.id } });
+  void import("@/server/push").then((p) => p.pushNotification(o.id, "PM", `@${user.nick}: ${body}`, { actorId: user.id }));
   return NextResponse.json({ id: m.id.toString() });
 }

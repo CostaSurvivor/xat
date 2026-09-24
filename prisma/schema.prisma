@@ -273,6 +273,9 @@ model User {
   testimonialsWritten  Testimonial[]         @relation("TestimonialsWritten")
   stories              Story[]               @relation("StoriesAuthored")
   albums               Album[]               @relation("AlbumsOwned")
+  pushSubscriptions    PushSubscription[]    @relation("PushSubscriptions")
+  /// preferências de push: { discreet: bool, groups: { pm: bool, ... } }
+  pushPrefs            Json?
 
   @@index([state, city])
   @@index([createdAt])
@@ -302,14 +305,15 @@ model ProfilePerson {
 }
 
 model Session {
-  id        String   @id @default(cuid())
-  userId    String
-  tokenHash String   @unique
-  ip        String   @db.VarChar(64)
-  userAgent String?  @db.VarChar(255)
-  createdAt DateTime @default(now())
-  expiresAt DateTime
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String             @id @default(cuid())
+  userId            String
+  tokenHash         String             @unique
+  ip                String             @db.VarChar(64)
+  userAgent         String?            @db.VarChar(255)
+  createdAt         DateTime           @default(now())
+  expiresAt         DateTime
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pushSubscriptions PushSubscription[]
 
   @@index([userId])
 }
@@ -1222,4 +1226,27 @@ model Album {
   owner      User     @relation("AlbumsOwned", fields: [ownerId], references: [id], onDelete: Cascade)
 
   @@index([ownerId, position])
+}
+
+// -----------------------------------------------------------------------------
+// Notificações push (PWA): uma inscrição por aparelho, presa à sessão de login
+// (sair da conta ou a sessão vencer apaga a inscrição daquele aparelho)
+// -----------------------------------------------------------------------------
+
+model PushSubscription {
+  id           String    @id @default(cuid())
+  userId       String
+  sessionId    String
+  endpointHash String    @unique @db.VarChar(64)
+  endpoint     String    @db.Text
+  p256dh       String    @db.VarChar(255)
+  auth         String    @db.VarChar(255)
+  userAgent    String?   @db.VarChar(200)
+  createdAt    DateTime  @default(now())
+  lastOkAt     DateTime?
+  user         User      @relation("PushSubscriptions", fields: [userId], references: [id], onDelete: Cascade)
+  session      Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([sessionId])
 }
