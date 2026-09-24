@@ -42,6 +42,9 @@ export default async function Dashboard() {
     <div className="space-y-4">
       <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold">Painel</h1>
       {minorReports > 0 && <Link href="/admin/denuncias" className="block rounded-xl bg-red-100 p-3 font-semibold">🚨 {minorReports} denúncia(s) de POSSÍVEL MENOR aguardando análise. Prioridade máxima.</Link>}
+      {pendingVerif + pendingEvents + openReports > 0 && (
+        <Link href="/admin/fila" className="btn-gold">⚡ Abrir fila rápida ({pendingVerif + pendingEvents + openReports} itens)</Link>
+      )}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Stat label="Online agora" value={online} />
         <Stat label="Salas ativas" value={counts.size} />

@@ -3,6 +3,7 @@ import { requireStaff } from "@/server/auth";
 
 const LINKS = [
   ["/admin", "Dashboard", false],
+  ["/admin/fila", "⚡ Fila rápida", false],
   ["/admin/denuncias", "Denúncias", false],
   ["/admin/verificacoes", "Verificações", false],
   ["/admin/tickets", "🎫 Tickets", false],
