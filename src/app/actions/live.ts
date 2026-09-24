@@ -19,7 +19,7 @@ const schema = z.object({
 export async function startLiveAction(_: R, formData: FormData): Promise<R> {
   const user = await requireUser();
   const denied = canBroadcast(user);
-  if (denied) return { error: denied };
+  if (denied) return { error: denied.message };
   if (!limiter("live-start", 6, 6 / 3600).take(user.id)) return { error: "Muitas transmissões iniciadas. Tente mais tarde." };
   const p = schema.safeParse(Object.fromEntries(formData));
   if (!p.success) return { error: p.error.issues[0].message };

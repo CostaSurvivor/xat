@@ -35,9 +35,10 @@ export async function watchDenied(user: CurrentUser, live: LiveWithHost): Promis
   return null;
 }
 
-export function canBroadcast(user: CurrentUser): string | null {
-  if (!isVerified(user)) return "Verifique seu perfil (selfie) para transmitir ao vivo.";
-  if (process.env.LIVE_REQUIRE_SUBSCRIBER === "1" && !isSubscriber(user)) return "Transmitir ao vivo é exclusivo para assinantes.";
+/** Só assinantes verificados transmitem (admin/staff contam como assinantes). */
+export function canBroadcast(user: CurrentUser): { message: string; href: string; cta: string } | null {
+  if (!isSubscriber(user)) return { message: "Transmitir ao vivo é exclusivo para assinantes.", href: "/assinar", cta: "⭐ Assine e faça lives" };
+  if (!isVerified(user)) return { message: "Verifique seu perfil (selfie) para transmitir ao vivo.", href: "/verificacao", cta: "🎥 Verifique-se para transmitir" };
   return null;
 }
 
