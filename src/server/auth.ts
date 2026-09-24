@@ -154,5 +154,7 @@ export function maybeMaintenance() {
     db.session.deleteMany({ where: { expiresAt: { lt: new Date() } } }),
     // "quem visitou meu perfil": guardado por 90 dias
     db.profileVisit.deleteMany({ where: { lastAt: { lt: new Date(Date.now() - 90 * 86400_000) } } }),
+    // stories vencidos: a foto some depois de 7 dias (moderação)
+    import("@/server/stories").then((m) => m.purgeOldStories()),
   ]).catch(() => {});
 }

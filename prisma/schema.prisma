@@ -63,6 +63,7 @@ enum MediaKind {
   ROOM_COVER
   ROOM_PHOTO
   EVENT_COVER
+  STORY
 }
 
 enum MediaStatus {
@@ -270,6 +271,7 @@ model User {
   events               Event[]
   testimonialsReceived Testimonial[]         @relation("TestimonialsReceived")
   testimonialsWritten  Testimonial[]         @relation("TestimonialsWritten")
+  stories              Story[]               @relation("StoriesAuthored")
 
   @@index([state, city])
   @@index([createdAt])
@@ -1166,4 +1168,36 @@ model Testimonial {
   @@unique([profileId, authorId])
   @@index([profileId, status, createdAt])
   @@index([authorId])
+}
+
+// -----------------------------------------------------------------------------
+// Stories: fotos que somem em 24 h (guardadas mais alguns dias só para moderação)
+// -----------------------------------------------------------------------------
+
+model Story {
+  id        String      @id @default(cuid())
+  authorId  String
+  mediaId   String
+  caption   String?     @db.VarChar(140)
+  /// ALL | FRIENDS
+  audience  String      @default("ALL") @db.VarChar(10)
+  createdAt DateTime    @default(now())
+  expiresAt DateTime
+  deletedAt DateTime?
+  author    User        @relation("StoriesAuthored", fields: [authorId], references: [id], onDelete: Cascade)
+  views     StoryView[]
+
+  @@index([authorId, expiresAt])
+  @@index([expiresAt])
+  @@index([mediaId])
+}
+
+model StoryView {
+  storyId  String
+  viewerId String
+  viewedAt DateTime @default(now())
+  story    Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@id([storyId, viewerId])
+  @@index([viewerId])
 }

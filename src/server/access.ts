@@ -48,6 +48,14 @@ export async function resolveMediaAccess(viewer: CurrentUser, mediaId: string, w
       // pôster segue a regra das fotos; o vídeo em si é exclusivo de assinantes
       if (want === "v") return isSubscriber(viewer) && !blurOnly ? { media: m, variant: "v" as const } : null;
       break;
+    case "STORY": {
+      const st = await db.story.findFirst({ where: { mediaId: m.id } });
+      if (!st) return null;
+      const { canSeeStory } = await import("@/lib/stories");
+      const friends = st.audience === "FRIENDS" ? await import("./friends").then((f) => f.areFriends(viewer.id, m.ownerId)) : false;
+      if (!canSeeStory(st, viewer, { friends, blocked: false })) return null;
+      break;
+    }
     case "PRIVATE_ALBUM": {
       if (!(await canSeeAlbum(viewer.id, m.ownerId, m.owner.albumVisibility))) return { media: m, variant: "b" as const };
       break;
