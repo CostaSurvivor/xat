@@ -32,3 +32,20 @@ describe("bonequinho por cargo", () => {
     expect(chatRole("USER", undefined)).toBe("GUEST");
   });
 });
+
+describe("fotos na sala: regra do dono", async () => {
+  const { canSendRoomPhoto } = await import("@/server/rooms");
+  const a = (role: "OWNER" | "MODERATOR" | "MEMBER" | "GUEST", platformRole: "USER" | "ADMIN" = "USER") => ({ role, platformRole });
+  it("não verificado nunca envia (exceto staff)", () => {
+    expect(canSendRoomPhoto({ mediaPolicy: "VERIFIED" }, a("OWNER"), false)).toBe(false);
+    expect(canSendRoomPhoto({ mediaPolicy: "NOBODY" }, a("GUEST", "ADMIN"), false)).toBe(true);
+  });
+  it("respeita a política", () => {
+    expect(canSendRoomPhoto({ mediaPolicy: "NOBODY" }, a("OWNER"), true)).toBe(false);
+    expect(canSendRoomPhoto({ mediaPolicy: "MODS" }, a("MODERATOR"), true)).toBe(true);
+    expect(canSendRoomPhoto({ mediaPolicy: "MODS" }, a("MEMBER"), true)).toBe(false);
+    expect(canSendRoomPhoto({ mediaPolicy: "MEMBERS" }, a("MEMBER"), true)).toBe(true);
+    expect(canSendRoomPhoto({ mediaPolicy: "MEMBERS" }, a("GUEST"), true)).toBe(false);
+    expect(canSendRoomPhoto({ mediaPolicy: "VERIFIED" }, a("GUEST"), true)).toBe(true);
+  });
+});

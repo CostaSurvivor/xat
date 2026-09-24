@@ -82,9 +82,11 @@ async function removeTarget(type: string, id: string) {
     case "COMMENT":
       await db.postComment.update({ where: { id }, data: { deletedAt: new Date() } });
       break;
-    case "ROOM_MESSAGE":
-      await db.message.update({ where: { id: BigInt(id) }, data: { deletedAt: new Date() } });
+    case "ROOM_MESSAGE": {
+      const m = await db.message.update({ where: { id: BigInt(id) }, data: { deletedAt: new Date() } });
+      if (m.mediaId) await db.media.update({ where: { id: m.mediaId }, data: { status: "REMOVED" } });
       break;
+    }
     case "PRIVATE_MESSAGE": {
       const m = await db.privateMessage.update({ where: { id: BigInt(id) }, data: { body: "[removido pela moderação]" } });
       if (m.mediaId) await db.media.update({ where: { id: m.mediaId }, data: { status: "REMOVED" } });

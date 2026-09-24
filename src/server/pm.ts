@@ -17,6 +17,7 @@ export async function canMessage(sender: CurrentUser, recipient: { id: string; p
   if (sender.id === recipient.id) return "Não dá para mandar PV para si mesmo.";
   if (await isBlockedBetween(sender.id, recipient.id)) return "Usuário indisponível.";
   if (isStaff(sender)) return null;
+  if (!isVerified(sender)) return "Verifique seu perfil (selfie) para conversar no PV.";
   // se o destinatário já me respondeu antes, a conversa está liberada
   const conv = await findConversation(sender.id, recipient.id);
   if (conv && (await db.privateMessage.count({ where: { conversationId: conv.id, senderId: recipient.id } })) > 0) return null;

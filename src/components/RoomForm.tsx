@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import { UFS } from "@/lib/config";
 
-type Room = { name: string; description: string | null; rules: string | null; state: string | null; city: string | null; access: string; theme: string; linksAllowed: boolean };
+type Room = { name: string; description: string | null; rules: string | null; state: string | null; city: string | null; access: string; theme: string; linksAllowed: boolean; mediaPolicy: string };
 type Act = (state: { ok?: boolean; error?: string } | undefined, fd: FormData) => Promise<{ ok?: boolean; error?: string } | undefined>;
 
 export function RoomForm({ action, room, bannedWords, isNew, canOfficial }: { action: Act; room?: Room; bannedWords?: string; isNew?: boolean; canOfficial?: boolean }) {
@@ -62,6 +62,15 @@ export function RoomForm({ action, room, bannedWords, isNew, canOfficial }: { ac
             <option value="neon">Neon</option>
           </select>
         </div>
+      </div>
+      <div>
+        <label className="label">Quem pode enviar fotos na sala</label>
+        <select name="mediaPolicy" defaultValue={room?.mediaPolicy ?? "MODS"} className="input">
+          <option value="NOBODY">Ninguém</option>
+          <option value="MODS">Só dono e moderadores</option>
+          <option value="MEMBERS">Membros da sala (verificados)</option>
+          <option value="VERIFIED">Qualquer perfil verificado</option>
+        </select>
       </div>
       <label className="flex items-center gap-2 text-sm text-mute"><input type="checkbox" name="linksAllowed" defaultChecked={room?.linksAllowed} /> Permitir links no chat</label>
       {isNew && canOfficial && <label className="flex items-center gap-2 text-sm text-gold"><input type="checkbox" name="official" defaultChecked /> ⭐ Sala oficial (fica sempre ativa e aparece no topo)</label>}

@@ -129,6 +129,7 @@ export async function messagesView(roomId: string, viewerId: string, opts: { aft
     id: m.id.toString(),
     kind: m.kind,
     body: m.body,
+    mediaId: m.mediaId,
     createdAt: m.createdAt.toISOString(),
     author: m.author
       ? { id: m.author.id, nick: m.author.nick, avatarId: m.author.avatarId, style: styles[m.author.id], chatRole: chatRole(m.author.role, roomRoleOf.get(m.author.id), styles[m.author.id]?.founder) }
@@ -141,4 +142,20 @@ export async function roomOnlineCounts() {
   const since = new Date(Date.now() - ONLINE_WINDOW_MS);
   const g = await db.roomPresence.groupBy({ by: ["roomId"], where: { lastSeenAt: { gt: since } }, _count: true });
   return new Map(g.map((x) => [x.roomId, x._count]));
+}
+
+/** Pode enviar foto nesta sala? (regra do dono + idade verificada sempre) */
+export function canSendRoomPhoto(room: { mediaPolicy: string }, actor: Actor, verified: boolean) {
+  if (actor.platformRole !== "USER") return true;
+  if (!verified) return false;
+  switch (room.mediaPolicy) {
+    case "VERIFIED":
+      return true;
+    case "MEMBERS":
+      return actor.role !== "GUEST";
+    case "MODS":
+      return actor.role === "OWNER" || actor.role === "MODERATOR";
+    default:
+      return false;
+  }
 }

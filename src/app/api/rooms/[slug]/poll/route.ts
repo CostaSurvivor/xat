@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { getCurrentUser } from "@/server/auth";
+import { getCurrentUser, isVerified } from "@/server/auth";
 import { stylesFor } from "@/server/styles";
-import { activeSanction, actorFor, canEnter, messagesView, onlineList, roomBySlug, touchPresence } from "@/server/rooms";
+import { activeSanction, actorFor, canEnter, canSendRoomPhoto, messagesView, onlineList, roomBySlug, touchPresence } from "@/server/rooms";
 
 /** Polling do chat (funciona em qualquer hospedagem, sem WebSocket/Redis). */
 export async function GET(req: Request, { params }: { params: Promise<{ slug: string }> }) {
@@ -53,7 +53,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
     online,
     deleted: deleted.map((d) => d.id.toString()),
     reactions,
-    me: { role: actor.role, platformRole: actor.platformRole, mutedUntil: mute ? (mute.expiresAt?.toISOString() ?? "sempre") : null },
+    me: { role: actor.role, platformRole: actor.platformRole, mutedUntil: mute ? (mute.expiresAt?.toISOString() ?? "sempre") : null, canPhoto: canSendRoomPhoto(room, actor, isVerified(user)) },
     slowMode: fresh?.slowModeSeconds ?? 0,
     pinned: pinned && !pinned.deletedAt ? { id: pinned.id.toString(), body: pinned.body, nick: pinned.author?.nick ?? "" } : null,
   });

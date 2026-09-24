@@ -47,6 +47,9 @@ Na tela do app → **Variáveis de ambiente**, copie de `.env.example` e preench
 | `PIX_KEY` (opcional) | melhor cadastrar em **Admin → Configurações** |
 | `MAX_VIDEO_MB` | `100` |
 | `DPO_EMAIL` | e-mail de contato LGPD |
+| `FOUNDER_EMAILS` | e-mail do fundador (visual exclusivo no chat) |
+| `PUBLIC_URL` | endereço do site (links dos e-mails) |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `MAIL_FROM` | e-mail para "esqueci minha senha" e recibos (Hostinger: `smtp.hostinger.com`, 465) |
 
 > ⚠️ **`UPLOAD_DIR` fora da pasta do app é importante.** Se ficar dentro, um novo deploy pode apagar as fotos. Para descobrir o caminho da sua home, use o Gerenciador de Arquivos ou rode `pwd` via SSH.
 

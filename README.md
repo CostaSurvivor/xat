@@ -8,18 +8,19 @@ Comunidade liberal 18+ (casais, solteiras e solteiros): **salas de chat estilo x
 
 | Área | Recursos |
 |---|---|
-| Entrada | Age gate 18+, cadastro com data de nascimento de **todas** as pessoas do perfil (casal: as duas), senha argon2id, sessão httpOnly |
-| Verificação | Selfie com gesto sorteado + papel com o nick, revisada no admin. Libera fotos, vídeos, PV com foto, loja e criação de salas |
-| Feed | Posts com até 6 fotos **ou** 1 vídeo, reações, comentários, abas Todos / Seguindo / Minha região |
-| Vídeos | Qualquer perfil verificado posta; **só assinantes assistem** (download direto bloqueado, marca d'água flutuante com o nick de quem assiste) |
-| Fotos | Marca d'água com o nick do autor, EXIF/GPS removidos, sem link público (servidas com checagem de acesso) |
-| Salas | `/{endereco}` criada por usuários, Dono → Moderador → Membro → Convidado, silenciar/expulsar/banir, limpar, fixar, modo lento, palavras bloqueadas, filtro de links, anti-flood, "digitando…", menções, lista de online por cargo + poder |
-| PV | Quem pode me chamar (todos / quem sigo / casais / ninguém), foto só se os dois aceitarem, chega **borrada** até clicar, marca d'água com o nick de quem recebe |
-| Perfil | Tipo (casal H/M, H/H, M/M, mulher, homem, trans, outro), bio, tags, álbum privado liberado por pedido, seguir, bloquear, esconder cidade, esconder de não verificados |
-| Economia | Moeda virtual com **ledger de partidas dobradas** (idempotente, nunca negativo), loja com prévia ao vivo, presentes, inventário, itens 7d/30d/permanentes, edição limitada |
-| Pagamento | **Pix manual**: QR Code com valor e identificador; o usuário clica "Já paguei" e o admin aprova (credita moedas ou ativa a assinatura) |
-| Admin | Dashboard (online, receita, pendências), aprovação de Pix, fila de verificações, denúncias com prioridade (possível menor = topo) e procedimento SaferNet/PF, usuários (banir, cargo, moedas, VIP), salas, loja, planos, anúncios globais |
-| LGPD | Consentimentos versionados, exportar dados (JSON), excluir conta, registros de acesso guardados 6 meses (Marco Civil) |
+| Entrada | Age gate 18+, cadastro com a data de nascimento de **todas** as pessoas do perfil, senha argon2id, 2FA opcional, "esqueci minha senha" por e-mail |
+| Verificação | Selfie com gesto sorteado e papel com o nick, revisada no admin. Libera fotos, vídeos, PV, loja e salas |
+| Perfil | Tipo (casal H/M, H/H, M/M, mulher, homem, trans, outro), "sobre ele / sobre ela" com características opcionais, gostos agrupados, álbum privado (privado / amigos / seguidores). **Nick e tipo de perfil só mudam por ticket** |
+| Social | Seguir (prioridade no feed), **amizade** (libera PV, álbum e posts "só amigos"), central de Avisos com pedidos de amizade |
+| Feed | Até 6 fotos **ou** 1 vídeo por post, reações, comentários com **respostas e reações** |
+| Vídeos | Qualquer perfil verificado posta; **só assinantes assistem** (streaming protegido, marca d'água com o nick de quem assiste) |
+| Salas (estilo xat) | Só **admin e assinantes** criam (a sala fica inativa se a assinatura vencer). Bonequinho por cargo + acessórios, glow neon, fundador exclusivo, moderação completa, reações, presentes animados, @menções com aviso, fotos conforme a regra do dono, fundo personalizado, som de entrada, histórico |
+| PV | Estilo WhatsApp (lista + conversa), exige verificação, só amigos por padrão; foto só se os dois aceitarem, chega **borrada** até clicar |
+| Economia | Pimentas com **ledger de partidas dobradas**, loja com prévia ao vivo (glow, neon, cores, ícones, molduras, entradas, poderes, **acessórios do boneco**), presentes, cupons |
+| Pagamento | **Pix manual** com QR Code gerado da chave cadastrada no admin; o usuário clica "Já paguei" e o admin aprova. Recibo por e-mail |
+| Suporte | Tickets (troca de nick, tipo de perfil, pagamento…) com conversa e aprovação no admin |
+| Admin | Painel, Pix, verificações, denúncias (possível menor no topo + procedimento SaferNet/PF), tickets, usuários (banir por e-mail/IP/dispositivo, cargo, moedas, VIP, resetar senha, histórico), salas, loja, planos, cupons, anúncios, configurações (Pix e foto de fundo) |
+| LGPD | Consentimentos versionados, exportar dados, excluir conta, registros de acesso por 6 meses com expurgo automático |
 
 ## Rodar local
 
@@ -38,7 +39,7 @@ Cadastre-se com um e-mail listado em `ADMIN_EMAILS`: essa conta vira admin já v
 ## Testes
 
 ```bash
-npm test      # 32 testes: age gate, permissões de sala, rate-limit/flood, ledger (concorrência e idempotência), Pix, itens (anti-XSS), vídeo
+npm test      # 38 testes: age gate, permissões de sala, rate-limit/flood, ledger (concorrência e idempotência), Pix, itens (anti-XSS), vídeo
 npm run lint  # checagem de tipos
 ```
 

@@ -41,6 +41,8 @@ export async function resolveMediaAccess(viewer: CurrentUser, mediaId: string, w
   switch (m.kind) {
     case "VERIFICATION_SELFIE":
       return null;
+    case "ROOM_COVER":
+      return { media: m, variant: want }; // fundo da sala: sem restrição
     case "POST_VIDEO":
       // pôster segue a regra das fotos; o vídeo em si é exclusivo de assinantes
       if (want === "v") return isSubscriber(viewer) && !blurOnly ? { media: m, variant: "v" as const } : null;

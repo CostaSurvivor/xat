@@ -30,7 +30,15 @@ export default async function RoomPage({ params }: { params: Promise<{ slug: str
   const members = await db.roomMember.count({ where: { roomId: room.id } });
 
   return (
-    <div className={`-mx-3 -my-4 bg-gradient-to-b px-3 py-3 sm:-mx-4 sm:px-4 ${THEMES[room.theme] ?? THEMES.noir}`}>
+    <div className={`relative -mx-3 -my-4 bg-gradient-to-b px-3 py-3 sm:-mx-4 sm:px-4 ${THEMES[room.theme] ?? THEMES.noir}`}>
+      {room.bgMediaId && (
+        <div aria-hidden className="pointer-events-none absolute inset-0 -z-0 overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={`/api/media/${room.bgMediaId}?v=d`} alt="" className="h-full w-full object-cover opacity-25" />
+          <div className="absolute inset-0 bg-gradient-to-b from-ink/60 via-ink/40 to-ink" />
+        </div>
+      )}
+      <div className="relative">
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <div className="mr-auto min-w-0">
           <h1 className="truncate font-[family-name:var(--font-display)] text-xl font-bold">{room.isOfficial && "⭐ "}{room.name}</h1>
@@ -62,6 +70,7 @@ export default async function RoomPage({ params }: { params: Promise<{ slug: str
       ) : (
         <ChatRoom slug={room.slug} me={{ id: user.id, nick: user.nick }} initial={initial} />
       )}
+      </div>
     </div>
   );
 }

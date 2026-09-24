@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { can } from "@/lib/permissions";
-import { deleteRoom, manageMember, updateRoom } from "@/app/actions/rooms";
+import { deleteRoom, manageMember, setRoomBackground, updateRoom } from "@/app/actions/rooms";
+import { ActionForm } from "@/components/Forms";
 import { requireUser } from "@/server/auth";
 import { actorFor, roomBySlug } from "@/server/rooms";
 import { RoomForm } from "@/components/RoomForm";
@@ -33,6 +34,25 @@ export default async function RoomConfig({ params }: { params: Promise<{ slug: s
         <section className="card p-5">
           <h2 className="mb-3 font-semibold text-gold">Configurações</h2>
           <RoomForm action={updateRoom.bind(null, slug)} room={room} bannedWords={words.map((w) => w.word).join(", ")} />
+        </section>
+      )}
+      {isOwner && (
+        <section className="card space-y-3 p-5">
+          <h2 className="font-semibold text-gold">Foto de fundo da sala</h2>
+          {room.bgMediaId && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={`/api/media/${room.bgMediaId}?v=d`} alt="" className="h-32 w-full rounded-xl object-cover opacity-70" />
+          )}
+          <ActionForm action={setRoomBackground.bind(null, slug)} className="flex flex-wrap items-center gap-2" okText="Fundo atualizado!">
+            <input type="file" name="bg" accept="image/jpeg,image/png,image/webp" className="input max-w-xs" />
+            <button className="btn-gold">Enviar</button>
+          </ActionForm>
+          {room.bgMediaId && (
+            <ActionForm action={setRoomBackground.bind(null, slug)} okText="Fundo removido.">
+              <input type="hidden" name="remove" value="1" />
+              <button className="text-xs text-mute underline">Remover fundo</button>
+            </ActionForm>
+          )}
         </section>
       )}
       <section className="card space-y-3 p-5">

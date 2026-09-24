@@ -40,7 +40,7 @@ async function snapshot(type: ReportTargetType, id: string) {
     }
     case "ROOM_MESSAGE": {
       const m = await db.message.findUnique({ where: { id: BigInt(id) } });
-      return { userId: m?.authorId ?? undefined, evidence: m && { body: m.body, roomId: m.roomId }, mediaIds: [] };
+      return { userId: m?.authorId ?? undefined, evidence: m && { body: m.body, roomId: m.roomId, mediaId: m.mediaId }, mediaIds: m?.mediaId ? [m.mediaId] : [] };
     }
     case "PRIVATE_MESSAGE": {
       const m = await db.privateMessage.findUnique({ where: { id: BigInt(id) } });

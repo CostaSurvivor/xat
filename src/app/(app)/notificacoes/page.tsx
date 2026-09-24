@@ -45,6 +45,7 @@ export default async function Notificacoes({ searchParams }: { searchParams: Pro
     if (n.kind === "VERIFICATION") return "/verificacao";
     if (n.kind === "FRIEND_REQUEST") return "/notificacoes?aba=pedidos";
     if (n.kind === "TICKET" && n.refId) return `/suporte/${n.refId}`;
+    if (n.kind === "MENTION" && n.refId) return `/${n.refId}`;
     return nick ? `/u/${nick}` : "#";
   };
 

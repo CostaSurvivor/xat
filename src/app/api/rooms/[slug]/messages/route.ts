@@ -51,5 +51,16 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
   }
 
   const msg = await db.message.create({ data: { roomId: room.id, authorId: user.id, body } });
+  // @menções: avisa até 5 pessoas citadas (que não bloquearam o autor)
+  const nicks = [...new Set([...body.matchAll(/@([A-Za-z0-9_.]{3,20})/g)].map((m) => m[1]))].slice(0, 5);
+  if (nicks.length) {
+    const { notify } = await import("@/server/notify");
+    const { isBlockedBetween } = await import("@/server/access");
+    const targets = await db.user.findMany({ where: { nick: { in: nicks }, status: "ACTIVE" }, select: { id: true } });
+    for (const t of targets) {
+      if (t.id === user.id || (await isBlockedBetween(user.id, t.id))) continue;
+      await notify(t.id, "MENTION", `@${user.nick} mencionou você em /${room.slug}: ${body.slice(0, 80)}`, user.id, room.slug);
+    }
+  }
   return NextResponse.json({ id: msg.id.toString() });
 }

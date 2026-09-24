@@ -22,6 +22,7 @@ const roomSchema = z.object({
   access: z.enum(["PUBLIC", "MEMBERS_ONLY", "COUPLES_ONLY", "VERIFIED_ONLY"]),
   theme: z.enum(["noir", "vinho", "ouro", "neon"]),
   linksAllowed: z.string().optional(),
+  mediaPolicy: z.enum(["NOBODY", "MODS", "MEMBERS", "VERIFIED"]).default("MODS"),
 });
 
 export async function createRoom(_: R, formData: FormData): Promise<R> {
@@ -48,6 +49,7 @@ export async function createRoom(_: R, formData: FormData): Promise<R> {
       access: d.access,
       theme: d.theme,
       linksAllowed: d.linksAllowed === "on",
+      mediaPolicy: d.mediaPolicy,
       isOfficial: isAdmin && formData.get("official") === "on",
       ownerId: user.id,
       members: { create: { userId: user.id, role: "OWNER" } },
@@ -66,7 +68,7 @@ export async function updateRoom(slug: string, _: R, formData: FormData): Promis
   const d = p.data;
   await db.room.update({
     where: { id: room.id },
-    data: { name: d.name, description: d.description || null, rules: d.rules || null, state: d.state || null, city: d.city || null, access: d.access, theme: d.theme, linksAllowed: d.linksAllowed === "on" },
+    data: { name: d.name, description: d.description || null, rules: d.rules || null, state: d.state || null, city: d.city || null, access: d.access, theme: d.theme, linksAllowed: d.linksAllowed === "on", mediaPolicy: d.mediaPolicy },
   });
   const words = String(formData.get("bannedWords") || "").split(/[,\n]/).map((w) => w.trim().toLowerCase()).filter((w) => w.length >= 2).slice(0, 200);
   await db.roomBannedWord.deleteMany({ where: { roomId: room.id } });
@@ -138,4 +140,53 @@ export async function deleteRoom(slug: string) {
   await db.room.delete({ where: { id: room.id } });
   await audit(user.id, "room.delete", "Room", room.id, { slug });
   redirect("/salas");
+}
+
+/** Foto enviada na sala (conforme regra do dono). Chega borrada até clicar. */
+export async function sendRoomPhoto(slug: string, formData: FormData): Promise<{ ok: boolean; error?: string }> {
+  const user = await requireUser();
+  const room = await roomBySlug(slug);
+  if (!room) return { ok: false, error: "Sala não encontrada" };
+  const actor = await actorFor(user, room.id);
+  const { canEnter, canSendRoomPhoto, activeSanction } = await import("@/server/rooms");
+  const { isVerified } = await import("@/server/auth");
+  if (await canEnter(user, room, actor)) return { ok: false, error: "Sem acesso" };
+  if (!canSendRoomPhoto(room, actor, isVerified(user))) return { ok: false, error: "Fotos não são permitidas para você nesta sala." };
+  if (await activeSanction(room.id, user.id, "MUTE")) return { ok: false, error: "Você está silenciado." };
+  if (!limiter("room-photo", 5, 5 / 600).take(user.id)) return { ok: false, error: "Muitas fotos em pouco tempo." };
+  const file = formData.get("photo");
+  if (!(file instanceof File)) return { ok: false, error: "Escolha uma foto" };
+  const { processUpload, MediaError } = await import("@/server/media");
+  try {
+    const m = await processUpload({ file, ownerId: user.id, ownerNick: user.nick, kind: "ROOM_PHOTO", watermarkText: `@${user.nick} · /${room.slug}` });
+    await db.message.create({ data: { roomId: room.id, authorId: user.id, body: "", mediaId: m.id } });
+  } catch (e) {
+    return { ok: false, error: e instanceof MediaError ? e.message : "Falha ao processar a foto" };
+  }
+  return { ok: true };
+}
+
+/** Dono (ou staff) define a foto de fundo da sala. */
+export async function setRoomBackground(slug: string, _: R, formData: FormData): Promise<R> {
+  const user = await requireUser();
+  const room = await roomBySlug(slug);
+  if (!room) return { error: "Sala não encontrada" };
+  if (!can(await actorFor(user, room.id), "edit_room")) return { error: "Sem permissão" };
+  if (formData.get("remove") === "1") {
+    await db.room.update({ where: { id: room.id }, data: { bgMediaId: null } });
+  } else {
+    const file = formData.get("bg");
+    if (!(file instanceof File) || !file.size) return { error: "Escolha uma imagem" };
+    const { processUpload, MediaError } = await import("@/server/media");
+    try {
+      const m = await processUpload({ file, ownerId: user.id, ownerNick: user.nick, kind: "ROOM_COVER", watermark: false });
+      await db.room.update({ where: { id: room.id }, data: { bgMediaId: m.id } });
+    } catch (e) {
+      return { error: e instanceof MediaError ? e.message : "Falha ao processar a imagem" };
+    }
+  }
+  await audit(user.id, "room.background", "Room", room.id);
+  revalidatePath(`/${slug}`);
+  revalidatePath(`/${slug}/config`);
+  return { ok: true };
 }

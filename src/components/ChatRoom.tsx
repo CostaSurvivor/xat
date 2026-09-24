@@ -8,10 +8,12 @@ import { Nick } from "./Nick";
 import { ReportButton } from "./ReportButton";
 import { CHAT_ROLES, RoleIcon, type ChatRole } from "./RoleIcon";
 import { sendCoins } from "@/app/actions/shop";
+import { sendRoomPhoto } from "@/app/actions/rooms";
+import { ProtectedImage } from "./ProtectedImage";
 import { CURRENCY_ICON, CURRENCY_NAME, REACTIONS } from "@/lib/config";
 
 type Me = { id: string; nick: string };
-type PollMe = { role: string; platformRole: string; mutedUntil: string | null };
+type PollMe = { role: string; platformRole: string; mutedUntil: string | null; canPhoto?: boolean };
 
 const EMOJIS = ["😈", "🔥", "😍", "😘", "😏", "🍑", "🍆", "💦", "👅", "💋", "🥂", "😂", "❤️", "👀", "🙈", "👏"];
 const ENTRY_FX: Record<string, string> = { sparkle: "✨", fire: "🔥", hearts: "💞", gold: "👑" };
@@ -41,6 +43,38 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
   const [sending, setSending] = useState(false);
   const [reactions, setReactions] = useState<Record<string, { e: Record<string, number>; mine: string | null }>>({});
   const [pickerFor, setPickerFor] = useState<string | null>(null);
+  const [hasOlder, setHasOlder] = useState(initial.length >= 50);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const [photoSending, setPhotoSending] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const mutedRef = useRef(false);
+  useEffect(() => {
+    try { const v = localStorage.getItem("chat-muted") === "1"; setMuted(v); mutedRef.current = v; } catch {}
+  }, []);
+
+  /** Som curto de entrada (gerado no navegador, sem arquivo). */
+  const chime = useCallback((fx: string) => {
+    if (mutedRef.current) return;
+    try {
+      const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const ctx = new Ctx();
+      const notes = fx === "fire" ? [330, 440, 660] : fx === "gold" ? [523, 659, 784, 1046] : fx === "hearts" ? [587, 740, 880] : [660, 880, 1320];
+      notes.forEach((f, i) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = fx === "fire" ? "sawtooth" : "sine";
+        o.frequency.value = f;
+        const t = ctx.currentTime + i * 0.09;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.08, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+        o.connect(g).connect(ctx.destination);
+        o.start(t);
+        o.stop(t + 0.4);
+      });
+      setTimeout(() => ctx.close(), 1200);
+    } catch {}
+  }, []);
 
   const lastId = useRef(initial.at(-1)?.id ?? "0");
   const lastPoll = useRef<number | null>(null);
@@ -64,6 +98,8 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
     const j = await r.json();
     lastPoll.current = j.now;
     if (j.messages.length) {
+      const entry = j.messages.find((m: ChatMessage) => m.kind === "SYSTEM" && m.body.startsWith("entry:"));
+      if (entry && lastPoll.current !== null) chime(entry.body.slice(6));
       lastId.current = j.messages.at(-1).id;
       setMessages((prev) => {
         const seen = new Set(prev.map((m) => m.id));
@@ -77,7 +113,26 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
     setPinned(j.pinned);
     setSlowMode(j.slowMode);
     return true;
-  }, [slug]);
+  }, [slug, chime]);
+
+  async function loadOlder() {
+    const first = messages.find((m) => /^\d+$/.test(m.id));
+    if (!first) return;
+    setLoadingOlder(true);
+    const el = listRef.current;
+    const prevHeight = el?.scrollHeight ?? 0;
+    const r = await fetch(`/api/rooms/${slug}/history?before=${first.id}`, { cache: "no-store" });
+    const j = await r.json().catch(() => ({ messages: [] }));
+    setLoadingOlder(false);
+    if (!j.messages?.length) return setHasOlder(false);
+    stick.current = false;
+    setMessages((prev) => {
+      const seen = new Set(prev.map((m) => m.id));
+      return [...j.messages.filter((m: ChatMessage) => !seen.has(m.id)), ...prev];
+    });
+    if (j.messages.length < 50) setHasOlder(false);
+    requestAnimationFrame(() => { if (el) el.scrollTop = el.scrollHeight - prevHeight; });
+  }
 
   useEffect(() => {
     let alive = true;
@@ -166,6 +221,11 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
           }}
           className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-2"
         >
+          {hasOlder && (
+            <div className="py-1 text-center">
+              <button onClick={loadOlder} disabled={loadingOlder} className="btn-ghost py-1 text-xs">{loadingOlder ? "Carregando…" : "↑ Carregar mensagens anteriores"}</button>
+            </div>
+          )}
           {messages.map((m) => {
             if (m.kind === "SYSTEM" && m.body.startsWith("entry:") && m.author) {
               const fx = m.body.slice(6);
@@ -197,6 +257,9 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
                   <Nick nick={m.author.nick} style={m.author.style} />
                   <span className="text-mute">: </span>
                   <span className="break-words" style={m.author.style?.text}>{renderBody(m.body, me.nick)}</span>
+                  {m.mediaId && (
+                    <ProtectedImage id={m.mediaId} reveal={m.author.id !== me.id} bust={m.author.id === me.id ? "r" : undefined} className="mt-1 h-48 w-48 rounded-xl" />
+                  )}
                   {reactions[m.id] && Object.values(reactions[m.id].e).some((n) => n > 0) && (
                     <span className="ml-2 inline-flex gap-1 align-middle">
                       {Object.entries(reactions[m.id].e).filter(([, n]) => n > 0).map(([e, n]) => (
@@ -228,6 +291,30 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
         ) : (
           <form onSubmit={send} className="relative flex items-center gap-2 border-t border-line p-2">
             <button type="button" onClick={() => setShowEmoji((v) => !v)} className="rounded-full px-2 text-xl">😈</button>
+            {pollMe?.canPhoto && (
+              <label className={`cursor-pointer px-1 text-xl ${photoSending ? "opacity-40" : ""}`} title="Enviar foto na sala">
+                📷
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  disabled={photoSending}
+                  onChange={async (e) => {
+                    const f = e.target.files?.[0];
+                    e.target.value = "";
+                    if (!f) return;
+                    setPhotoSending(true);
+                    const fd = new FormData();
+                    fd.set("photo", f);
+                    const r = await sendRoomPhoto(slug, fd);
+                    setPhotoSending(false);
+                    setError(r.ok ? null : r.error ?? "Erro");
+                    stick.current = true;
+                    poll();
+                  }}
+                />
+              </label>
+            )}
             {showEmoji && (
               <div className="absolute bottom-14 left-2 z-10 grid grid-cols-8 gap-1 rounded-xl border border-line bg-panel2 p-2 shadow-xl">
                 {EMOJIS.map((e) => <button type="button" key={e} onClick={() => { setText((t) => t + e); setShowEmoji(false); }} className="text-xl">{e}</button>)}
@@ -254,6 +341,13 @@ export function ChatRoom({ slug, me, initial }: { slug: string; me: Me; initial:
         <div className="card flex h-full max-h-full flex-col" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center justify-between border-b border-line px-3 py-2 text-sm">
             <b>Online ({online.length})</b>
+            <button
+              onClick={() => { const v = !muted; setMuted(v); mutedRef.current = v; try { localStorage.setItem("chat-muted", v ? "1" : "0"); } catch {} }}
+              title={muted ? "Ativar sons" : "Silenciar sons"}
+              className="text-sm"
+            >
+              {muted ? "🔇" : "🔊"}
+            </button>
             {isMod && (
               <select className="rounded bg-panel2 text-xs" value={slowMode} onChange={(e) => mod("set_slowmode", { seconds: Number(e.target.value) })}>
                 {[0, 5, 10, 30, 60].map((s) => <option key={s} value={s}>{s ? `lento ${s}s` : "sem modo lento"}</option>)}
