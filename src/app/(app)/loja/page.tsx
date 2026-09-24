@@ -27,7 +27,7 @@ export default async function Loja({ searchParams }: { searchParams: Promise<{ c
   const { cat = "destaques", q = "", r = "" } = await searchParams;
   const where: Prisma.ItemWhereInput = { active: true };
   if (cat !== "destaques") where.category = cat as Prisma.ItemWhereInput["category"];
-  if (q) where.name = { contains: q };
+  if (q) where.OR = [{ name: { contains: q } }, { description: { contains: q } }];
   if (r) where.rarity = r as Prisma.ItemWhereInput["rarity"];
 
   const [items, balance, owned] = await Promise.all([

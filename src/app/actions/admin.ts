@@ -164,6 +164,13 @@ export async function adminUserAction(userId: string, formData: FormData) {
   } else if (op === "verify") {
     await db.user.update({ where: { id: userId }, data: { ageVerification: "APPROVED", ageVerifiedAt: new Date() } });
     await audit(admin.id, "user.verify", "User", userId);
+  } else if (op === "unverify") {
+    // tira o selo: volta a "não verificado" e pode enviar nova selfie (fotos já publicadas continuam; novas exigem verificar de novo)
+    const reason = String(formData.get("reason") || "").trim().slice(0, 200) || null;
+    await db.user.update({ where: { id: userId }, data: { ageVerification: "NONE", ageVerifiedAt: null } });
+    await db.verificationRequest.updateMany({ where: { userId, status: "PENDING" }, data: { status: "REJECTED", reviewerId: admin.id, reviewedAt: new Date(), rejectReason: reason } });
+    await notify(userId, "VERIFICATION", `Seu selo de verificado foi removido pela administração${reason ? `: ${reason}` : ""}. Envie uma nova selfie em Verificação.`);
+    await audit(admin.id, "user.unverify", "User", userId, { reason });
   } else if (op === "resetpw") {
     const { randomBytes } = await import("node:crypto");
     const { hashPassword } = await import("@/server/auth");

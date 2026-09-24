@@ -34,6 +34,8 @@ export const DOLL_ACCESSORIES = {
   mask: "Máscara de baile",
   whip: "Chicote",
   champagne: "Taça de champanhe",
+  gaucho: "Chapéu gaúcho",
+  chimarrao: "Cuia de chimarrão",
 } as const;
 export type DollAccessory = keyof typeof DOLL_ACCESSORIES;
 
@@ -104,6 +106,26 @@ function Accessory({ kind }: { kind: string }) {
       );
     case "whip":
       return <path d="M15.4 16.8 L17.6 12 C19.6 9.8 21.4 11.6 20 13.6 C19 15 21.2 16.4 22 15" fill="none" stroke="#c98a4b" strokeWidth=".8" strokeLinecap="round" />;
+    case "gaucho":
+      // chapéu campeiro preto de aba reta com barbicacho (cordão no queixo)
+      return (
+        <g>
+          <ellipse cx="10" cy="3.1" rx="7.6" ry="1.1" fill="#1f1f1f" stroke="#000" strokeWidth=".3" />
+          <path d="M6.9 3 L7.4 0.2 H12.6 L13.1 3 Z" fill="#2b2b2b" stroke="#000" strokeWidth=".3" />
+          <path d="M7.1 2.3 H12.9" stroke="#b91c1c" strokeWidth=".5" />
+          <path d="M6.4 3.4 Q10 9.4 13.6 3.4" fill="none" stroke="#7c4a1e" strokeWidth=".35" />
+        </g>
+      );
+    case "chimarrao":
+      // cuia com erva e bomba prateada, na mão
+      return (
+        <g>
+          <path d="M16.6 10 Q16.4 13.8 18.4 14.2 Q20.4 13.8 20.2 10 Z" fill="#8b5a2b" stroke="#3b2410" strokeWidth=".3" />
+          <ellipse cx="18.4" cy="10" rx="1.8" ry=".45" fill="#4d7c0f" />
+          <path d="M18.9 10 L20.4 6.6" stroke="#cbd5e1" strokeWidth=".45" strokeLinecap="round" />
+          <path d="M16.9 11.2 H19.9" stroke="#d4af37" strokeWidth=".3" />
+        </g>
+      );
     case "champagne":
       return (
         <g>

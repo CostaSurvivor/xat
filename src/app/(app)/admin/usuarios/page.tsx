@@ -58,6 +58,19 @@ export default async function Usuarios({ searchParams }: { searchParams: Promise
                 <button className="btn-ghost py-1 text-xs">+VIP</button>
               </form>
               {u.ageVerification !== "APPROVED" && <form action={adminUserAction.bind(null, u.id)}><input type="hidden" name="op" value="verify" /><button className="btn-ghost py-1 text-xs">Verificar</button></form>}
+              {u.ageVerification === "APPROVED" && u.role === "USER" && (
+                <form action={adminUserAction.bind(null, u.id)} className="flex gap-1">
+                  <input type="hidden" name="op" value="unverify" />
+                  <select name="reason" className="input w-auto py-1 text-xs" aria-label="Motivo">
+                    <option>Fotos não conferem com a selfie</option>
+                    <option>Perfil falso ou de terceiros</option>
+                    <option>Dúvida sobre maioridade</option>
+                    <option>Mudança de integrantes do perfil</option>
+                    <option>Outro motivo</option>
+                  </select>
+                  <button className="btn-ghost py-1 text-xs text-red-700">Tirar verificado</button>
+                </form>
+              )}
               <form action={adminUserAction.bind(null, u.id)}><input type="hidden" name="op" value="resetpw" /><button className="btn-ghost py-1 text-xs">Resetar senha</button></form>
               <Link href={`/admin/usuarios/${u.id}`} className="btn-ghost py-1 text-xs">Histórico</Link>
               {u.status === "ACTIVE" ? (

@@ -11,7 +11,7 @@ import { hash } from "@node-rs/argon2";
 
 const db = new PrismaClient();
 
-import { COUPLES_ROOM, GENERAL_ROOM, STAFF_ONLY_ROOMS, UFS, stateRoom } from "../src/lib/config";
+import { COUPLES_ROOM, GENERAL_ROOM, STAFF_ONLY_ROOMS, UFS, defaultStateDescription, stateRoom } from "../src/lib/config";
 import { cityCoords } from "../src/lib/geo";
 import { DEFAULT_GROUPS } from "../src/lib/groups";
 
@@ -57,6 +57,13 @@ const ITEMS: ItemSeed[] = [
   { slug: "badge-diamante", name: "Diamante", category: "BADGE", rarity: "EPIC", config: { emoji: "💎" }, price30: 150, pricePerm: 900, powerScore: 12 },
   { slug: "badge-algema", name: "Algema", category: "BADGE", rarity: "RARE", config: { emoji: "⛓️" }, price30: 90, pricePerm: 500, powerScore: 6 },
   { slug: "badge-mascara", name: "Máscara", category: "BADGE", rarity: "RARE", config: { emoji: "🎭" }, price30: 90, pricePerm: 500, powerScore: 6 },
+  // Coleção Tchê (homenagem aos gaúchos)
+  { slug: "boneco-chapeu-gaucho", name: "Chapéu gaúcho", category: "DOLL", rarity: "RARE", description: "Coleção Tchê: chapéu de aba larga com barbicacho. Bah!", config: { accessory: "gaucho" }, price30: 90, pricePerm: 450, powerScore: 5 },
+  { slug: "boneco-chimarrao", name: "Cuia de chimarrão", category: "DOLL", rarity: "RARE", description: "Coleção Tchê: a cuia com bomba na mão, pra roda de mate no chat.", config: { accessory: "chimarrao" }, price30: 90, pricePerm: 450, powerScore: 5 },
+  { slug: "badge-chimarrao", name: "Tchê! (chimarrão)", category: "BADGE", description: "Coleção Tchê: o mate ao lado do nick.", config: { emoji: "🧉" }, price30: 50, pricePerm: 300, powerScore: 3 },
+  { slug: "nick-farroupilha", name: "Nick Farroupilha", category: "NICK_COLOR", rarity: "EPIC", description: "Coleção Tchê: degradê nas cores da bandeira gaúcha.", config: { colors: ["#15803d", "#dc2626", "#ca8a04"] }, price30: 200, pricePerm: 1000, powerScore: 10 },
+  { slug: "moldura-farroupilha", name: "Moldura Farroupilha", category: "AVATAR_FRAME", rarity: "EPIC", description: "Coleção Tchê: verde, vermelho e amarelo em volta da foto.", config: { colors: ["#15803d", "#dc2626", "#eab308"], animation: "pulse" }, price30: 150, pricePerm: 800, powerScore: 8 },
+  { slug: "texto-verde-pampa", name: "Texto Verde Pampa", category: "TEXT_COLOR", description: "Coleção Tchê: o verde dos campos do pampa.", config: { color: "#166534" }, price30: 60, pricePerm: 300, powerScore: 2 },
   { slug: "badge-pimenta", name: "Pimenta", category: "BADGE", config: { emoji: "🌶️" }, price30: 40, pricePerm: 250, powerScore: 2 },
   { slug: "moldura-ouro", name: "Moldura Dourada", category: "AVATAR_FRAME", rarity: "RARE", config: { colors: ["#d4af37", "#f1d77a"], animation: "pulse" }, price30: 150, pricePerm: 800, powerScore: 8 },
   { slug: "moldura-vinho", name: "Moldura Vinho", category: "AVATAR_FRAME", config: { colors: ["#a01c43", "#ff2f6d"], animation: "none" }, price30: 90, pricePerm: 500, powerScore: 4 },
@@ -122,6 +129,11 @@ async function main() {
     await db.platformSetting.upsert({ where: { key: "rooms-v2" }, create: { key: "rooms-v2", value: { at: new Date().toISOString() } }, update: {} });
   }
   await migrateRoomsV2();
+  // descrições regionais (ex.: RS "Bah, tchê!"): só troca se ainda estiver com o texto padrão (não sobrescreve edição do admin)
+  for (const uf of UFS) {
+    const want = stateRoom(uf).description;
+    if (want !== defaultStateDescription(uf)) await db.room.updateMany({ where: { slug: uf.toLowerCase(), description: defaultStateDescription(uf) }, data: { description: want } });
+  }
   // grupos iniciais: criados uma vez (depois a equipe cria/arquiva pelo painel)
   if (!(await db.platformSetting.findUnique({ where: { key: "groups-v1" } }))) {
     for (const g of DEFAULT_GROUPS) await db.group.upsert({ where: { slug: g.slug }, create: { ...g }, update: {} });
