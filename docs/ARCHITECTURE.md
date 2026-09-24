@@ -1,7 +1,23 @@
-# [NOME]: plano de arquitetura (Etapa 1)
+# SexPapo: arquitetura
 
-> Status: **aguardando aprovação**. Nenhum código de aplicação foi escrito ainda.
-> Schema do banco: [`packages/db/prisma/schema.prisma`](../packages/db/prisma/schema.prisma) (validado com `prisma validate`).
+## Revisão (versão atual, sem VPS)
+
+Por decisão do dono, a primeira versão roda em **hospedagem Node.js da Hostinger**, sem VPS:
+
+| Plano original (abaixo) | Versão atual |
+|---|---|
+| Monorepo + servidor Socket.IO separado | **Um único app Next.js** na raiz (a Hostinger detecta e faz o build) |
+| PostgreSQL | **MySQL** (o banco que a Hostinger oferece), via Prisma: [`prisma/schema.prisma`](../prisma/schema.prisma) |
+| Redis (presença, rate-limit, pub/sub) | Presença em tabela (`RoomPresence`, heartbeat); rate-limit em memória + checagem de flood no banco |
+| WebSocket | **Polling HTTP** (chat a cada 2s, PV a cada 3s, pausa com a aba oculta), sem dependência de WebSocket |
+| Cloudflare R2 | **Disco local** (`UPLOAD_DIR`) atrás de `src/server/storage.ts`, trocável por S3/R2 |
+| Gateways (Segpay, CCBill…) | **Pix manual** com QR Code (BR Code com valor e identificador) e aprovação no admin. `Payment.provider` permite plugar gateway depois |
+| — | **Perfil assinante** (`User.vipUntil` + `Subscription`): só assinante assiste vídeos |
+| — | **Feed** estilo Sexlog (posts, fotos, vídeo, reações, comentários) |
+
+O restante do documento é o plano original e continua valendo como caminho de migração para VPS quando o volume pedir.
+
+---
 
 ## 1. Visão geral
 

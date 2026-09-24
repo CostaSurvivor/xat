@@ -1,0 +1,54 @@
+# VPS: app + MySQL + Caddy (HTTPS automático). Uso: docs/DEPLOY-VPS.md
+services:
+  app:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_SITE_NAME: ${NEXT_PUBLIC_SITE_NAME:-SexPapo}
+        NEXT_PUBLIC_CURRENCY_NAME: ${NEXT_PUBLIC_CURRENCY_NAME:-Pimentas}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: mysql://sexpapo:${MYSQL_PASSWORD}@db:3306/sexpapo
+      UPLOAD_DIR: /data/uploads
+    volumes:
+      - uploads:/data/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: sexpapo
+      MYSQL_USER: sexpapo
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    volumes:
+      - dbdata:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./infra/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    depends_on:
+      - app
+
+volumes:
+  uploads:
+  dbdata:
+  caddy_data:
