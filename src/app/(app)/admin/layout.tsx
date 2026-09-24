@@ -9,6 +9,7 @@ const LINKS = [
   ["/admin/pagamentos", "Pix", true],
   ["/admin/usuarios", "Usuários", true],
   ["/admin/salas", "Salas", true],
+  ["/admin/ao-vivo", "🔴 Ao vivo", false],
   ["/admin/loja", "Loja", true],
   ["/admin/avisos", "Anúncios", true],
   ["/admin/config", "⚙️ Configurações", true],

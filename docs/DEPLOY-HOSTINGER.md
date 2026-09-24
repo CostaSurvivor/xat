@@ -49,6 +49,8 @@ Na tela do app → **Variáveis de ambiente**, copie de `.env.example` e preench
 | `DPO_EMAIL` | e-mail de contato LGPD |
 | `FOUNDER_EMAILS` | e-mail do fundador (visual exclusivo no chat) |
 | `PUBLIC_URL` | endereço do site (links dos e-mails) |
+| `LIVE_MAX_VIEWERS` / `LIVE_TIP_FEE_PCT` | ao vivo: espectadores com vídeo por live (padrão 10) e taxa da plataforma sobre gorjetas (padrão 0) |
+| `LIVE_TURN_URLS` / `LIVE_TURN_USERNAME` / `LIVE_TURN_CREDENTIAL` | servidor TURN (opcional, melhora o ao vivo em 4G/5G) |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `MAIL_FROM` | e-mail para "esqueci minha senha" e recibos (Hostinger: `smtp.hostinger.com`, 465) |
 
 > ⚠️ **`UPLOAD_DIR` fora da pasta do app é importante.** Se ficar dentro, um novo deploy pode apagar as fotos. Para descobrir o caminho da sua home, use o Gerenciador de Arquivos ou rode `pwd` via SSH.
@@ -73,4 +75,5 @@ Na tela do app → **Variáveis de ambiente**, copie de `.env.example` e preench
 - **Vídeos sem conversão:** sem `ffmpeg` no servidor, o vídeo fica como foi enviado (MP4/MOV/WEBM). A marca d'água do vídeo é sobreposta no player com o nick de quem assiste. A capa do vídeo recebe marca d'água de verdade.
 - **Escala:** o chat por polling aguenta bem algumas centenas de pessoas online. Para milhares ao mesmo tempo, a migração natural é uma VPS com WebSocket e Redis. O código foi separado para essa troca ser localizada (`src/app/api/rooms/*` e `ChatRoom.tsx`).
 - **Porta de origem (Marco Civil):** na hospedagem compartilhada, o proxy da Hostinger pode não repassar a porta do visitante. O app grava IP, data e hora sempre, e a porta quando o proxy envia `X-Client-Port` ou `X-Real-Port`. Na VPS, o Caddy já envia.
+- **Ao vivo:** o vídeo vai direto do aparelho de quem transmite para cada espectador (WebRTC), então a hospedagem não carrega o vídeo. O limite é o upload de quem transmite: 10 espectadores com vídeo por padrão. Em 4G/5G algumas conexões falham sem **TURN**. Para lives com centenas de pessoas, o caminho é um SFU (LiveKit) numa VPS.
 - **Backup:** ative os backups do plano e baixe periodicamente a pasta `UPLOAD_DIR` e o banco.

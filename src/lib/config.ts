@@ -40,6 +40,7 @@ export const RESERVED_SLUGS = new Set([
   "admin", "api", "login", "sair", "cadastro", "entrada", "feed", "u", "salas", "mensagens",
   "loja", "carteira", "perfil", "conta", "verificacao", "notificacoes", "termos", "privacidade",
   "regras", "_next", "static", "favicon.ico", "robots.txt", "denunciar", "busca", "pessoas",
+  "ao-vivo", "live", "trocas", "suporte", "assinar",
 ]);
 
 export const REACTIONS = ["🔥", "❤️", "😈", "😂", "👏", "😍"] as const;

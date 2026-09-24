@@ -14,6 +14,21 @@ Por decisão do dono, a primeira versão roda em **hospedagem Node.js da Hosting
 | Gateways (Segpay, CCBill…) | **Pix manual** com QR Code (BR Code com valor e identificador) e aprovação no admin. `Payment.provider` permite plugar gateway depois |
 | — | **Perfil assinante** (`User.vipUntil` + `Subscription`): só assinante assiste vídeos |
 | — | **Feed** estilo Sexlog (posts, fotos, vídeo, reações, comentários) |
+| Servidor de mídia para lives | **Ao vivo via WebRTC P2P**: o vídeo vai direto do navegador de quem transmite para cada espectador (até `LIVE_MAX_VIEWERS`). A sinalização (offer/answer sem trickle) passa pela tabela `LiveSignal` no mesmo polling do chat. O servidor nunca recebe nem grava o vídeo |
+
+### Ao vivo (`/ao-vivo`)
+
+- **Quem transmite:** perfis verificados (ou só assinantes com `LIVE_REQUIRE_SUBSCRIBER=1`). Uma transmissão por vez. Quem transmite aceita as regras: 18+, consentimento e nada de local público.
+- **Quem assiste:** todos os membros logados, ou só assinantes, conforme a escolha de quem transmite. Bloqueios e remoções são respeitados.
+- **Vídeo:** usa `getUserMedia` com resolução até 960×540 a 24 fps e ~700 kbps por espectador. Quem transmite envia uma cópia para cada espectador, então o limite depende do upload dessa pessoa (padrão 10). Quem passa do limite continua no chat e recebe o vídeo quando abre vaga. O espectador vê uma marca d'água com o próprio nick passeando pelo vídeo.
+- **Rede:** STUN público por padrão. Em redes móveis com CGNAT, parte das conexões só funciona com **TURN**: configure `LIVE_TURN_URLS`, `LIVE_TURN_USERNAME` e `LIVE_TURN_CREDENTIAL`.
+- **Gorjetas:** tipo `TIP` no ledger. A transação debita quem dá e credita quem transmite, com taxa opcional (`LIVE_TIP_FEE_PCT`) para `SYSTEM_SINK`. Na mesma transação somam o total e a meta, entram no ranking "quem mais apoiou" e aparecem animadas no chat. É idempotente pela chave do cliente.
+- **Moderação:**
+  - Quem transmite apaga mensagens e remove espectadores.
+  - Staff encerra pelo player ou em **Admin → Ao vivo**.
+  - Denúncias usam o tipo `LIVE`.
+  - Sem heartbeat por 25 s, a transmissão é encerrada automaticamente.
+- **Escala futura:** para centenas de espectadores por live, troque o P2P por um SFU (LiveKit, mediasoup) numa VPS ou por um serviço gerenciado. Antes, confira se os termos desse serviço aceitam conteúdo adulto. Só `LiveRoom.tsx` e a rota `signal` mudam.
 
 O restante do documento é o plano original e continua valendo como caminho de migração para VPS quando o volume pedir.
 
