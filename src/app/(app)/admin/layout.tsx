@@ -10,6 +10,7 @@ const LINKS = [
   ["/admin/salas", "Salas", true],
   ["/admin/loja", "Loja", true],
   ["/admin/avisos", "Anúncios", true],
+  ["/admin/config", "⚙️ Configurações", true],
 ] as const;
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {

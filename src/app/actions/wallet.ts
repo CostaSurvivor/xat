@@ -4,7 +4,7 @@ import { randomInt } from "node:crypto";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { PIX } from "@/lib/config";
+import { getPixConfig } from "@/server/settings";
 import { limiter } from "@/lib/ratelimit";
 import { isVerified, requireUser } from "@/server/auth";
 
@@ -15,7 +15,7 @@ const newCode = () => "P" + Array.from({ length: 7 }, () => ALPH[randomInt(ALPH.
 export async function createPixPayment(packageId: string) {
   const user = await requireUser();
   if (!isVerified(user)) redirect("/verificacao");
-  if (!PIX.key) redirect("/carteira?erro=pix");
+  if (!(await getPixConfig()).key) redirect("/carteira?erro=pix");
   if (!limiter("pix-create", 5, 5 / 3600).take(user.id)) redirect("/carteira?erro=limite");
   const pkg = await db.coinPackage.findUnique({ where: { id: packageId } });
   if (!pkg || !pkg.active) redirect("/carteira");
@@ -48,7 +48,7 @@ export async function cancelPayment(paymentId: string) {
 export async function createVipPayment(planId: string) {
   const user = await requireUser();
   if (!isVerified(user)) redirect("/verificacao");
-  if (!PIX.key) redirect("/assinar?erro=pix");
+  if (!(await getPixConfig()).key) redirect("/assinar?erro=pix");
   if (!limiter("pix-create", 5, 5 / 3600).take(user.id)) redirect("/assinar?erro=limite");
   const plan = await db.vipPlan.findUnique({ where: { id: planId } });
   if (!plan || !plan.active) redirect("/assinar");

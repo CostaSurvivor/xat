@@ -44,8 +44,7 @@ Na tela do app → **Variáveis de ambiente**, copie de `.env.example` e preench
 | `NEXT_PUBLIC_CURRENCY_NAME` | `Pimentas` |
 | `ADMIN_EMAILS` | seu e-mail (vira admin ao se cadastrar) |
 | `UPLOAD_DIR` | **pasta fora do app**, ex.: `/home/u123456789/midias-sexpapo` |
-| `PIX_KEY` | sua chave Pix |
-| `PIX_MERCHANT_NAME` / `PIX_MERCHANT_CITY` | nome e cidade (sem acento) que aparecem no Pix |
+| `PIX_KEY` (opcional) | melhor cadastrar em **Admin → Configurações** |
 | `MAX_VIDEO_MB` | `100` |
 | `DPO_EMAIL` | e-mail de contato LGPD |
 
@@ -56,7 +55,7 @@ Na tela do app → **Variáveis de ambiente**, copie de `.env.example` e preench
 ## 5. Primeiro acesso
 
 1. Abra o domínio temporário, aceite o aviso 18+ e **cadastre-se com o e-mail de `ADMIN_EMAILS`**.
-2. O botão **ADMIN** aparece no topo. Confira em **Admin → Loja** os pacotes de moeda e os planos de assinatura, e ajuste os preços.
+2. O botão **ADMIN** aparece no topo. Em **Admin → Configurações**, cadastre sua chave Pix (tem um QR de teste). Em **Admin → Loja**, ajuste pacotes de moeda e planos de assinatura.
 3. Faça um Pix de teste de R$ 0,01 para você mesmo (ou só gere o QR) e confira se nome e chave aparecem certos no app do banco.
 
 ## 6. Rotina do dia a dia

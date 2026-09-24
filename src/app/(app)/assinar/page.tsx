@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
-import { CURRENCY_ICON, CURRENCY_NAME, PIX, SITE_NAME } from "@/lib/config";
+import { CURRENCY_ICON, CURRENCY_NAME, SITE_NAME } from "@/lib/config";
+import { getPixConfig } from "@/server/settings";
 import { isSubscriber, isVerified, requireUser } from "@/server/auth";
 import { createVipPayment } from "@/app/actions/wallet";
 import Link from "next/link";
@@ -10,6 +11,7 @@ const brl = (c: number) => (c / 100).toLocaleString("pt-BR", { style: "currency"
 export default async function Assinar({ searchParams }: { searchParams: Promise<{ erro?: string }> }) {
   const user = await requireUser();
   const { erro } = await searchParams;
+  const pix = await getPixConfig();
   const plans = await db.vipPlan.findMany({ where: { active: true }, orderBy: { sortOrder: "asc" } });
   const sub = isSubscriber(user) && user.vipUntil;
   return (
@@ -36,7 +38,7 @@ export default async function Assinar({ searchParams }: { searchParams: Promise<
               <p className="font-semibold">{p.name}</p>
               <p className="text-3xl font-bold text-gold">{brl(p.priceCents)}</p>
               <p className="text-xs text-mute">{p.days} dias{p.bonusCoins ? ` · +${p.bonusCoins} ${CURRENCY_ICON}` : ""}</p>
-              <button disabled={!PIX.key} className="btn-gold mt-3 w-full">Assinar com Pix</button>
+              <button disabled={!pix.key} className="btn-gold mt-3 w-full">Assinar com Pix</button>
             </form>
           ))}
         </div>

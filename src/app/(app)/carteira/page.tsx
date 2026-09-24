@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { CURRENCY_ICON, CURRENCY_NAME, PIX } from "@/lib/config";
+import { CURRENCY_ICON, CURRENCY_NAME } from "@/lib/config";
+import { getPixConfig } from "@/server/settings";
 import { isVerified, requireUser } from "@/server/auth";
 import { balanceOf } from "@/server/ledger";
 import { createPixPayment } from "@/app/actions/wallet";
@@ -16,6 +17,7 @@ const brl = (c: number) => (c / 100).toLocaleString("pt-BR", { style: "currency"
 export default async function Carteira({ searchParams }: { searchParams: Promise<{ erro?: string }> }) {
   const user = await requireUser();
   const { erro } = await searchParams;
+  const pix = await getPixConfig();
   const wallet = await db.wallet.findUnique({ where: { userId: user.id } });
   const [balance, packages, payments, entries] = await Promise.all([
     balanceOf(user.id),
@@ -43,7 +45,7 @@ export default async function Carteira({ searchParams }: { searchParams: Promise
                 <p className="text-sm text-mute">{p.name}</p>
                 <p className="text-2xl font-bold">{CURRENCY_ICON} {p.coins}</p>
                 {p.bonusCoins > 0 && <p className="text-xs text-green-300">+{p.bonusCoins} bônus</p>}
-                <button className="btn-gold mt-3 w-full" disabled={!PIX.key}>{brl(p.priceCents)}</button>
+                <button className="btn-gold mt-3 w-full" disabled={!pix.key}>{brl(p.priceCents)}</button>
               </form>
             ))}
           </div>

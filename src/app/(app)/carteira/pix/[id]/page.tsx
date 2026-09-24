@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import QRCode from "qrcode";
 import { db } from "@/lib/db";
-import { CURRENCY_ICON, PIX, SITE_NAME } from "@/lib/config";
+import { CURRENCY_ICON, SITE_NAME } from "@/lib/config";
+import { getPixConfig } from "@/server/settings";
 import { pixPayload } from "@/lib/pix";
 import { requireUser } from "@/server/auth";
 import { cancelPayment, claimPayment } from "@/app/actions/wallet";
@@ -14,7 +15,9 @@ export default async function PixPage({ params }: { params: Promise<{ id: string
   const p = await db.payment.findUnique({ where: { id: (await params).id } });
   if (!p || p.userId !== user.id) notFound();
   const brl = (p.amountCents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-  const code = pixPayload({ key: PIX.key, name: PIX.merchantName, city: PIX.merchantCity, amountCents: p.amountCents, txid: p.code });
+  const pix = await getPixConfig();
+  if (!pix.key) return <div className="card mx-auto max-w-md p-6 text-center">Pagamento via Pix indisponível no momento. Tente mais tarde.</div>;
+  const code = pixPayload({ key: pix.key, name: pix.merchantName, city: pix.merchantCity, amountCents: p.amountCents, txid: p.code });
   const qr = await QRCode.toDataURL(code, { margin: 1, width: 320, color: { dark: "#000000", light: "#ffffff" } });
   return (
     <div className="card mx-auto max-w-md space-y-4 p-6 text-center">

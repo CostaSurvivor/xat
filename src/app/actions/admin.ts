@@ -269,3 +269,20 @@ export async function saveVipPlan(formData: FormData) {
   await audit(admin.id, "vipplan.save", "VipPlan", id || data.name);
   revalidatePath("/admin/loja");
 }
+
+// ---------------- Configurações (admin) ----------------
+const pixSchema = z.object({
+  key: z.string().trim().min(3, "Chave Pix muito curta").max(77),
+  merchantName: z.string().trim().min(2).max(25),
+  merchantCity: z.string().trim().min(2).max(15),
+});
+
+export async function savePixConfig(_: { ok?: boolean; error?: string } | undefined, formData: FormData) {
+  const admin = await requireAdmin();
+  const p = pixSchema.safeParse(Object.fromEntries(formData));
+  if (!p.success) return { error: p.error.issues[0].message };
+  await db.platformSetting.upsert({ where: { key: "pix" }, create: { key: "pix", value: p.data }, update: { value: p.data } });
+  await audit(admin.id, "settings.pix", undefined, undefined, { key: p.data.key.slice(0, 4) + "…" });
+  revalidatePath("/admin/config");
+  return { ok: true };
+}

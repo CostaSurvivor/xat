@@ -1,5 +1,7 @@
 import { db } from "@/lib/db";
-import { CURRENCY_ICON, PIX } from "@/lib/config";
+import Link from "next/link";
+import { CURRENCY_ICON } from "@/lib/config";
+import { getPixConfig } from "@/server/settings";
 import { requireAdmin } from "@/server/auth";
 import { approvePayment, rejectPayment } from "@/app/actions/admin";
 
@@ -8,6 +10,7 @@ const brl = (c: number) => (c / 100).toLocaleString("pt-BR", { style: "currency"
 
 export default async function Pagamentos() {
   await requireAdmin();
+  const pix = await getPixConfig();
   const [pending, recent] = await Promise.all([
     db.payment.findMany({ where: { status: { in: ["CLAIMED", "PENDING"] } }, include: { user: { select: { nick: true } } }, orderBy: [{ status: "asc" }, { createdAt: "desc" }], take: 100 }),
     db.payment.findMany({ where: { status: { in: ["PAID", "REJECTED"] } }, include: { user: { select: { nick: true } } }, orderBy: { reviewedAt: "desc" }, take: 30 }),
@@ -15,7 +18,7 @@ export default async function Pagamentos() {
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-bold">Pix manual</h1>
-      {!PIX.key && <p className="rounded-xl bg-red-900/50 p-3 text-sm">⚠️ PIX_KEY não configurada: usuários não conseguem gerar QR Code.</p>}
+      {!pix.key && <p className="rounded-xl bg-red-900/50 p-3 text-sm">⚠️ Chave Pix não configurada: usuários não conseguem gerar QR Code. <Link href="/admin/config" className="underline">Configurar agora</Link></p>}
       <p className="text-sm text-mute">Confira no extrato do banco o valor e o identificador (txid / descrição) antes de aprovar. A aprovação credita as moedas uma única vez.</p>
       <div className="card divide-y divide-line">
         {pending.length === 0 && <p className="p-4 text-sm text-mute">Nada pendente.</p>}
