@@ -23,7 +23,7 @@ export default async function Assinar({ searchParams }: { searchParams: Promise<
         {sub && <p className="mt-3 rounded-xl bg-gold/15 p-2 text-gold2">Você é assinante até <b>{sub.toLocaleDateString("pt-BR")}</b>. Renovar soma mais dias.</p>}
       </div>
       <ul className="grid gap-2 text-sm sm:grid-cols-2">
-        {["🎬 Assiste a todos os vídeos do feed e dos perfis", "🏷️ Selo VIP dourado no perfil e nos posts", `${CURRENCY_ICON} ${CURRENCY_NAME} de bônus a cada período`, "💛 Ajuda a manter a comunidade segura e sem anúncios"].map((b) => (
+        {["🎬 Assiste a todos os vídeos do feed e dos perfis", "👀 Vê quem visitou seu perfil", "🏷️ Selo VIP dourado no perfil e nos posts", `${CURRENCY_ICON} ${CURRENCY_NAME} de bônus a cada período`, "💛 Ajuda a manter a comunidade segura e sem anúncios"].map((b) => (
           <li key={b} className="card p-3">{b}</li>
         ))}
       </ul>

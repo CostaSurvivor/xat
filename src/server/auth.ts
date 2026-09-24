@@ -152,5 +152,7 @@ export function maybeMaintenance() {
     // presença antiga nas salas e sessões vencidas
     db.roomPresence.deleteMany({ where: { lastSeenAt: { lt: new Date(Date.now() - 86400_000) } } }),
     db.session.deleteMany({ where: { expiresAt: { lt: new Date() } } }),
+    // "quem visitou meu perfil": guardado por 90 dias
+    db.profileVisit.deleteMany({ where: { lastAt: { lt: new Date(Date.now() - 90 * 86400_000) } } }),
   ]).catch(() => {});
 }

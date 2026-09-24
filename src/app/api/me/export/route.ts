@@ -26,7 +26,11 @@ export async function GET() {
     db.liveStream.findMany({ where: { hostId: u.id }, select: { id: true, title: true, startedAt: true, endedAt: true, tipTotal: true, peakViewers: true } }),
     db.liveMessage.findMany({ where: { authorId: u.id }, select: { streamId: true, kind: true, body: true, amount: true, createdAt: true } }),
   ]);
-  const data = { exportedAt: new Date(), liveStreams, liveMessages: liveMessages.map((m) => ({ ...m, amount: m.amount ?? undefined })), profile, persons, consents, posts, comments, roomMessages: messages, privateMessagesSent: pms, follows, blocks, payments, inventory, media, accessLogs: access };
+  const [visitsReceived, visitsMade] = await Promise.all([
+    db.profileVisit.findMany({ where: { visitedId: u.id }, select: { visitorId: true, count: true, firstAt: true, lastAt: true } }),
+    db.profileVisit.findMany({ where: { visitorId: u.id }, select: { visitedId: true, count: true, firstAt: true, lastAt: true } }),
+  ]);
+  const data = { exportedAt: new Date(), visitsReceived, visitsMade, liveStreams, liveMessages: liveMessages.map((m) => ({ ...m, amount: m.amount ?? undefined })), profile, persons, consents, posts, comments, roomMessages: messages, privateMessagesSent: pms, follows, blocks, payments, inventory, media, accessLogs: access };
   const json = JSON.stringify(data, (_, v) => (typeof v === "bigint" ? v.toString() : v), 2);
   return new NextResponse(json, {
     headers: { "Content-Type": "application/json; charset=utf-8", "Content-Disposition": `attachment; filename="meus-dados-${u.nick}.json"` },

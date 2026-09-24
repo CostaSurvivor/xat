@@ -13,6 +13,7 @@ const LINKS = [
   { href: "/notificacoes", label: "Avisos", icon: "🔔", badge: "notif" as const },
 ];
 const EXTRA = [
+  { href: "/visitas", label: "Visitas" },
   { href: "/loja", label: "Loja" },
   { href: "/trocas", label: "Trocas" },
 ];

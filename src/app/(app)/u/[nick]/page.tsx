@@ -16,6 +16,7 @@ import { ProtectedImage } from "@/components/ProtectedImage";
 import { ReportButton } from "@/components/ReportButton";
 import { GiftButton } from "@/components/GiftButton";
 import { startTrade } from "@/app/actions/trade";
+import { recordVisit } from "@/server/visits";
 
 export async function generateMetadata({ params }: { params: Promise<{ nick: string }> }) {
   return { title: `@${decodeURIComponent((await params).nick)}` };
@@ -29,6 +30,7 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
   const me = u.id === viewer.id;
   const iBlocked = await db.block.findUnique({ where: { blockerId_blockedId: { blockerId: viewer.id, blockedId: u.id } } });
   if (!me && !iBlocked && (await isBlockedBetween(viewer.id, u.id))) notFound();
+  if (!me && !iBlocked) await recordVisit(viewer, u.id);
 
   const [fStatus, friends] = await Promise.all([friendStatus(viewer.id, u.id), friendIds(u.id)]);
   const [followers, following, isFollowing, album, access, posts, styles] = await Promise.all([
