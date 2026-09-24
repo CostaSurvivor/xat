@@ -11,7 +11,8 @@
     "db:seed": "tsx prisma/seed.ts",
     "setup": "prisma db push && tsx prisma/seed.ts",
     "lint": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build:hostinger": "prisma db push --skip-generate && prisma generate && tsx prisma/seed.ts && next build"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -28,19 +29,19 @@
     "react-dom": "^19.3.0",
     "server-only": "^0.0.1",
     "sharp": "^0.34.5",
-    "zod": "^3.25.76"
-  },
-  "devDependencies": {
+    "zod": "^3.25.76",
+    "prisma": "^6.19.3",
+    "typescript": "^5.9.3",
+    "tailwindcss": "^4.3.3",
     "@tailwindcss/postcss": "^4.3.3",
+    "postcss": "^8.5.28",
+    "tsx": "^4.23.15",
     "@types/node": "^22.20.4",
-    "@types/qrcode": "^1.5.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "postcss": "^8.5.28",
-    "prisma": "^6.19.3",
-    "tailwindcss": "^4.3.3",
-    "tsx": "^4.23.15",
-    "typescript": "^5.9.3",
+    "@types/qrcode": "^1.5.6"
+  },
+  "devDependencies": {
     "vitest": "^3.2.7"
   }
 }

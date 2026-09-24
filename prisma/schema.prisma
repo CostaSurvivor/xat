@@ -55,6 +55,7 @@ enum VerificationStatus {
 enum MediaKind {
   AVATAR
   POST
+  POST_VIDEO
   PRIVATE_ALBUM
   PM_PHOTO
   VERIFICATION_SELFIE
@@ -123,6 +124,7 @@ enum WalletKind {
 
 enum LedgerTxType {
   PURCHASE_CREDIT
+  VIP_BONUS
   ITEM_PURCHASE
   GIFT_COINS
   GIFT_ITEM
@@ -203,6 +205,7 @@ model User {
   pmPolicy         PmPolicy           @default(EVERYONE)
   acceptPmPhotos   Boolean            @default(false)
   avatarId         String?
+  vipUntil         DateTime? // assinante até (cache de Subscription)
   lastSeenAt       DateTime?
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
@@ -226,6 +229,7 @@ model User {
   wallet          Wallet?
   inventory       InventoryItem[]
   payments        Payment[]
+  subscriptions   Subscription[]
   reportsFiled    Report[]           @relation("Reporter")
   notifications   Notification[]     @relation("NotifUser")
   albumOwned      AlbumAccess[]      @relation("AlbumOwner")
@@ -336,6 +340,8 @@ model Media {
   width       Int
   height      Int
   sha256      String      @db.VarChar(64)
+  mime        String      @default("image/webp") @db.VarChar(40) // vídeo: mime do arquivo em originalKey
+  sizeBytes   Int         @default(0)
   createdAt   DateTime    @default(now())
   owner       User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   postMedia   PostMedia[]
@@ -638,6 +644,8 @@ model CoinPackage {
 model Payment {
   id          String        @id @default(cuid())
   userId      String
+  kind        String        @default("COINS") @db.VarChar(10) // COINS | VIP
+  vipDays     Int?
   provider    String        @default("pix_manual") @db.VarChar(30)
   code        String        @unique @db.VarChar(12) // identificador p/ o usuário citar
   status      PaymentStatus @default(PENDING)
@@ -653,6 +661,31 @@ model Payment {
 
   @@index([status, createdAt])
   @@index([userId, createdAt])
+}
+
+// Assinatura (perfil assinante: assiste vídeos, selo VIP, bônus de moedas)
+model VipPlan {
+  id         String  @id @default(cuid())
+  name       String  @db.VarChar(60)
+  days       Int
+  priceCents Int
+  bonusCoins Int     @default(0)
+  active     Boolean @default(true)
+  sortOrder  Int     @default(0)
+}
+
+// Histórico de períodos de assinatura (User.vipUntil é o cache do fim atual)
+model Subscription {
+  id        String   @id @default(cuid())
+  userId    String
+  paymentId String?  @unique
+  startsAt  DateTime
+  endsAt    DateTime
+  source    String   @db.VarChar(20) // PIX | ADMIN
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, endsAt])
 }
 
 // -----------------------------------------------------------------------------

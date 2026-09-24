@@ -88,6 +88,8 @@ export async function requireUser() {
 }
 
 export const isVerified = (u: { ageVerification: string }) => u.ageVerification === "APPROVED";
+/** Assinante: pode assistir vídeos. */
+export const isSubscriber = (u: { vipUntil: Date | null; role: string }) => (!!u.vipUntil && u.vipUntil > new Date()) || u.role !== "USER";
 export const isStaff = (u: { role: string }) => u.role === "ADMIN" || u.role === "MODERATOR";
 
 /** Mídia, PV com foto, compras e criação de sala exigem idade verificada. */

@@ -1,5 +1,7 @@
 import "server-only";
-import { mkdir, readFile, writeFile, unlink } from "node:fs/promises";
+import { mkdir, readFile, writeFile, unlink, stat } from "node:fs/promises";
+import { createReadStream } from "node:fs";
+import { Readable } from "node:stream";
 import path from "node:path";
 
 /**
@@ -23,6 +25,13 @@ export const storage = {
   },
   async get(key: string) {
     return readFile(safe(key));
+  },
+  async size(key: string) {
+    return (await stat(safe(key))).size;
+  },
+  /** Stream de um intervalo de bytes (para vídeo com Range). */
+  stream(key: string, start: number, end: number) {
+    return Readable.toWeb(createReadStream(safe(key), { start, end })) as ReadableStream;
   },
   async remove(key: string) {
     await unlink(safe(key)).catch(() => {});

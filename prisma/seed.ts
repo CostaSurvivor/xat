@@ -66,6 +66,14 @@ async function main() {
     await db.item.upsert({ where: { slug }, create: { slug, ...data }, update: data });
   }
   if ((await db.coinPackage.count()) === 0) await db.coinPackage.createMany({ data: PACKAGES });
+  if ((await db.vipPlan.count()) === 0)
+    await db.vipPlan.createMany({
+      data: [
+        { name: "Mensal", days: 30, priceCents: 2990, bonusCoins: 100, sortOrder: 1 },
+        { name: "Trimestral", days: 90, priceCents: 7490, bonusCoins: 400, sortOrder: 2 },
+        { name: "Anual", days: 365, priceCents: 23990, bonusCoins: 2000, sortOrder: 3 },
+      ],
+    });
   for (const kind of ["SYSTEM_MINT", "SYSTEM_SINK"] as const) {
     if (!(await db.wallet.findFirst({ where: { kind } }))) await db.wallet.create({ data: { kind } });
   }

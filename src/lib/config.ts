@@ -1,4 +1,4 @@
-export const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME || "Suingaê";
+export const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME || "SexPapo";
 export const CURRENCY_NAME = process.env.NEXT_PUBLIC_CURRENCY_NAME || "Pimentas";
 export const CURRENCY_ICON = "🌶️";
 

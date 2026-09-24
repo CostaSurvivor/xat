@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireUser, isVerified } from "@/server/auth";
+import { requireUser, isVerified, isSubscriber } from "@/server/auth";
 import { getFeed, type FeedTab } from "@/server/feed";
 import { Composer } from "@/components/Composer";
 import { PostCard } from "@/components/PostCard";
@@ -22,7 +22,7 @@ export default async function Feed({ searchParams }: { searchParams: Promise<{ t
           ))}
         </div>
         {posts.length === 0 && <p className="card p-8 text-center text-mute">Nada por aqui ainda. Que tal postar algo? 🔥</p>}
-        {posts.map((p) => <PostCard key={p.id} post={p} />)}
+        {posts.map((p) => <PostCard key={p.id} post={p} viewer={{ nick: user.nick, subscriber: isSubscriber(user) }} />)}
         {posts.length === 15 && (
           <Link href={`/feed?tab=${tab}&antes=${encodeURIComponent(posts[posts.length - 1].createdAt)}`} className="btn-ghost w-full">Carregar mais</Link>
         )}

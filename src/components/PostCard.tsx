@@ -11,10 +11,11 @@ import { Avatar } from "./Avatar";
 import { Nick } from "./Nick";
 import { ProtectedImage } from "./ProtectedImage";
 import { ReportButton } from "./ReportButton";
+import { VideoPlayer } from "./VideoPlayer";
 
 type Comment = Awaited<ReturnType<typeof loadComments>>[number];
 
-export function PostCard({ post }: { post: FeedPost }) {
+export function PostCard({ post, viewer }: { post: FeedPost; viewer: { nick: string; subscriber: boolean } }) {
   const router = useRouter();
   const [reactions, setReactions] = useState(post.reactions);
   const [mine, setMine] = useState(post.myReaction);
@@ -46,6 +47,7 @@ export function PostCard({ post }: { post: FeedPost }) {
           <div className="truncate">
             <Nick nick={a.nick} style={a.style} />
             {a.ageVerification === "APPROVED" && <span title="Verificado" className="ml-1 text-xs text-gold">✔</span>}
+            {a.vip && <span title="Assinante" className="ml-1 rounded bg-gold px-1 text-[10px] font-bold text-ink">VIP</span>}
           </div>
           <div className="text-xs text-mute">
             {PROFILE_TYPES[a.profileType as keyof typeof PROFILE_TYPES]?.label}
@@ -62,7 +64,11 @@ export function PostCard({ post }: { post: FeedPost }) {
       {post.body && <p className="whitespace-pre-wrap break-words px-4 pb-3 text-[15px]">{post.body}</p>}
       {post.media.length > 0 && (
         <div className="relative">
-          <ProtectedImage id={post.media[idx].id} className="aspect-[4/5] max-h-[75vh] w-full" />
+          {post.media[idx].video ? (
+            <VideoPlayer id={post.media[idx].id} canWatch={viewer.subscriber || post.canDelete} viewerNick={viewer.nick} className="aspect-[4/5] max-h-[75vh] w-full" />
+          ) : (
+            <ProtectedImage id={post.media[idx].id} className="aspect-[4/5] max-h-[75vh] w-full" />
+          )}
           {post.media.length > 1 && (
             <>
               <div className="absolute right-2 top-2 rounded-full bg-black/60 px-2 text-xs">{idx + 1}/{post.media.length}</div>

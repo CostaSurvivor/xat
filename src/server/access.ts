@@ -1,6 +1,6 @@
 import "server-only";
 import { db } from "@/lib/db";
-import { isStaff, isVerified, type CurrentUser } from "./auth";
+import { isStaff, isSubscriber, isVerified, type CurrentUser } from "./auth";
 
 export const MEDIA_REQUIRES_VERIFICATION = process.env.MEDIA_REQUIRES_VERIFICATION !== "false";
 
@@ -16,7 +16,8 @@ export async function blockedIds(userId: string) {
   return [...new Set(rows.map((r) => (r.blockerId === userId ? r.blockedId : r.blockerId)))];
 }
 
-export type MediaVariant = "d" | "b" | "o";
+/** d = exibição (marca d'água), b = borrada, o = original (só dono/staff), v = vídeo (assinantes) */
+export type MediaVariant = "d" | "b" | "o" | "v";
 
 /**
  * Decide qual versão da mídia o usuário pode ver.
@@ -29,6 +30,7 @@ export async function resolveMediaAccess(viewer: CurrentUser, mediaId: string, w
   const own = m.ownerId === viewer.id;
   if (m.status !== "APPROVED" && !staff) return null;
   if (want === "o") return own || staff ? { media: m, variant: "o" as const } : null;
+  if (want === "v" && m.kind !== "POST_VIDEO") return null;
   if (own || staff) return { media: m, variant: want };
   if (m.owner.status !== "ACTIVE") return null;
   if (await isBlockedBetween(viewer.id, m.ownerId)) return null;
@@ -39,6 +41,10 @@ export async function resolveMediaAccess(viewer: CurrentUser, mediaId: string, w
   switch (m.kind) {
     case "VERIFICATION_SELFIE":
       return null;
+    case "POST_VIDEO":
+      // pôster segue a regra das fotos; o vídeo em si é exclusivo de assinantes
+      if (want === "v") return isSubscriber(viewer) && !blurOnly ? { media: m, variant: "v" as const } : null;
+      break;
     case "PRIVATE_ALBUM": {
       const acc = await db.albumAccess.findUnique({ where: { ownerId_viewerId: { ownerId: m.ownerId, viewerId: viewer.id } } });
       if (!acc?.granted) return { media: m, variant: "b" as const };

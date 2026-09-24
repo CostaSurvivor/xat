@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { ageOn } from "@/lib/age";
 import { PROFILE_TYPES } from "@/lib/config";
-import { isVerified, requireUser } from "@/server/auth";
+import { isSubscriber, isVerified, requireUser } from "@/server/auth";
 import { isBlockedBetween } from "@/server/access";
 import { getFeed } from "@/server/feed";
 import { stylesFor } from "@/server/styles";
@@ -48,7 +48,7 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
         <div className="flex items-start gap-4">
           <Avatar mediaId={hidden ? null : u.avatarId} nick={u.nick} size={88} style={st} />
           <div className="min-w-0 flex-1">
-            <h1 className="text-xl"><Nick nick={u.nick} style={st} link={false} /> {u.ageVerification === "APPROVED" && <span title="Perfil verificado" className="text-sm text-gold">✔ verificado</span>}</h1>
+            <h1 className="text-xl"><Nick nick={u.nick} style={st} link={false} /> {u.ageVerification === "APPROVED" && <span title="Perfil verificado" className="text-sm text-gold">✔ verificado</span>} {u.vipUntil && u.vipUntil > new Date() && <span className="rounded bg-gold px-1.5 align-middle text-xs font-bold text-ink">VIP</span>}</h1>
             <p className="text-sm text-mute">
               {PROFILE_TYPES[u.profileType].label} · {u.persons.map((p) => `${p.label} ${ageOn(p.birthDate)}`).join(", ")}
               {!u.hideCity && u.city ? ` · ${u.city}/${u.state}` : u.state ? ` · ${u.state}` : ""}
@@ -85,7 +85,7 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
         </section>
       )}
 
-      {!hidden && posts.map((p) => <PostCard key={p.id} post={p} />)}
+      {!hidden && posts.map((p) => <PostCard key={p.id} post={p} viewer={{ nick: viewer.nick, subscriber: isSubscriber(viewer) }} />)}
     </div>
   );
 }

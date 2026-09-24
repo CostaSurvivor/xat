@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ["sharp", "@node-rs/argon2", "@prisma/client"],
-  experimental: { serverActions: { bodySizeLimit: "12mb" } },
+  experimental: { serverActions: { bodySizeLimit: "110mb" } },
   poweredByHeader: false,
   async headers() {
     return [

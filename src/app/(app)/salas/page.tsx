@@ -37,7 +37,7 @@ export default async function Salas({ searchParams }: { searchParams: Promise<{ 
         <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${counts.get(r.id) ? "bg-green-900/50 text-green-300" : "bg-panel2 text-mute"}`}>{counts.get(r.id) ?? 0} on</span>
       </div>
       {r.description && <p className="mt-2 line-clamp-2 text-sm text-mute">{r.description}</p>}
-      <p className="mt-2 text-[11px] text-mute">{r._count.members} membros {ACCESS_LABEL[r.access] && `· ${ACCESS_LABEL[r.access]}`}{r.owner && ` · por @${r.owner.nick}`}</p>
+      <p className="mt-2 text-[11px] text-mute">{r._count.members} {r._count.members === 1 ? "membro" : "membros"} {ACCESS_LABEL[r.access] && `· ${ACCESS_LABEL[r.access]}`}{r.owner && ` · por @${r.owner.nick}`}</p>
     </Link>
   );
 

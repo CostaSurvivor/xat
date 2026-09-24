@@ -90,3 +90,69 @@ export async function processUpload(opts: { file: File; ownerId: string; ownerNi
     },
   });
 }
+
+export const MAX_VIDEO_BYTES = Number(process.env.MAX_VIDEO_MB || 100) * 1024 * 1024;
+
+/** Detecta o formato do vídeo pelos bytes iniciais (não confia no nome/mime do navegador). */
+export function sniffVideo(head: Buffer): string | null {
+  if (head.length >= 12 && head.toString("ascii", 4, 8) === "ftyp") {
+    const brand = head.toString("ascii", 8, 12);
+    return brand.startsWith("qt") ? "video/quicktime" : "video/mp4";
+  }
+  if (head.length >= 4 && head.readUInt32BE(0) === 0x1a45dfa3) return "video/webm";
+  return null;
+}
+
+async function placeholderPoster() {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="720" height="1280"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a0b1a"/><stop offset="1" stop-color="#0b0708"/></linearGradient></defs><rect width="720" height="1280" fill="url(#g)"/><text x="360" y="660" font-size="140" text-anchor="middle" fill="#d4af37" fill-opacity=".6">▶</text></svg>`;
+  return sharp(Buffer.from(svg)).jpeg().toBuffer();
+}
+
+/**
+ * Vídeo: guardado como enviado (sem transcodificação: hospedagem compartilhada
+ * não tem ffmpeg garantido). O pôster (quadro capturado no navegador) recebe
+ * marca d'água e versão borrada. A reprodução exige assinatura e mostra
+ * marca d'água sobreposta com o nick de quem assiste.
+ */
+export async function processVideo(opts: { file: File; poster?: File | null; ownerId: string; ownerNick: string }) {
+  const { file } = opts;
+  if (!file || file.size === 0) throw new MediaError("Arquivo vazio");
+  if (file.size > MAX_VIDEO_BYTES) throw new MediaError(`Vídeo muito grande (máx. ${Math.round(MAX_VIDEO_BYTES / 1024 / 1024)} MB)`);
+  const input = Buffer.from(await file.arrayBuffer());
+  const mime = sniffVideo(input.subarray(0, 16));
+  if (!mime) throw new MediaError("Formato de vídeo não suportado (use MP4, MOV ou WEBM)");
+  const sha = createHash("sha256").update(input).digest("hex");
+  if (await db.mediaHashBlock.findUnique({ where: { sha256: sha } })) throw new MediaError("Este vídeo não é permitido.");
+
+  let posterIn: Buffer;
+  try {
+    posterIn = opts.poster && opts.poster.size > 0 && opts.poster.size < MAX_UPLOAD_BYTES ? Buffer.from(await opts.poster.arrayBuffer()) : await placeholderPoster();
+    await sharp(posterIn).metadata();
+  } catch {
+    posterIn = await placeholderPoster();
+  }
+  const poster = await sharp(posterIn).rotate().resize(1280, 1280, { fit: "inside", withoutEnlargement: true }).toBuffer({ resolveWithObject: true });
+  const display = await renderWatermarked(poster.data, `@${opts.ownerNick} · ${SITE_NAME}`);
+  const blur = await sharp(poster.data).resize(48, 48, { fit: "inside" }).blur(4).resize(480, 480, { fit: "inside" }).webp({ quality: 50 }).toBuffer();
+
+  const d = new Date();
+  const ext = mime === "video/webm" ? "webm" : mime === "video/quicktime" ? "mov" : "mp4";
+  const dir = `${d.getUTCFullYear()}/${String(d.getUTCMonth() + 1).padStart(2, "0")}/${randomBytes(12).toString("hex")}`;
+  await storage.put(`${dir}/v.${ext}`, input);
+  await storage.put(`${dir}/d.webp`, display);
+  await storage.put(`${dir}/b.webp`, blur);
+  return db.media.create({
+    data: {
+      ownerId: opts.ownerId,
+      kind: "POST_VIDEO",
+      originalKey: `${dir}/v.${ext}`,
+      displayKey: `${dir}/d.webp`,
+      blurKey: `${dir}/b.webp`,
+      width: poster.info.width,
+      height: poster.info.height,
+      sha256: sha,
+      mime,
+      sizeBytes: file.size,
+    },
+  });
+}

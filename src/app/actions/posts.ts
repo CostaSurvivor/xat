@@ -7,7 +7,7 @@ import { REACTIONS } from "@/lib/config";
 import { limiter } from "@/lib/ratelimit";
 import { isStaff, isVerified, requireUser } from "@/server/auth";
 import { isBlockedBetween } from "@/server/access";
-import { MediaError, processUpload } from "@/server/media";
+import { MediaError, processUpload, processVideo } from "@/server/media";
 import { notify } from "@/server/notify";
 
 type R = { ok: boolean; error?: string };
@@ -18,12 +18,19 @@ export async function createPost(_: R | undefined, formData: FormData): Promise<
   const body = String(formData.get("body") || "").trim().slice(0, 3000);
   const visibility = formData.get("visibility") === "FOLLOWERS" ? "FOLLOWERS" : "PUBLIC";
   const files = formData.getAll("photos").filter((f): f is File => f instanceof File && f.size > 0).slice(0, 6);
-  if (!body && !files.length) return { ok: false, error: "Escreva algo ou escolha fotos" };
-  if (files.length && !isVerified(user)) return { ok: false, error: "Verifique seu perfil para postar fotos." };
+  const video = formData.get("video");
+  const hasVideo = video instanceof File && video.size > 0;
+  if (!body && !files.length && !hasVideo) return { ok: false, error: "Escreva algo ou escolha fotos/vídeo" };
+  if ((files.length || hasVideo) && !isVerified(user)) return { ok: false, error: "Verifique seu perfil para postar fotos e vídeos." };
+  if (hasVideo && files.length) return { ok: false, error: "Poste fotos ou um vídeo (não os dois juntos)." };
   if (/https?:\/\/|www\./i.test(body)) return { ok: false, error: "Links não são permitidos nos posts." };
 
   const media = [];
   try {
+    if (hasVideo) {
+      const poster = formData.get("poster");
+      media.push(await processVideo({ file: video as File, poster: poster instanceof File ? poster : null, ownerId: user.id, ownerNick: user.nick }));
+    }
     for (const f of files) media.push(await processUpload({ file: f, ownerId: user.id, ownerNick: user.nick, kind: "POST" }));
   } catch (e) {
     return { ok: false, error: e instanceof MediaError ? e.message : "Falha ao processar a foto" };

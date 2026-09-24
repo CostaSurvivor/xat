@@ -34,7 +34,7 @@ export default async function RoomPage({ params }: { params: Promise<{ slug: str
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <div className="mr-auto min-w-0">
           <h1 className="truncate font-[family-name:var(--font-display)] text-xl font-bold">{room.isOfficial && "⭐ "}{room.name}</h1>
-          <p className="truncate text-xs text-mute">/{room.slug} · {members} membros{room.description ? ` · ${room.description}` : ""}</p>
+          <p className="truncate text-xs text-mute">/{room.slug} · {members} {members === 1 ? "membro" : "membros"}{room.description ? ` · ${room.description}` : ""}</p>
         </div>
         {room.rules && (
           <details className="relative">

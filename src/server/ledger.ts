@@ -88,21 +88,32 @@ export async function creditPayment(paymentId: string, reviewerId: string) {
     const p = await tx.payment.findUniqueOrThrow({ where: { id: paymentId } });
     if (p.status === "PAID") return p;
     if (p.status === "REJECTED" || p.status === "EXPIRED") throw new Error("Pagamento não está pendente");
-    const mint = await systemWallet(tx, "SYSTEM_MINT");
-    const w = await userWallet(tx, p.userId);
-    const r = await postTransaction(tx, {
-      type: "PURCHASE_CREDIT",
-      key: `payment:${p.id}`,
-      moves: [
-        { walletId: mint.id, amount: -p.coins },
-        { walletId: w.id, amount: p.coins },
-      ],
-      actorId: reviewerId,
-      note: `Pix ${p.code}`,
-    });
+    // trava a linha do pagamento: aprovações simultâneas esperam aqui
+    await tx.$queryRaw`SELECT id FROM Payment WHERE id = ${p.id} FOR UPDATE`;
+    const fresh = await tx.payment.findUniqueOrThrow({ where: { id: p.id } });
+    if (fresh.status === "PAID") return fresh;
+
+    if (p.kind === "VIP") await extendVip(tx, p.userId, p.vipDays ?? 30, "PIX", p.id);
+
+    let ledgerTxId: string | null = null;
+    if (p.coins > 0) {
+      const mint = await systemWallet(tx, "SYSTEM_MINT");
+      const w = await userWallet(tx, p.userId);
+      const r = await postTransaction(tx, {
+        type: p.kind === "VIP" ? "VIP_BONUS" : "PURCHASE_CREDIT",
+        key: `payment:${p.id}`,
+        moves: [
+          { walletId: mint.id, amount: -p.coins },
+          { walletId: w.id, amount: p.coins },
+        ],
+        actorId: reviewerId,
+        note: `Pix ${p.code}`,
+      });
+      ledgerTxId = r.tx.id;
+    }
     return tx.payment.update({
       where: { id: p.id },
-      data: { status: "PAID", reviewedById: reviewerId, reviewedAt: new Date(), ledgerTxId: r.tx.id },
+      data: { status: "PAID", reviewedById: reviewerId, reviewedAt: new Date(), ledgerTxId },
     });
   });
 }
@@ -185,4 +196,18 @@ export async function buyItem(buyerId: string, itemId: string, duration: Duratio
       },
     });
   });
+}
+
+/** Estende a assinatura a partir do fim atual (ou de agora, se já venceu). */
+export async function extendVip(tx: Tx, userId: string, days: number, source: "PIX" | "ADMIN", paymentId?: string) {
+  const u = await tx.user.findUniqueOrThrow({ where: { id: userId } });
+  const start = u.vipUntil && u.vipUntil > new Date() ? u.vipUntil : new Date();
+  const end = new Date(start.getTime() + days * 86400_000);
+  await tx.subscription.create({ data: { userId, paymentId, startsAt: start, endsAt: end, source } });
+  await tx.user.update({ where: { id: userId }, data: { vipUntil: end } });
+  return end;
+}
+
+export async function grantVip(userId: string, days: number) {
+  return db.$transaction((tx) => extendVip(tx, userId, days, "ADMIN"));
 }

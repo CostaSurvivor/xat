@@ -28,8 +28,8 @@ export async function getFeed(viewer: CurrentUser, opts: { tab?: FeedTab; before
     orderBy: { createdAt: "desc" },
     take,
     include: {
-      author: { select: { id: true, nick: true, avatarId: true, profileType: true, city: true, state: true, hideCity: true, ageVerification: true } },
-      media: { orderBy: { position: "asc" }, include: { media: { select: { id: true, status: true, width: true, height: true } } } },
+      author: { select: { id: true, nick: true, avatarId: true, profileType: true, city: true, state: true, hideCity: true, ageVerification: true, vipUntil: true } },
+      media: { orderBy: { position: "asc" }, include: { media: { select: { id: true, status: true, width: true, height: true, kind: true } } } },
       _count: { select: { comments: { where: { deletedAt: null } } } },
     },
   });
@@ -45,8 +45,8 @@ export async function getFeed(viewer: CurrentUser, opts: { tab?: FeedTab; before
     body: p.body,
     createdAt: p.createdAt.toISOString(),
     visibility: p.visibility,
-    author: { ...p.author, city: p.author.hideCity ? null : p.author.city, style: styles[p.authorId] },
-    media: p.media.filter((m) => m.media.status === "APPROVED").map((m) => ({ id: m.media.id, w: m.media.width, h: m.media.height })),
+    author: { ...p.author, vipUntil: undefined, vip: !!p.author.vipUntil && p.author.vipUntil > new Date(), city: p.author.hideCity ? null : p.author.city, style: styles[p.authorId] },
+    media: p.media.filter((m) => m.media.status === "APPROVED").map((m) => ({ id: m.media.id, w: m.media.width, h: m.media.height, video: m.media.kind === "POST_VIDEO" })),
     comments: p._count.comments,
     reactions: Object.fromEntries(reactions.filter((r) => r.postId === p.id).map((r) => [r.emoji, r._count])),
     myReaction: mine.find((m) => m.postId === p.id)?.emoji ?? null,
