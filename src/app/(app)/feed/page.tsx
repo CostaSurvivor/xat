@@ -6,6 +6,7 @@ import { PostCard } from "@/components/PostCard";
 import { OnlineRooms } from "@/components/OnlineRooms";
 import { HotPhotos } from "@/components/HotPhotos";
 import { liveList } from "@/server/live";
+import { StoryTray } from "@/components/StoryTray";
 
 export const metadata = { title: "Feed" };
 
@@ -26,6 +27,7 @@ export default async function Feed({ searchParams }: { searchParams: Promise<{ t
             ))}
           </div>
         )}
+        <StoryTray viewer={user} />
         <Composer verified={isVerified(user)} />
         <div className="flex flex-wrap gap-2">
           <Link href="/destaques" className="rounded-full px-3 py-1 text-sm text-wine lg:hidden">🔥 Em alta</Link>

@@ -51,13 +51,21 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
   const hidden = u.hideFromUnverified && !isVerified(viewer) && !me;
   const { weeklyTopRank } = await import("@/server/ranking");
   const top = await weeklyTopRank(u);
+  const { storiesOf } = await import("@/server/stories");
+  const hasStories = !iBlocked && !hidden && (await storiesOf(u.id, viewer)).length > 0;
   const km = viewer.lat != null && viewer.lng != null && distanceVisible(u) ? haversineKm({ lat: viewer.lat, lng: viewer.lng }, { lat: u.lat!, lng: u.lng! }) : null;
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
       <section className="card p-5">
         <div className="flex items-start gap-4">
-          <Avatar mediaId={hidden ? null : u.avatarId} nick={u.nick} size={88} style={st} />
+          {hasStories ? (
+            <Link href={`/stories/${u.nick}`} title="Ver stories" className="shrink-0 rounded-full bg-gradient-to-tr from-amber-400 via-wine2 to-fuchsia-600 p-[3px]">
+              <span className="block rounded-full bg-panel p-[2px]"><Avatar mediaId={u.avatarId} nick={u.nick} size={80} style={st} /></span>
+            </Link>
+          ) : (
+            <Avatar mediaId={hidden ? null : u.avatarId} nick={u.nick} size={88} style={st} />
+          )}
           <div className="min-w-0 flex-1">
             <h1 className="text-xl"><Nick nick={u.nick} style={st} link={false} /> {u.ageVerification === "APPROVED" && <span title="Perfil verificado" className="text-sm text-gold">✔ verificado</span>} {u.vipUntil && u.vipUntil > new Date() && <span className="rounded bg-gold px-1.5 align-middle text-xs font-bold text-white">VIP</span>}</h1>
             <p className="text-sm text-mute">
