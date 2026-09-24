@@ -15,6 +15,7 @@ const LINKS = [
 ];
 const EXTRA = [
   { href: "/destaques", label: "Destaques" },
+  { href: "/grupos", label: "Grupos" },
   { href: "/eventos", label: "Eventos" },
   { href: "/visitas", label: "Visitas" },
   { href: "/loja", label: "Loja" },

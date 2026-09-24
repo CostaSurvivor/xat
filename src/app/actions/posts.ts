@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
+import { canAccessPost } from "@/server/feed";
 import { REACTIONS } from "@/lib/config";
 import { limiter } from "@/lib/ratelimit";
 import { isStaff, isVerified, requireUser } from "@/server/auth";
@@ -26,6 +27,19 @@ export async function createPost(_: R | undefined, formData: FormData): Promise<
   if (hasVideo && files.length) return { ok: false, error: "Poste fotos ou um vídeo (não os dois juntos)." };
   if (/https?:\/\/|www\./i.test(body)) return { ok: false, error: "Links não são permitidos nos posts." };
 
+  // post dentro de um grupo: precisa ser membro e poder participar
+  const groupId = String(formData.get("groupId") || "") || null;
+  let groupSlug: string | null = null;
+  if (groupId) {
+    const { joinError } = await import("@/lib/groups");
+    const g = await db.group.findUnique({ where: { id: groupId } });
+    if (!g) return { ok: false, error: "Grupo não encontrado" };
+    const err = joinError(g, user);
+    if (err) return { ok: false, error: err };
+    if (!(await db.groupMember.findUnique({ where: { groupId_userId: { groupId, userId: user.id } } }))) return { ok: false, error: "Entre no grupo para postar." };
+    groupSlug = g.slug;
+  }
+
   const media = [];
   try {
     if (hasVideo) {
@@ -37,9 +51,10 @@ export async function createPost(_: R | undefined, formData: FormData): Promise<
     return { ok: false, error: e instanceof MediaError ? e.message : "Falha ao processar a foto" };
   }
   await db.post.create({
-    data: { authorId: user.id, body: body || null, visibility, media: { create: media.map((m, i) => ({ mediaId: m.id, position: i })) } },
+    // no grupo o post é sempre visível para quem pode ver o grupo
+    data: { authorId: user.id, body: body || null, visibility: groupId ? "PUBLIC" : visibility, groupId, media: { create: media.map((m, i) => ({ mediaId: m.id, position: i })) } },
   });
-  revalidatePath("/feed");
+  revalidatePath(groupSlug ? `/grupos/${groupSlug}` : "/feed");
   return { ok: true };
 }
 
@@ -57,6 +72,7 @@ export async function reactToPost(postId: string, emoji: string) {
   if (!limiter("react", 60, 1).take(user.id)) return;
   const post = await db.post.findUnique({ where: { id: postId } });
   if (!post || post.deletedAt || (await isBlockedBetween(user.id, post.authorId))) return;
+  if (!(await canAccessPost(user, postId, true))) return;
   const existing = await db.postReaction.findUnique({ where: { postId_userId: { postId, userId: user.id } } });
   if (existing?.emoji === emoji) {
     await db.postReaction.delete({ where: { postId_userId: { postId, userId: user.id } } });
@@ -77,6 +93,7 @@ export async function commentOnPost(postId: string, raw: string, parentId?: stri
   const post = await db.post.findUnique({ where: { id: postId } });
   if (!post || post.deletedAt) return { ok: false, error: "Post não encontrado" };
   if (await isBlockedBetween(user.id, post.authorId)) return { ok: false, error: "Indisponível" };
+  if (!(await canAccessPost(user, postId, true))) return { ok: false, error: post.groupId ? "Participe do grupo para comentar." : "Indisponível" };
   // resposta: sempre presa ao comentário raiz (1 nível, como no Instagram)
   let parent = parentId ? await db.postComment.findUnique({ where: { id: parentId } }) : null;
   if (parent && parent.postId !== postId) return { ok: false, error: "Comentário inválido" };
@@ -100,6 +117,7 @@ export async function deleteComment(commentId: string) {
 export async function loadComments(postId: string) {
   const user = await requireUser();
   const { getComments } = await import("@/server/feed");
+  if (!(await canAccessPost(user, postId))) return [];
   return getComments(user.id, postId);
 }
 
@@ -109,6 +127,7 @@ export async function reactToComment(commentId: string, emoji: string) {
   if (!limiter("react", 60, 1).take(user.id)) return;
   const c = await db.postComment.findUnique({ where: { id: commentId } });
   if (!c || c.deletedAt || (await isBlockedBetween(user.id, c.authorId))) return;
+  if (!(await canAccessPost(user, c.postId, true))) return;
   const key = { commentId_userId: { commentId, userId: user.id } };
   const existing = await db.commentReaction.findUnique({ where: key });
   if (existing?.emoji === emoji) await db.commentReaction.delete({ where: key });

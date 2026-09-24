@@ -25,7 +25,7 @@ async function scoredPosts(days: number, opts: { photosOnly: boolean; uf?: strin
   const photo = opts.photosOnly
     ? Prisma.sql`AND EXISTS (SELECT 1 FROM PostMedia pm JOIN Media m ON m.id = pm.mediaId WHERE pm.postId = p.id AND m.kind = 'POST' AND m.status = 'APPROVED')`
     : Prisma.empty;
-  const base = Prisma.sql`p.createdAt > ${since} AND p.deletedAt IS NULL AND p.visibility = 'PUBLIC' AND a.status = 'ACTIVE' ${uf} ${photo}`;
+  const base = Prisma.sql`p.createdAt > ${since} AND p.deletedAt IS NULL AND p.visibility = 'PUBLIC' AND p.groupId IS NULL AND a.status = 'ACTIVE' ${uf} ${photo}`;
   const [reacts, comms] = await Promise.all([
     db.$queryRaw<{ postId: string; authorId: string; createdAt: Date; n: bigint }[]>`
       SELECT p.id AS postId, p.authorId AS authorId, p.createdAt AS createdAt, COUNT(*) AS n

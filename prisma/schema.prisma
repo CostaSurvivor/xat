@@ -422,13 +422,16 @@ model Post {
   visibility PostVisibility @default(PUBLIC)
   createdAt  DateTime       @default(now())
   deletedAt  DateTime?
+  groupId    String? // post feito dentro de um grupo (não aparece no feed principal)
   author     User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  group      Group?         @relation(fields: [groupId], references: [id], onDelete: Cascade)
   media      PostMedia[]
   comments   PostComment[]
   reactions  PostReaction[]
 
   @@index([createdAt])
   @@index([authorId, createdAt])
+  @@index([groupId, createdAt])
 }
 
 model PostMedia {
@@ -1107,5 +1110,33 @@ model EventRsvp {
   event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@id([eventId, userId])
+  @@index([userId])
+}
+
+// -----------------------------------------------------------------------------
+// Grupos por interesse (criados pela equipe do site). Posts de grupo ficam no grupo.
+// -----------------------------------------------------------------------------
+
+model Group {
+  id          String        @id @default(cuid())
+  slug        String        @unique @db.VarChar(40)
+  name        String        @db.VarChar(60)
+  description String        @db.Text
+  emoji       String        @default("💬") @db.VarChar(8)
+  audience    String        @default("ALL") @db.VarChar(10) // ALL | COUPLES
+  archivedAt  DateTime?
+  createdById String?
+  createdAt   DateTime      @default(now())
+  members     GroupMember[]
+  posts       Post[]
+}
+
+model GroupMember {
+  groupId  String
+  userId   String
+  joinedAt DateTime @default(now())
+  group    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, userId])
   @@index([userId])
 }
