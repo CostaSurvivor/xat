@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { LIKE_TAGS, UFS } from "@/lib/config";
+import { LIKE_GROUPS, UFS } from "@/lib/config";
 import { isVerified, requireUser } from "@/server/auth";
 import { deleteMedia, setAlbumAccess, updateProfile, uploadPhoto } from "@/app/actions/profile";
 import { logout } from "@/app/actions/auth";
@@ -55,16 +55,21 @@ export default async function MeuPerfil() {
               <input name="city" defaultValue={user.city ?? ""} className="input" />
             </div>
           </div>
-          <div>
+          <div className="space-y-3">
             <span className="label">O que curtem</span>
-            <div className="flex flex-wrap gap-1.5">
-              {LIKE_TAGS.map((t) => (
-                <label key={t} className="cursor-pointer">
-                  <input type="checkbox" name="likes" value={t} defaultChecked={likes.includes(t)} className="peer sr-only" />
-                  <span className="inline-block rounded-full border border-line px-2.5 py-1 text-xs text-mute peer-checked:border-gold peer-checked:bg-wine/40 peer-checked:text-white">{t}</span>
-                </label>
-              ))}
-            </div>
+            {LIKE_GROUPS.map((g) => (
+              <div key={g.title}>
+                <p className="mb-1 text-xs text-gold">{g.title}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {g.tags.map((t) => (
+                    <label key={t} className="cursor-pointer">
+                      <input type="checkbox" name="likes" value={t} defaultChecked={likes.includes(t)} className="peer sr-only" />
+                      <span className="inline-block rounded-full border border-line px-2.5 py-1 text-xs text-mute peer-checked:border-gold peer-checked:bg-wine/40 peer-checked:text-white">{t}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
           <div>
             <label className="label">Quem pode me chamar no PV</label>

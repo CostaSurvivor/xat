@@ -23,11 +23,16 @@ export const PROFILE_TYPES = {
 export type ProfileTypeKey = keyof typeof PROFILE_TYPES;
 export const isCouple = (t: string) => t.startsWith("COUPLE_");
 
-export const LIKE_TAGS = [
-  "Troca de casais", "Ménage", "Voyeur", "Exibicionismo", "Soft swing", "Full swap",
-  "Mesmo quarto", "Casa de swing", "Encontros em motel", "Cuckold", "Hotwife", "BDSM leve",
-  "Fetiches", "Nudismo", "Amizade liberal", "Virtual", "Só conversa",
+/** Gostos agrupados (perfil e filtro de busca). */
+export const LIKE_GROUPS: { title: string; tags: string[] }[] = [
+  { title: "Ménage", tags: ["Ménage masculino (2 homens + 1 mulher)", "Ménage feminino (2 mulheres + 1 homem)"] },
+  { title: "Interação (casais)", tags: ["Interação com ele", "Interação com ela", "Interação com ele e ela", "Só ela interage", "Só ele interage"] },
+  { title: "Orientação", tags: ["Hétero", "Bi masculino", "Bi feminino", "Casal bi (os dois)"] },
+  { title: "Estilo", tags: ["Troca de casais", "Soft swing", "Full swap", "Mesmo quarto", "Voyeur", "Exibicionismo", "Cuckold", "Hotwife", "BDSM leve", "Fetiches", "Nudismo"] },
+  { title: "Como e onde", tags: ["Casa de swing", "Encontros em motel", "Festas liberais", "Virtual", "Só conversa", "Amizade liberal"] },
 ];
+
+export const LIKE_TAGS = LIKE_GROUPS.flatMap((g) => g.tags);
 
 export const UFS = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
 

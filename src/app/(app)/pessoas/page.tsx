@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Prisma, ProfileType } from "@prisma/client";
 import { db } from "@/lib/db";
-import { PROFILE_TYPES, UFS } from "@/lib/config";
+import { LIKE_GROUPS, LIKE_TAGS, PROFILE_TYPES, UFS } from "@/lib/config";
 import { isVerified, requireUser } from "@/server/auth";
 import { blockedIds } from "@/server/access";
 import { stylesFor } from "@/server/styles";
@@ -10,7 +10,7 @@ import { Nick } from "@/components/Nick";
 
 export const metadata = { title: "Pessoas" };
 
-export default async function Pessoas({ searchParams }: { searchParams: Promise<{ tipo?: string; uf?: string; q?: string; on?: string; ver?: string }> }) {
+export default async function Pessoas({ searchParams }: { searchParams: Promise<{ tipo?: string; uf?: string; q?: string; on?: string; ver?: string; curte?: string }> }) {
   const viewer = await requireUser();
   const sp = await searchParams;
   const blocked = await blockedIds(viewer.id);
@@ -21,6 +21,7 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
   if (sp.q) where.OR = [{ nick: { contains: sp.q } }, { city: { contains: sp.q } }];
   if (sp.on) where.lastSeenAt = { gt: new Date(Date.now() - 5 * 60_000) };
   if (sp.ver) where.ageVerification = "APPROVED";
+  if (sp.curte && LIKE_TAGS.includes(sp.curte)) where.likes = { array_contains: [sp.curte] };
   if (!isVerified(viewer)) where.hideFromUnverified = false;
 
   const users = await db.user.findMany({ where, orderBy: { lastSeenAt: "desc" }, take: 60, select: { id: true, nick: true, avatarId: true, profileType: true, city: true, state: true, hideCity: true, ageVerification: true, lastSeenAt: true } });
@@ -36,6 +37,12 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
           {Object.entries(PROFILE_TYPES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
         <select name="uf" defaultValue={sp.uf ?? ""} className="input w-auto"><option value="">UF</option>{UFS.map((u) => <option key={u}>{u}</option>)}</select>
+        <select name="curte" defaultValue={sp.curte ?? ""} className="input w-auto max-w-56">
+          <option value="">Curte…</option>
+          {LIKE_GROUPS.map((g) => (
+            <optgroup key={g.title} label={g.title}>{g.tags.map((t) => <option key={t}>{t}</option>)}</optgroup>
+          ))}
+        </select>
         <label className="flex items-center gap-1 text-sm text-mute"><input type="checkbox" name="on" defaultChecked={!!sp.on} /> online</label>
         <label className="flex items-center gap-1 text-sm text-mute"><input type="checkbox" name="ver" defaultChecked={!!sp.ver} /> verificados</label>
         <button className="btn-wine">Buscar</button>
