@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { brl, compact, parsePeriod, PERIODS, shortDay } from "@/lib/report";
-import { requireStaff } from "@/server/auth";
+import { requireAdmin } from "@/server/auth";
 import { adminReport } from "@/server/report";
 import { ColumnChart, HBars } from "@/components/ReportCharts";
 
@@ -25,7 +25,7 @@ function Stat({ label, k, fmt = compact, upIsGood = true, days }: { label: strin
 }
 
 export default async function Relatorio({ searchParams }: { searchParams: Promise<{ p?: string }> }) {
-  await requireStaff();
+  await requireAdmin(); // tem receita: só admin (igual à tela de Pix)
   const days = parsePeriod((await searchParams).p);
   const r = await adminReport(days);
   return (

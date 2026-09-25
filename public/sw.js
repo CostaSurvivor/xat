@@ -4,7 +4,7 @@
  * (celular pode ser compartilhado). Só a página "sem conexão" fica salva.
  */
 const OFFLINE = "/offline.html";
-const CACHE = "sp-offline-v2";
+const CACHE = "sp-offline-v3";
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.add(OFFLINE)).then(() => self.skipWaiting()));
@@ -28,7 +28,7 @@ self.addEventListener("fetch", (e) => {
 self.addEventListener("push", (e) => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch { d = {}; }
-  const url = typeof d.url === "string" && d.url.startsWith("/") && !d.url.startsWith("//") ? d.url : "/notificacoes";
+  const url = typeof d.url === "string" && d.url.startsWith("/") && !d.url.startsWith("//") && !d.url.includes("\\") ? d.url : "/notificacoes";
   e.waitUntil(
     self.registration.showNotification(d.title || "Nova notificação", {
       body: d.body || "Você tem uma novidade",
@@ -43,7 +43,9 @@ self.addEventListener("push", (e) => {
 
 self.addEventListener("notificationclick", (e) => {
   e.notification.close();
-  const url = new URL((e.notification.data && e.notification.data.url) || "/notificacoes", self.location.origin).href;
+  let url = new URL((e.notification.data && e.notification.data.url) || "/notificacoes", self.location.origin);
+  if (url.origin !== self.location.origin) url = new URL("/notificacoes", self.location.origin);
+  url = url.href;
   e.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
       for (const c of list) if (c.url.startsWith(self.location.origin) && "focus" in c) return c.navigate(url).then((w) => (w || c).focus());

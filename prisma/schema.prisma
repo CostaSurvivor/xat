@@ -281,6 +281,8 @@ model User {
   pushPrefs            Json?
   /// cartão "Primeiros passos" escondido pela pessoa
   onboardingHiddenAt   DateTime?
+  /// não aparecer para outros na Paquera
+  paqueraHidden        Boolean               @default(false)
 
   @@index([state, city])
   @@index([createdAt])
@@ -1176,6 +1178,8 @@ model Testimonial {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   reviewedAt  DateTime?
+  /// apagado pelo autor: a linha fica (sem texto) para não reabrir um depoimento ocultado
+  withdrawnAt DateTime?
   profile     User      @relation("TestimonialsReceived", fields: [profileId], references: [id], onDelete: Cascade)
   author      User      @relation("TestimonialsWritten", fields: [authorId], references: [id], onDelete: Cascade)
 
@@ -1221,17 +1225,30 @@ model StoryView {
 // -----------------------------------------------------------------------------
 
 model Album {
-  id         String   @id @default(cuid())
+  id         String              @id @default(cuid())
   ownerId    String
-  name       String   @db.VarChar(40)
-  emoji      String   @default("📁") @db.VarChar(8)
+  name       String              @db.VarChar(40)
+  emoji      String              @default("📁") @db.VarChar(8)
   /// VERIFIED | FOLLOWERS | FRIENDS | PRIVATE (só quem o dono liberar)
-  visibility String   @default("PRIVATE") @db.VarChar(10)
-  position   Int      @default(0)
-  createdAt  DateTime @default(now())
-  owner      User     @relation("AlbumsOwned", fields: [ownerId], references: [id], onDelete: Cascade)
+  visibility String              @default("PRIVATE") @db.VarChar(10)
+  position   Int                 @default(0)
+  createdAt  DateTime            @default(now())
+  owner      User                @relation("AlbumsOwned", fields: [ownerId], references: [id], onDelete: Cascade)
+  access     ThemedAlbumAccess[]
 
   @@index([ownerId, position])
+}
+
+/// Pedido/liberação de acesso a UM álbum por tema (não abre os outros álbuns do dono)
+model ThemedAlbumAccess {
+  albumId   String
+  viewerId  String
+  granted   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  album     Album    @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  @@id([albumId, viewerId])
+  @@index([viewerId])
 }
 
 // -----------------------------------------------------------------------------
@@ -1292,9 +1309,11 @@ model RoomPollVote {
 // -----------------------------------------------------------------------------
 
 model ProfileLike {
-  likerId   String
-  likedId   String
-  createdAt DateTime @default(now())
+  likerId     String
+  likedId     String
+  createdAt   DateTime  @default(now())
+  /// desfeita: a linha fica (curtir de novo não gera outro aviso; evita spam de curtir/descurtir)
+  withdrawnAt DateTime?
 
   @@id([likerId, likedId])
   @@index([likedId, createdAt])

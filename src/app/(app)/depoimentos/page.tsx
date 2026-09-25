@@ -19,12 +19,12 @@ export default async function Depoimentos({ searchParams }: { searchParams: Prom
   const sent = aba === "enviados";
   const [received, written] = await Promise.all([
     db.testimonial.findMany({
-      where: { profileId: user.id },
+      where: { profileId: user.id, withdrawnAt: null },
       orderBy: [{ status: "desc" }, { createdAt: "desc" }],
       take: 100,
       include: { author: { select: { nick: true } } },
     }),
-    db.testimonial.findMany({ where: { authorId: user.id }, orderBy: { updatedAt: "desc" }, take: 100, include: { profile: { select: { nick: true } } } }),
+    db.testimonial.findMany({ where: { authorId: user.id, withdrawnAt: null }, orderBy: { updatedAt: "desc" }, take: 100, include: { profile: { select: { nick: true } } } }),
   ]);
   // pendentes primeiro
   received.sort((a, b) => Number(b.status === "PENDING") - Number(a.status === "PENDING"));

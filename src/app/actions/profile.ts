@@ -36,6 +36,7 @@ export async function updateProfile(_: R, formData: FormData): Promise<R> {
       likes,
       hideCity: formData.get("hideCity") === "on",
       showDistance: formData.get("showDistance") === "on",
+      paqueraHidden: formData.get("inPaquera") !== "on",
       ...coordsForProfile(p.data.city || null, p.data.state, user),
       hideFromUnverified: formData.get("hideFromUnverified") === "on",
       acceptPmPhotos: formData.get("acceptPmPhotos") === "on",

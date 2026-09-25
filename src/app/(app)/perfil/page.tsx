@@ -30,7 +30,7 @@ export default async function MeuPerfil() {
     db.media.findMany({ where: { ownerId: user.id, kind: "PRIVATE_ALBUM", status: "APPROVED", albumId: null }, orderBy: { createdAt: "desc" } }),
     db.albumAccess.findMany({ where: { ownerId: user.id }, include: { viewer: { select: { id: true, nick: true } } }, orderBy: { createdAt: "desc" } }),
     visitCountSince(user.id, 7),
-    db.testimonial.count({ where: { profileId: user.id, status: "PENDING" } }),
+    db.testimonial.count({ where: { profileId: user.id, status: "PENDING", withdrawnAt: null } }),
   ]);
   const likes = (user.likes as string[] | null) ?? [];
 
@@ -137,6 +137,7 @@ export default async function MeuPerfil() {
             <label className="flex gap-2"><input type="checkbox" name="acceptPmPhotos" defaultChecked={user.acceptPmPhotos} /> Aceito receber fotos no PV (chegam borradas até eu abrir)</label>
             <label className="flex gap-2"><input type="checkbox" name="hideCity" defaultChecked={user.hideCity} /> Esconder minha cidade</label>
             <label className="flex gap-2"><input type="checkbox" name="showDistance" defaultChecked={user.showDistance} /> Aparecer na busca por proximidade (mostra só a distância aproximada, ex.: “~15 km”; nunca o endereço)</label>
+            <label className="flex gap-2"><input type="checkbox" name="inPaquera" defaultChecked={!user.paqueraHidden} /> Aparecer na Paquera (só para perfis verificados)</label>
             <label className="flex gap-2"><input type="checkbox" name="hideFromUnverified" defaultChecked={user.hideFromUnverified} /> Esconder meu perfil e fotos de quem não é verificado</label>
           </div>
           <button className="btn-gold">Salvar</button>

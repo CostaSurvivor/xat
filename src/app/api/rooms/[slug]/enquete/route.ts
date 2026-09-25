@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { limiter } from "@/lib/ratelimit";
 import { canManagePoll, isOpen, roomPollSchema } from "@/lib/roompolls";
 import { assertSameOrigin, getCurrentUser } from "@/server/auth";
-import { actorFor, canEnter, roomBySlug } from "@/server/rooms";
+import { activeSanction, actorFor, canEnter, roomBySlug } from "@/server/rooms";
 import { closePoll } from "@/server/roompolls";
 import { audit } from "@/server/notify";
 
@@ -43,6 +43,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ slug: st
   if (c.err) return c.err;
   const { user, room } = c;
   if (!limiter("roompoll-vote", 20, 1).take(user.id)) return NextResponse.json({ error: "Devagar!" }, { status: 429 });
+  if (await activeSanction(room.id, user.id, "MUTE")) return NextResponse.json({ error: "Você está silenciado nesta sala." }, { status: 403 });
   const body = await req.json().catch(() => ({}));
   const poll = await db.roomPoll.findUnique({ where: { id: String(body.pollId ?? "") } });
   if (!poll || poll.roomId !== room.id) return NextResponse.json({ error: "Enquete não encontrada" }, { status: 404 });

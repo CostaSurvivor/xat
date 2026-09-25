@@ -46,3 +46,31 @@ export async function deleteAlbum(id: string) {
   ]);
   revalidatePath("/perfil");
 }
+
+/** Pedir acesso a UM álbum por tema. */
+export async function requestThemedAlbum(albumId: string) {
+  const user = await requireUser();
+  const a = await db.album.findUnique({ where: { id: albumId }, include: { owner: { select: { id: true, nick: true } } } });
+  if (!a || a.ownerId === user.id) return;
+  const { isBlockedBetween } = await import("@/server/access");
+  if (await isBlockedBetween(user.id, a.ownerId)) return;
+  const key = { albumId_viewerId: { albumId, viewerId: user.id } };
+  if (await db.themedAlbumAccess.findUnique({ where: key })) return;
+  await db.themedAlbumAccess.create({ data: { albumId, viewerId: user.id } });
+  const { notify } = await import("@/server/notify");
+  await notify(a.ownerId, "ALBUM_REQUEST", `@${user.nick} pediu para ver o álbum ${a.emoji} ${a.name}`, user.id, user.id);
+  revalidatePath(`/u/${a.owner.nick}`);
+}
+
+/** Dono libera ou revoga UM álbum para uma pessoa. */
+export async function setThemedAlbumAccess(albumId: string, viewerId: string, granted: boolean) {
+  const user = await requireUser();
+  const a = await db.album.findUnique({ where: { id: albumId } });
+  if (!a || a.ownerId !== user.id || viewerId === user.id) return;
+  await db.themedAlbumAccess.upsert({ where: { albumId_viewerId: { albumId, viewerId } }, create: { albumId, viewerId, granted }, update: { granted } });
+  if (granted) {
+    const { notify } = await import("@/server/notify");
+    await notify(viewerId, "ALBUM_GRANTED", `@${user.nick} liberou o álbum ${a.emoji} ${a.name} para vocês 🔓`, user.id);
+  }
+  revalidatePath("/perfil");
+}

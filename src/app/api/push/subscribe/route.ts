@@ -22,6 +22,9 @@ export async function POST(req: Request) {
   if ((await db.pushSubscription.count({ where: { userId: user.id } })) >= 10)
     await db.pushSubscription.deleteMany({ where: { id: { in: (await db.pushSubscription.findMany({ where: { userId: user.id }, orderBy: { createdAt: "asc" }, take: 1 })).map((s) => s.id) } } });
   const h = endpointHash(p.data.endpoint);
+  // o mesmo aparelho pode trocar de conta, mas só se a inscrição anterior não estiver mais em uso (sessão encerrada)
+  const prev = await db.pushSubscription.findUnique({ where: { endpointHash: h }, include: { session: { select: { expiresAt: true } } } });
+  if (prev && prev.userId !== user.id && prev.session.expiresAt > new Date()) return NextResponse.json({ error: "Este aparelho já está ativo em outra conta. Saia dela primeiro." }, { status: 409 });
   const data = { userId: user.id, sessionId, endpoint: p.data.endpoint, p256dh: p.data.keys.p256dh, auth: p.data.keys.auth, userAgent: req.headers.get("user-agent")?.slice(0, 200) ?? null };
   // o mesmo aparelho pode mudar de conta: a inscrição passa para quem está logado agora
   await db.pushSubscription.upsert({ where: { endpointHash: h }, create: { endpointHash: h, ...data }, update: data });

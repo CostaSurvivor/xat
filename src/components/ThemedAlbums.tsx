@@ -1,8 +1,8 @@
 import { db } from "@/lib/db";
 import { ALBUMS, ALBUM_VISIBILITY, type AlbumVisibility } from "@/lib/albums";
 import { canSeeAlbum } from "@/server/access";
-import { createAlbum, deleteAlbum, updateAlbum } from "@/app/actions/albums";
-import { deleteMedia, requestAlbum, uploadPhoto } from "@/app/actions/profile";
+import { createAlbum, deleteAlbum, requestThemedAlbum, setThemedAlbumAccess, updateAlbum } from "@/app/actions/albums";
+import { deleteMedia, uploadPhoto } from "@/app/actions/profile";
 import { ActionForm, AutoSubmitFile } from "./Forms";
 import { ProtectedImage } from "./ProtectedImage";
 import { ConfirmButton } from "./ConfirmButton";
@@ -21,6 +21,9 @@ function VisibilitySelect({ value }: { value?: string }) {
 export async function ThemedAlbumsOwner({ ownerId, verified }: { ownerId: string; verified: boolean }) {
   const albums = await db.album.findMany({ where: { ownerId }, orderBy: { position: "asc" } });
   const photos = await db.media.findMany({ where: { albumId: { in: albums.map((a) => a.id) }, status: "APPROVED" }, orderBy: { createdAt: "desc" }, select: { id: true, albumId: true } });
+  const requests = await db.themedAlbumAccess.findMany({ where: { albumId: { in: albums.map((a) => a.id) } }, orderBy: { createdAt: "desc" } });
+  const reqUsers = await db.user.findMany({ where: { id: { in: requests.map((r) => r.viewerId) }, status: "ACTIVE" }, select: { id: true, nick: true } });
+  const nickOf = new Map(reqUsers.map((u) => [u.id, u.nick]));
   return (
     <section className="card space-y-4 p-5">
       <div>
@@ -49,6 +52,16 @@ export async function ThemedAlbumsOwner({ ownerId, verified }: { ownerId: string
               )}
               <form action={deleteAlbum.bind(null, a.id)}><ConfirmButton message={`Apagar o álbum "${a.name}" e todas as fotos dele?`} className="text-xs text-red-700 hover:underline">Apagar álbum e fotos</ConfirmButton></form>
             </div>
+            {requests.filter((r) => r.albumId === a.id && nickOf.has(r.viewerId)).length > 0 && (
+              <ul className="space-y-1 rounded-lg bg-panel2/60 p-2 text-sm" aria-label="Pedidos de acesso">
+                {requests.filter((r) => r.albumId === a.id && nickOf.has(r.viewerId)).map((r) => (
+                  <li key={r.viewerId} className="flex items-center gap-2">
+                    <span className="mr-auto">@{nickOf.get(r.viewerId)} {r.granted ? <span className="text-xs text-green-700">· liberado</span> : <span className="text-xs text-mute">· pediu acesso</span>}</span>
+                    <form action={setThemedAlbumAccess.bind(null, a.id, r.viewerId, !r.granted)}><button className={r.granted ? "btn-ghost py-0.5 text-xs" : "btn-gold py-0.5 text-xs"}>{r.granted ? "Revogar" : "Liberar"}</button></form>
+                  </li>
+                ))}
+              </ul>
+            )}
             {list.length > 0 && (
               <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-6">
                 {list.map((m) => (
@@ -79,13 +92,14 @@ export async function ThemedAlbumsOwner({ ownerId, verified }: { ownerId: string
 }
 
 /** Visitante: cada álbum com o próprio cadeado. */
-export async function ThemedAlbumsViewer({ owner, viewerId, requested }: { owner: { id: string; nick: string }; viewerId: string; requested: boolean }) {
+export async function ThemedAlbumsViewer({ owner, viewerId, viewerVerified }: { owner: { id: string; nick: string }; viewerId: string; viewerVerified: boolean }) {
   const albums = await db.album.findMany({ where: { ownerId: owner.id }, orderBy: { position: "asc" } });
   if (!albums.length) return null;
   const photos = await db.media.findMany({ where: { albumId: { in: albums.map((a) => a.id) }, status: "APPROVED" }, orderBy: { createdAt: "desc" }, select: { id: true, albumId: true } });
   const withPhotos = albums.filter((a) => photos.some((p) => p.albumId === a.id));
   if (!withPhotos.length) return null;
-  const access = await Promise.all(withPhotos.map((a) => canSeeAlbum(viewerId, owner.id, a.visibility)));
+  const access = await Promise.all(withPhotos.map((a) => canSeeAlbum(viewerId, owner.id, a.visibility, { viewerVerified, albumId: a.id })));
+  const asked = new Set((await db.themedAlbumAccess.findMany({ where: { viewerId, albumId: { in: withPhotos.map((a) => a.id) } }, select: { albumId: true } })).map((r) => r.albumId));
   return (
     <>
       {withPhotos.map((a, i) => {
@@ -96,7 +110,7 @@ export async function ThemedAlbumsViewer({ owner, viewerId, requested }: { owner
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <h2 className="mr-auto font-semibold text-gold">{a.emoji} {a.name} ({list.length})</h2>
               <span className="text-[11px] text-mute">{visLabel(a.visibility)}</span>
-              {!open && a.visibility === "PRIVATE" && (requested ? <span className="text-xs text-mute">Pedido enviado</span> : <form action={requestAlbum.bind(null, owner.id)}><button className="btn-wine py-1 text-xs">Pedir acesso</button></form>)}
+              {!open && a.visibility === "PRIVATE" && (asked.has(a.id) ? <span className="text-xs text-mute">Pedido enviado</span> : <form action={requestThemedAlbum.bind(null, a.id)}><button className="btn-wine py-1 text-xs">Pedir acesso</button></form>)}
             </div>
             <div className="grid grid-cols-3 gap-1.5">
               {list.slice(0, open ? 30 : 6).map((m) => <ProtectedImage key={m.id} id={m.id} className="aspect-square rounded-lg" />)}

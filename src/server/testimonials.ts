@@ -7,7 +7,7 @@ export async function metInPersonCounts(userIds: string[]) {
   if (!userIds.length) return new Map<string, number>();
   const rows = await db.testimonial.groupBy({
     by: ["profileId"],
-    where: { profileId: { in: userIds }, status: "APPROVED", metInPerson: true, author: { status: "ACTIVE", ageVerification: "APPROVED" } },
+    where: { profileId: { in: userIds }, status: "APPROVED", withdrawnAt: null, metInPerson: true, author: { status: "ACTIVE", ageVerification: "APPROVED" } },
     _count: { _all: true },
   });
   return new Map(rows.map((r) => [r.profileId, r._count._all]));
