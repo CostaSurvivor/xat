@@ -150,7 +150,7 @@ export default async function Landing() {
 
       <section className="text-center">
         <h2 className="font-[family-name:var(--font-display)] text-3xl font-bold">Pronto para entrar?</h2>
-        <p className="mt-2 text-mute">{offer.left > 0 ? `Ainda dá tempo: restam ${offer.left} vagas com bônus de boas-vindas.` : "Leva um minuto e é grátis."}</p>
+        <p className="mt-2 text-mute">{offer.left > 0 ? `Ainda dá tempo: restam ${offer.left} vagas com bônus para os primeiros perfis verificados.` : "Leva um minuto e é grátis."}</p>
         <Link href="/cadastro" className="btn-gold mt-4 inline-block px-8 py-3 text-base">Criar conta grátis</Link>
       </section>
     </div>

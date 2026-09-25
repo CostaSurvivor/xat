@@ -6,6 +6,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { hash, verify } from "@node-rs/argon2";
 import { db } from "@/lib/db";
 import { PIN_LOCK, isLocked } from "@/lib/pinlock";
+import { clientIpFrom } from "@/lib/ip";
 
 const COOKIE = "sid";
 const SESSION_DAYS = 30;
@@ -26,8 +27,8 @@ export async function verifyPassword(hashStr: string, pw: string) {
 
 export async function clientInfo() {
   const h = await headers();
-  const fwd = h.get("x-forwarded-for")?.split(",")[0]?.trim();
-  const ip = fwd || h.get("x-real-ip") || "0.0.0.0";
+  // não confia no começo do X-Forwarded-For (o visitante escreve o que quiser): ver src/lib/ip.ts
+  const ip = clientIpFrom((k) => h.get(k), Number(process.env.TRUSTED_PROXY_HOPS || 1));
   // porta de ORIGEM do visitante (Marco Civil, IPs compartilhados/CGNAT). X-Forwarded-Port
   // é a porta do servidor e não serve; o proxy precisa enviar X-Client-Port / X-Real-Port.
   const port = Number(h.get("x-client-port") || h.get("x-real-port") || 0) || null;
