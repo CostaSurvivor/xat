@@ -38,8 +38,8 @@ export default async function Fila() {
       link: `/eventos/${e.id}`,
     })),
     ...reports.map((r) => {
-      const ev = r.evidence as { media?: string[]; mediaId?: string; body?: string } | null;
-      const media = [...(ev?.media ?? []), ...(ev?.mediaId ? [ev.mediaId] : [])];
+      const ev = r.evidence as { media?: string[]; mediaId?: string; body?: string; audio?: boolean } | null;
+      const media = [...(ev?.media ?? []), ...(ev?.mediaId && !ev.audio ? [ev.mediaId] : [])];
       const target = r.targetUserId ? nickOf.get(r.targetUserId) : null;
       return {
         kind: "report" as const, id: r.id, priority: r.priority, createdAt: r.createdAt.toISOString(),
@@ -47,6 +47,7 @@ export default async function Fila() {
         lines: [`denunciado por @${r.reporter.nick}`, ...(r.details ? [`“${r.details}”`] : []), ...(typeof ev?.body === "string" ? [`Conteúdo: ${ev.body.slice(0, 600)}`] : [])],
         // possível menor: sempre borrado na fila
         images: media.map((id) => ({ id, blur: r.reason === "POSSIBLE_MINOR" })),
+        audios: ev?.audio && ev.mediaId ? [ev.mediaId] : [],
         link: target ? `/u/${target}` : null,
         urgent: r.reason === "POSSIBLE_MINOR",
       };

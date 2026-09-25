@@ -53,6 +53,9 @@ export default async function Denuncias({ searchParams }: { searchParams: Promis
               ))}
             </div>
           )}
+          {(r.evidence as { audio?: boolean } | null)?.audio && typeof (r.evidence as { mediaId?: unknown }).mediaId === "string" && (
+            <audio controls preload="none" src={`/api/media/${(r.evidence as { mediaId: string }).mediaId}`} className="w-full" />
+          )}
           {r.resolution && <p className="text-xs text-mute">Resolução: {r.resolution}</p>}
           {status === "OPEN" && (
             <form action={handleReport.bind(null, r.id)} className="flex flex-wrap gap-2">
