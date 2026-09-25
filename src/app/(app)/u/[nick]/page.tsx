@@ -25,13 +25,14 @@ import { profileTrip } from "@/server/trips";
 import { listContos } from "@/server/contos";
 import { ContoCard } from "@/components/ContoCard";
 import { FavoriteBox } from "@/components/Favorite";
+import { NETWORK_TABS, networkOf, type NetworkTab } from "@/server/network";
 import { AFFINITY_MIN_TAGS, affinity, affinityTier, tagsOf } from "@/lib/affinity";
 
 export async function generateMetadata({ params }: { params: Promise<{ nick: string }> }) {
   return { title: `@${decodeURIComponent((await params).nick)}` };
 }
 
-export default async function UserPage({ params }: { params: Promise<{ nick: string }> }) {
+export default async function UserPage({ params, searchParams }: { params: Promise<{ nick: string }>; searchParams: Promise<{ aba?: string }> }) {
   const viewer = await requireUser();
   const nick = decodeURIComponent((await params).nick);
   const u = await db.user.findFirst({ where: { nick }, include: { persons: true } });
@@ -49,6 +50,18 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
     listContos(viewer, { order: "populares", page: 1, authorId: u.id }),
   ]);
   const fav = me ? null : await db.favorite.findUnique({ where: { ownerId_targetId: { ownerId: viewer.id, targetId: u.id } } });
+  // rede (amigos / seguidores / seguindo) e, no próprio perfil, visitas, favoritos e depoimentos pendentes
+  const abaRaw = (await searchParams).aba;
+  const aba: NetworkTab = NETWORK_TABS.includes(abaRaw as NetworkTab) ? (abaRaw as NetworkTab) : "amigos";
+  const net = iBlocked ? { total: 0, users: [] } : await networkOf(viewer, u.id, aba, 24);
+  const mine = me
+    ? await Promise.all([
+        import("@/server/visits").then((m) => m.visitsFor(u.id)).then((v) => v.slice(0, 10)),
+        db.favorite.findMany({ where: { ownerId: u.id, target: { status: "ACTIVE" } }, orderBy: { createdAt: "desc" }, take: 8, include: { target: { select: { nick: true, avatarId: true } } } }),
+        db.favorite.count({ where: { ownerId: u.id } }),
+        db.testimonial.count({ where: { profileId: u.id, status: "PENDING", withdrawnAt: null } }),
+      ])
+    : null;
   const [followers, following, isFollowing, album, access, posts, styles] = await Promise.all([
     db.follow.count({ where: { followeeId: u.id } }),
     db.follow.count({ where: { followerId: u.id } }),
@@ -94,7 +107,11 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
               {!me && km != null && <span className="ml-1 rounded-full bg-pink-50 px-2 py-0.5 text-xs font-semibold text-wine">📍 {distanceLabel(km)}</span>}
             </p>
             {trip && !hidden && <Link href={me ? "/viagens" : `/viagens?uf=${trip.state}`} className="mt-1 inline-block rounded-full bg-sky-50 px-2 py-0.5 text-xs font-semibold text-sky-800" title={trip.note ?? undefined}>{tripLabel(trip, today)}</Link>}
-            <p className="mt-1 text-xs text-mute"><b className="text-fg">{friends.length}</b> amigos · <b className="text-fg">{followers}</b> seguidores · <b className="text-fg">{following}</b> seguindo</p>
+            <p className="mt-1 text-xs text-mute">
+              <Link href="?aba=amigos#rede" className="hover:text-wine"><b className="text-fg">{friends.length}</b> amigos</Link> ·{" "}
+              <Link href="?aba=seguidores#rede" className="hover:text-wine"><b className="text-fg">{followers}</b> seguidores</Link> ·{" "}
+              <Link href="?aba=seguindo#rede" className="hover:text-wine"><b className="text-fg">{following}</b> seguindo</Link>
+            </p>
             {!me && (
               <div className="mt-3 flex flex-wrap gap-2">
                 {!iBlocked && fStatus === "none" && <form action={sendFriendRequest.bind(null, u.id)}><button className="btn-gold">🤝 Adicionar amigo</button></form>}
@@ -115,7 +132,12 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
               </div>
             )}
             {!me && !iBlocked && <div className="mt-2"><FavoriteBox targetId={u.id} initialOn={!!fav} initialNote={fav?.note ?? null} /></div>}
-            {me && <Link href="/perfil" className="btn-ghost mt-3">Editar perfil</Link>}
+            {me && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Link href="/perfil" className="btn-ghost">✏️ Editar perfil e configurações</Link>
+                <Link href="/depoimentos" className="btn-ghost">📝 Depoimentos{mine?.[3] ? ` (${mine[3]} novos)` : ""}</Link>
+              </div>
+            )}
           </div>
         </div>
         {u.bio && !hidden && <p className="mt-4 whitespace-pre-wrap text-sm">{u.bio}</p>}
@@ -155,6 +177,82 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
         )}
         {hidden && <p className="mt-4 text-sm text-mute">Este perfil só é visível para perfis verificados. <Link href="/verificacao" className="text-gold underline">Verificar agora</Link></p>}
       </section>
+
+      {me && mine && (
+        <section className="card p-4" id="visitas" aria-label="Últimas visitas">
+          <div className="mb-3 flex items-center gap-2">
+            <h2 className="mr-auto font-semibold">👀 Quem visitou por último</h2>
+            <Link href="/visitas" className="text-xs text-wine underline">ver todas</Link>
+          </div>
+          {mine[0].length === 0 ? (
+            <p className="text-sm text-mute">Ninguém visitou seu perfil nos últimos 30 dias.</p>
+          ) : (
+            <div className="flex gap-3 overflow-x-auto pb-1">
+              {mine[0].map((v, i) =>
+                isSubscriber(viewer) ? (
+                  <Link key={v.id} href={`/u/${encodeURIComponent(v.nick)}`} className="flex w-16 shrink-0 flex-col items-center gap-1">
+                    <Avatar mediaId={v.avatarId} nick={v.nick} size={52} style={v.style} />
+                    <span className="w-full truncate text-center text-[11px]">{v.nick}</span>
+                  </Link>
+                ) : (
+                  <span key={i} className="flex w-16 shrink-0 flex-col items-center gap-1" aria-hidden>
+                    <span className="h-[52px] w-[52px] rounded-full bg-gradient-to-br from-pink-200 to-wine/40 blur-[2px]" />
+                    <span className="h-2.5 w-10 rounded bg-panel2" />
+                  </span>
+                ),
+              )}
+            </div>
+          )}
+          {!isSubscriber(viewer) && mine[0].length > 0 && <p className="mt-2 text-xs text-mute">Ver <b>quem</b> visitou é exclusivo para assinantes. <Link href="/assinar" className="text-gold underline">Assinar</Link></p>}
+        </section>
+      )}
+
+      {me && mine && (
+        <section className="card p-4" aria-label="Meus favoritos">
+          <div className="mb-3 flex items-center gap-2">
+            <h2 className="mr-auto font-semibold">⭐ Meus favoritos <span className="text-xs font-normal text-mute">🔒 só você vê</span></h2>
+            <Link href="/favoritos" className="text-xs text-wine underline">{mine[2] ? `ver todos (${mine[2]})` : "abrir"}</Link>
+          </div>
+          {mine[1].length === 0 ? (
+            <p className="text-sm text-mute">Toque em ☆ Favoritar no perfil de alguém para guardar aqui, com anotação privada.</p>
+          ) : (
+            <div className="flex gap-3 overflow-x-auto pb-1">
+              {mine[1].map((f) => (
+                <Link key={f.targetId} href={`/u/${encodeURIComponent(f.target.nick)}`} className="flex w-16 shrink-0 flex-col items-center gap-1">
+                  <Avatar mediaId={f.target.avatarId} nick={f.target.nick} size={52} />
+                  <span className="w-full truncate text-center text-[11px]">{f.target.nick}</span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {!iBlocked && !hidden && (
+        <section className="card p-4" id="rede" aria-label="Rede">
+          <div className="mb-3 flex flex-wrap gap-2">
+            {NETWORK_TABS.map((t) => (
+              <Link key={t} href={`?aba=${t}#rede`} scroll={false} aria-current={aba === t ? "page" : undefined}
+                className={`rounded-full px-3 py-1 text-sm ${aba === t ? "bg-wine text-white" : "border border-line text-mute hover:text-fg"}`}>
+                {t === "amigos" ? `🤝 Amigos (${friends.length})` : t === "seguidores" ? `👥 Seguidores (${followers})` : `➡️ Seguindo (${following})`}
+              </Link>
+            ))}
+          </div>
+          {net.users.length === 0 ? (
+            <p className="text-sm text-mute">{aba === "amigos" ? "Nenhum amigo para mostrar." : aba === "seguidores" ? "Nenhum seguidor para mostrar." : "Não segue ninguém ainda."}</p>
+          ) : (
+            <div className="grid grid-cols-4 gap-3 sm:grid-cols-6" data-testid="rede">
+              {net.users.map((f) => (
+                <Link key={f.id} href={`/u/${encodeURIComponent(f.nick)}`} className="flex min-w-0 flex-col items-center gap-1">
+                  <Avatar mediaId={f.avatarId} nick={f.nick} size={52} style={f.style} />
+                  <span className="w-full truncate text-center text-[11px]">{f.nick}</span>
+                </Link>
+              ))}
+            </div>
+          )}
+          {net.total > net.users.length && <p className="mt-2 text-xs text-mute">Mostrando {net.users.length} de {net.total}.</p>}
+        </section>
+      )}
 
       {!iBlocked && !hidden && album.length > 0 && (
         <section className="card p-4">

@@ -26,7 +26,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           {!isSubscriber(user) && <Link href="/assinar" className="hidden whitespace-nowrap rounded-full bg-gradient-to-r from-gold to-gold2 px-3 py-1 text-xs font-bold text-white lg:inline">⭐ Assine</Link>}
           <Link href="/loja" className="hidden whitespace-nowrap rounded-full border border-gold/40 px-3 py-1 text-sm text-gold hover:bg-gold/10 md:inline">{CURRENCY_ICON} {balance.toLocaleString("pt-BR")}</Link>
           <HeaderIcons />
-          <Link href="/perfil" aria-label="Meu perfil"><Avatar mediaId={user.avatarId} nick={user.nick} size={34} /></Link>
+          <Link href={`/u/${encodeURIComponent(user.nick)}`} aria-label="Meu perfil"><Avatar mediaId={user.avatarId} nick={user.nick} size={34} /></Link>
         </div>
         {user.ageVerification !== "APPROVED" && (
           <Link href="/verificacao" className="block bg-wine px-4 py-1.5 text-center text-xs text-white">

@@ -37,7 +37,6 @@ const MORE = [
   { href: "/eventos", label: "Eventos", icon: "🎉" },
   { href: "/contos", label: "Contos", icon: "📖" },
   { href: "/viagens", label: "Viagens", icon: "✈️" },
-  { href: "/favoritos", label: "Favoritos", icon: "⭐" },
   { href: "/loja", label: "Loja", icon: "🛍️" },
   { href: "/trocas", label: "Trocas", icon: "🔄" },
 ];
@@ -51,16 +50,14 @@ const BOTTOM_RIGHT = [{ href: "/pessoas", label: "Pessoas", icon: "👥" }];
 
 /** Menu "☰" do celular: grade de atalhos com ícone, grandes para o dedo. */
 const MENU = [
-  { href: "/perfil", label: "Meu perfil", icon: "👤" },
+  { href: "/eu", label: "Meu perfil", icon: "👤" },
   { href: "/ao-vivo", label: "Ao vivo", icon: "🔴" },
   { href: "/busca", label: "Buscar", icon: "🔍" },
   { href: "/videos", label: "Vídeos", icon: "🎬" },
-  { href: "/destaques", label: "Destaques", icon: "🏆" },
   { href: "/grupos", label: "Grupos", icon: "🫂" },
   { href: "/eventos", label: "Eventos", icon: "🎉" },
   { href: "/contos", label: "Contos", icon: "📖" },
   { href: "/viagens", label: "Viagens", icon: "✈️" },
-  { href: "/favoritos", label: "Favoritos", icon: "⭐" },
   { href: "/loja", label: "Loja", icon: "🛍️" },
   { href: "/trocas", label: "Trocas", icon: "🔄" },
   { href: "/carteira", label: "Carteira", icon: "🌶️" },
