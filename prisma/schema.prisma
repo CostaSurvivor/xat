@@ -161,6 +161,7 @@ enum ReportTargetType {
   EVENT
   TESTIMONIAL
   CONTO
+  CONTO_COMMENT
 }
 
 enum ReportReason {
@@ -182,6 +183,7 @@ enum ReportStatus {
 
 enum NotificationKind {
   CONTO
+  CONTO_COMMENT
   MATCH
   PROFILE_LIKE
   TESTIMONIAL
@@ -287,6 +289,7 @@ model User {
   paqueraHidden        Boolean               @default(false)
   contos               Conto[]               @relation("ContosWritten")
   trips                Trip[]                @relation("TripsPlanned")
+  contoComments        ContoComment[]        @relation("ContoComments")
 
   @@index([state, city])
   @@index([createdAt])
@@ -1338,20 +1341,22 @@ model ProfileSkip {
 // -----------------------------------------------------------------------------
 
 model Conto {
-  id        String      @id @default(cuid())
-  authorId  String
-  title     String      @db.VarChar(120)
-  category  String      @db.VarChar(20)
-  body      String      @db.Text
-  likeCount Int         @default(0)
-  readCount Int         @default(0)
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  id           String         @id @default(cuid())
+  authorId     String
+  title        String         @db.VarChar(120)
+  category     String         @db.VarChar(20)
+  body         String         @db.Text
+  likeCount    Int            @default(0)
+  readCount    Int            @default(0)
+  commentCount Int            @default(0)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
   /// apagado pelo autor ou removido pela equipe (a linha fica para as denúncias)
-  deletedAt DateTime?
-  author    User        @relation("ContosWritten", fields: [authorId], references: [id], onDelete: Cascade)
-  likes     ContoLike[]
-  reads     ContoRead[]
+  deletedAt    DateTime?
+  author       User           @relation("ContosWritten", fields: [authorId], references: [id], onDelete: Cascade)
+  likes        ContoLike[]
+  reads        ContoRead[]
+  comments     ContoComment[]
 
   @@index([deletedAt, createdAt])
   @@index([category, createdAt])
@@ -1399,4 +1404,18 @@ model Trip {
   @@index([userId, endsOn])
   @@index([state, startsOn])
   @@index([endsOn, startsOn])
+}
+
+model ContoComment {
+  id        String    @id @default(cuid())
+  contoId   String
+  authorId  String
+  body      String    @db.VarChar(1000)
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+  conto     Conto     @relation(fields: [contoId], references: [id], onDelete: Cascade)
+  author    User      @relation("ContoComments", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([contoId, createdAt])
+  @@index([authorId, createdAt])
 }

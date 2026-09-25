@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CONTOS, canDeleteConto, canEditConto, excerpt, forbiddenReason, parseConto, publishError, readingMinutes } from "@/lib/contos";
+import { CONTOS, canDeleteComment, canDeleteConto, canEditConto, excerpt, forbiddenReason, parseComment, parseConto, publishError, readingMinutes } from "@/lib/contos";
 
 const body = "Era uma noite quente na casa de swing e a gente resolveu arriscar. ".repeat(8);
 
@@ -72,5 +72,24 @@ describe("apresentação", () => {
 describe("prévia", () => {
   it("não deixa pontuação antes das reticências", () => {
     expect(excerpt("Era a noite. E depois veio mais coisa para contar aqui", 14)).toBe("Era a noite…");
+  });
+});
+
+describe("comentários", () => {
+  it("valida o texto", () => {
+    expect(parseComment("  Que delícia de conto!  ")).toEqual({ body: "Que delícia de conto!" });
+    expect(parseComment("   ")).toHaveProperty("error");
+    expect(parseComment("a".repeat(1001))).toHaveProperty("error");
+    expect(parseComment("me segue em www.x.com")).toHaveProperty("error");
+    expect(parseComment("ela era adolescente")).toHaveProperty("error");
+  });
+  it("apaga quem escreveu, o autor do conto ou a equipe", () => {
+    const cm = { authorId: "a", deletedAt: null };
+    const conto = { authorId: "b" };
+    expect(canDeleteComment(cm, conto, { id: "a", role: "USER" })).toBe(true);
+    expect(canDeleteComment(cm, conto, { id: "b", role: "USER" })).toBe(true);
+    expect(canDeleteComment(cm, conto, { id: "c", role: "USER" })).toBe(false);
+    expect(canDeleteComment(cm, conto, { id: "c", role: "MODERATOR" })).toBe(true);
+    expect(canDeleteComment({ ...cm, deletedAt: new Date() }, conto, { id: "a", role: "USER" })).toBe(false);
   });
 });

@@ -1,14 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CONTO_CATEGORIES, canDeleteConto, canEditConto, isCategory, readingMinutes } from "@/lib/contos";
+import { CONTO_CATEGORIES, canDeleteComment, canDeleteConto, canEditConto, isCategory, readingMinutes } from "@/lib/contos";
 import { isStaff, requireUser } from "@/server/auth";
-import { getConto, listContos, recordRead } from "@/server/contos";
+import { contoComments, getConto, listContos, recordRead } from "@/server/contos";
 import { stylesFor } from "@/server/styles";
 import { Avatar } from "@/components/Avatar";
 import { Nick } from "@/components/Nick";
 import { ReportButton } from "@/components/ReportButton";
 import { ContoCard } from "@/components/ContoCard";
 import { ContoDeleteButton, ContoLikeButton } from "@/components/ContoActions";
+import { ContoComments } from "@/components/ContoComments";
 
 export const dynamic = "force-dynamic";
 
@@ -25,9 +26,10 @@ export default async function Conto({ params }: { params: Promise<{ id: string }
   if (!c) notFound();
   if (!c.deletedAt) await recordRead(user.id, c);
   const cat = isCategory(c.category) ? CONTO_CATEGORIES[c.category] : null;
-  const [styles, more] = await Promise.all([
+  const [styles, more, comments] = await Promise.all([
     stylesFor([c.authorId]),
     listContos(user, { order: "populares", page: 1, authorId: c.authorId }),
+    contoComments(user, c.id),
   ]);
   const others = more.items.filter((o) => o.id !== c.id).slice(0, 3);
   const mine = c.authorId === user.id;
@@ -60,6 +62,13 @@ export default async function Conto({ params }: { params: Promise<{ id: string }
           </div>
         </div>
       </article>
+      {!c.deletedAt && (
+        <ContoComments
+          contoId={c.id}
+          canComment
+          comments={comments.map((cm) => ({ id: cm.id, body: cm.body, createdAt: cm.createdAt.toISOString(), author: cm.author, mine: cm.authorId === user.id, canDelete: canDeleteComment(cm, c, user) }))}
+        />
+      )}
       {others.length > 0 && (
         <section className="space-y-2">
           <h2 className="font-semibold">Mais contos de @{c.author.nick}</h2>

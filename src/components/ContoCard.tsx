@@ -2,7 +2,7 @@ import Link from "next/link";
 import { CONTO_CATEGORIES, excerpt, isCategory, readingMinutes } from "@/lib/contos";
 import { timeAgo } from "@/lib/time";
 
-type C = { id: string; title: string; category: string; body: string; likeCount: number; readCount: number; createdAt: Date; author: { nick: string } };
+type C = { id: string; title: string; category: string; body: string; likeCount: number; readCount: number; commentCount: number; createdAt: Date; author: { nick: string } };
 
 /** Cartão de conto para as listas (sem foto: título, categoria, prévia e números). */
 export function ContoCard({ c, compact = false }: { c: C; compact?: boolean }) {
@@ -19,6 +19,7 @@ export function ContoCard({ c, compact = false }: { c: C; compact?: boolean }) {
         <span>por @{c.author.nick}</span>
         <span>· {timeAgo(c.createdAt)}</span>
         <span className="ml-auto" title="Curtidas">❤ {c.likeCount}</span>
+        <span title="Comentários">💬 {c.commentCount}</span>
         <span title="Leituras">👁 {c.readCount}</span>
       </div>
     </Link>
