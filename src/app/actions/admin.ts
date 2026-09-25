@@ -109,6 +109,9 @@ async function removeTarget(type: string, id: string) {
     case "TESTIMONIAL":
       await db.testimonial.deleteMany({ where: { id } });
       break;
+    case "CONTO":
+      await db.conto.updateMany({ where: { id }, data: { deletedAt: new Date() } });
+      break;
   }
 }
 

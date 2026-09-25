@@ -160,6 +160,7 @@ enum ReportTargetType {
   LIVE
   EVENT
   TESTIMONIAL
+  CONTO
 }
 
 enum ReportReason {
@@ -180,6 +181,7 @@ enum ReportStatus {
 }
 
 enum NotificationKind {
+  CONTO
   MATCH
   PROFILE_LIKE
   TESTIMONIAL
@@ -283,6 +285,7 @@ model User {
   onboardingHiddenAt   DateTime?
   /// não aparecer para outros na Paquera
   paqueraHidden        Boolean               @default(false)
+  contos               Conto[]               @relation("ContosWritten")
 
   @@index([state, city])
   @@index([createdAt])
@@ -1327,4 +1330,49 @@ model ProfileSkip {
 
   @@id([userId, skippedId])
   @@index([createdAt])
+}
+
+// -----------------------------------------------------------------------------
+// Contos eróticos: textos com categoria, curtidas e leituras
+// -----------------------------------------------------------------------------
+
+model Conto {
+  id        String      @id @default(cuid())
+  authorId  String
+  title     String      @db.VarChar(120)
+  category  String      @db.VarChar(20)
+  body      String      @db.Text
+  likeCount Int         @default(0)
+  readCount Int         @default(0)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  /// apagado pelo autor ou removido pela equipe (a linha fica para as denúncias)
+  deletedAt DateTime?
+  author    User        @relation("ContosWritten", fields: [authorId], references: [id], onDelete: Cascade)
+  likes     ContoLike[]
+  reads     ContoRead[]
+
+  @@index([deletedAt, createdAt])
+  @@index([category, createdAt])
+  @@index([authorId, createdAt])
+}
+
+model ContoLike {
+  contoId   String
+  userId    String
+  createdAt DateTime @default(now())
+  conto     Conto    @relation(fields: [contoId], references: [id], onDelete: Cascade)
+
+  @@id([contoId, userId])
+  @@index([userId])
+}
+
+model ContoRead {
+  contoId String
+  userId  String
+  readAt  DateTime @default(now())
+  conto   Conto    @relation(fields: [contoId], references: [id], onDelete: Cascade)
+
+  @@id([contoId, userId])
+  @@index([userId])
 }

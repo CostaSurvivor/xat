@@ -34,6 +34,7 @@ const RIGHT = [
 const MORE = [
   { href: "/grupos", label: "Grupos", icon: "🫂" },
   { href: "/eventos", label: "Eventos", icon: "🎉" },
+  { href: "/contos", label: "Contos", icon: "📖" },
   { href: "/loja", label: "Loja", icon: "🛍️" },
   { href: "/trocas", label: "Trocas", icon: "🔄" },
 ];
@@ -53,6 +54,7 @@ const MENU = [
   { href: "/destaques", label: "Destaques", icon: "🏆" },
   { href: "/grupos", label: "Grupos", icon: "🫂" },
   { href: "/eventos", label: "Eventos", icon: "🎉" },
+  { href: "/contos", label: "Contos", icon: "📖" },
   { href: "/loja", label: "Loja", icon: "🛍️" },
   { href: "/trocas", label: "Trocas", icon: "🔄" },
   { href: "/carteira", label: "Carteira", icon: "🌶️" },

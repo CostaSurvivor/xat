@@ -5,6 +5,7 @@ import { canSeeGroup } from "@/lib/groups";
 import { fmtEventDate } from "@/lib/events";
 import { isVerified, requireUser } from "@/server/auth";
 import { blockedIds } from "@/server/access";
+import { visibleWhere } from "@/server/contos";
 import { stylesFor } from "@/server/styles";
 import { Avatar } from "@/components/Avatar";
 import { Nick } from "@/components/Nick";
@@ -18,7 +19,7 @@ export default async function Busca({ searchParams }: { searchParams: Promise<{ 
   const q = String((await searchParams).q ?? "").trim().slice(0, 60);
   const ok = q.length >= 2;
   const blocked = ok ? await blockedIds(user.id) : [];
-  const [people, groups, events, rooms] = ok
+  const [people, groups, events, rooms, contos] = ok
     ? await Promise.all([
         db.user.findMany({
           where: {
@@ -39,16 +40,19 @@ export default async function Busca({ searchParams }: { searchParams: Promise<{ 
           take: 10,
         }),
         db.room.findMany({ where: { isOfficial: true, name: { contains: q } }, take: 10, select: { slug: true, name: true } }),
+        visibleWhere(user).then((w) =>
+          db.conto.findMany({ where: { ...w, title: { contains: q } }, orderBy: { likeCount: "desc" }, take: 8, select: { id: true, title: true, likeCount: true, author: { select: { nick: true } } } }),
+        ),
       ])
-    : [[], [], [], []];
+    : [[], [], [], [], []];
   const styles = await stylesFor(people.map((p) => p.id));
   const visibleGroups = groups.filter((g) => canSeeGroup(g, user)).slice(0, 8);
-  const total = people.length + visibleGroups.length + events.length + rooms.length;
+  const total = people.length + visibleGroups.length + events.length + rooms.length + contos.length;
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">
       <form className="card flex gap-2 p-3" role="search">
-        <input name="q" defaultValue={q} autoFocus placeholder="Buscar perfis, cidades, grupos, eventos e salas" className="input flex-1" aria-label="Buscar" />
+        <input name="q" defaultValue={q} autoFocus placeholder="Buscar perfis, cidades, grupos, eventos, salas e contos" className="input flex-1" aria-label="Buscar" />
         <button className="btn-gold">Buscar</button>
       </form>
       {!ok && <p className="text-center text-sm text-mute">Digite pelo menos 2 letras. Dica: busque um nick, uma cidade ou um tema, como “swing” ou “viagem”.</p>}
@@ -84,6 +88,16 @@ export default async function Busca({ searchParams }: { searchParams: Promise<{ 
           <ul className="divide-y divide-line">
             {events.map((e) => (
               <li key={e.id}><Link href={`/eventos/${e.id}`} className="block py-2 hover:text-wine"><span className="font-medium">{e.title}</span> <span className="text-xs text-mute">· {fmtEventDate(e.startsAt)} · {e.city}/{e.state}</span></Link></li>
+            ))}
+          </ul>
+        </section>
+      )}
+      {contos.length > 0 && (
+        <section className="card p-4">
+          <h2 className="mb-2 font-semibold">📖 Contos</h2>
+          <ul className="divide-y divide-line">
+            {contos.map((c) => (
+              <li key={c.id}><Link href={`/contos/${c.id}`} className="flex items-center gap-2 py-2 hover:text-wine"><span className="font-medium">{c.title}</span><span className="ml-auto shrink-0 text-xs text-mute">@{c.author.nick} · ❤ {c.likeCount}</span></Link></li>
             ))}
           </ul>
         </section>
