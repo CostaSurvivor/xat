@@ -8,7 +8,7 @@ Comunidade liberal 18+ (casais, solteiras e solteiros), com **visual claro (fund
 
 | Área | Recursos |
 |---|---|
-| Entrada | Age gate 18+, cadastro com a data de nascimento de **todas** as pessoas do perfil, **login com Google ou e-mail e senha** (a pessoa escolhe), senha argon2id, 2FA opcional (vale também no Google), "esqueci minha senha" por e-mail |
+| Entrada | Age gate 18+, cadastro com a data de nascimento de **todas** as pessoas do perfil, **login com Google ou e-mail e senha** (a pessoa escolhe), senha argon2id, 2FA opcional (vale também no Google), "esqueci minha senha" por e-mail; cartão **🚀 Primeiros passos** no feed (verificar, foto, bio, gostos, sala, 1º post, notificações) com barra de progresso e **bônus único de 20 Pimentas** ao completar (conferido no servidor e idempotente no ledger) |
 | Verificação | Selfie com gesto sorteado e papel com o nick, revisada no admin. Libera fotos, vídeos, PV, loja e salas |
 | Perfil | Tipo (casal H/M, H/H, M/M, mulher, homem, trans, outro), "sobre ele / sobre ela" com características opcionais, gostos agrupados, álbum privado (privado / amigos / seguidores). **Nick e tipo de perfil só mudam por ticket**; **álbuns por tema** (até 10, com 30 fotos cada), cada um com quem pode ver: perfis verificados, seguidores, amigos ou só quem o dono liberar; quem não pode ver recebe a versão borrada |
 | Destaques | **Fotos em alta** (semana/mês, por estado) e **perfis mais curtidos** (casais, mulheres, homens, trans e outros); contam só reações de perfis verificados e cada comentarista 1x, sem o próprio autor, só posts públicos e só autores verificados; selo **🏆 Top 10 da semana** no perfil; faixa "Em alta" no feed; página própria de cada post |
@@ -49,7 +49,7 @@ Cadastre-se com um e-mail listado em `ADMIN_EMAILS`: essa conta vira admin já v
 ## Testes
 
 ```bash
-npm test      # 115 testes (+2 de S3 com S3_TEST_ENDPOINT): login com Google, age gate, ao vivo (gorjetas, sinalização), permissões de sala, salas inativas, rate-limit/flood, ledger (concorrência e idempotência), trocas, webhook de pagamento, CSAM, Pix, itens (anti-XSS), vídeo
+npm test      # 119 testes (+2 de S3 com S3_TEST_ENDPOINT): login com Google, age gate, ao vivo (gorjetas, sinalização), permissões de sala, salas inativas, rate-limit/flood, ledger (concorrência e idempotência), trocas, webhook de pagamento, CSAM, Pix, itens (anti-XSS), vídeo
 npm run lint  # checagem de tipos
 ```
 
