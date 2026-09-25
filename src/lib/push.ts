@@ -57,6 +57,7 @@ export function pushUrl(kind: string, refId?: string | null, actorNick?: string 
   const safe = (p: string) => (p.startsWith("/") && !p.startsWith("//") && !p.includes("\\") ? p : "/notificacoes");
   if (kind === "PM" && actorNick) return safe(`/mensagens/${encodeURIComponent(actorNick)}`);
   if (kind === "MATCH") return "/paquera/matches";
+  if (kind === "VERIFICATION") return refId === "fila" ? "/admin/fila" : "/verificacao";
   if (kind === "PROFILE_LIKE") return "/paquera/curtidas";
   if (kind === "TRADE" && refId) return safe(`/trocas/${refId}`);
   if (kind === "EVENT" && refId) return safe(`/eventos/${refId}`);

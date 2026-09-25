@@ -152,6 +152,7 @@ export async function submitVerification(_: R, formData: FormData): Promise<R> {
     const m = await processUpload({ file, ownerId: user.id, ownerNick: user.nick, kind: "VERIFICATION_SELFIE", watermark: false });
     await db.verificationRequest.create({ data: { userId: user.id, gesture, mediaId: m.id } });
     await db.user.update({ where: { id: user.id }, data: { ageVerification: "PENDING" } });
+    await (await import("@/server/staffAlerts")).alertStaffVerification();
   } catch (e) {
     return { error: e instanceof MediaError ? e.message : "Falha ao processar a foto" };
   }
