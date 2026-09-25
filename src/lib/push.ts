@@ -3,7 +3,7 @@
 export const PUSH_GROUPS = {
   pm: { label: "✉️ Mensagens no PV", kinds: ["PM"], default: true },
   social: { label: "🤝 Amizades, seguidores, curtidas e matches", kinds: ["FRIEND_REQUEST", "FRIEND_ACCEPTED", "FOLLOW", "MATCH", "PROFILE_LIKE"], default: true },
-  comments: { label: "💬 Comentários, respostas e menções", kinds: ["POST_COMMENT", "COMMENT_REPLY", "MENTION"], default: true },
+  comments: { label: "💬 Comentários, respostas e menções", kinds: ["POST_COMMENT", "COMMENT_REPLY", "MENTION", "CONTO_COMMENT"], default: true },
   reactions: { label: "🔥 Reações nos seus posts e contos", kinds: ["POST_REACTION", "COMMENT_REACTION", "CONTO"], default: false },
   testimonials: { label: "📝 Depoimentos", kinds: ["TESTIMONIAL"], default: true },
   trades: { label: "🎁 Presentes, trocas e Pimentas", kinds: ["GIFT", "TRADE", "COINS_CREDITED"], default: true },
@@ -62,7 +62,7 @@ export function pushUrl(kind: string, refId?: string | null, actorNick?: string 
   if (kind === "EVENT" && refId) return safe(`/eventos/${refId}`);
   if (kind === "LIVE" && refId) return safe(`/ao-vivo/${refId}`);
   if (kind === "TICKET" && refId) return safe(`/suporte/${refId}`);
-  if (kind === "CONTO" && refId) return safe(`/contos/${encodeURIComponent(refId)}`);
+  if ((kind === "CONTO" || kind === "CONTO_COMMENT") && refId) return safe(`/contos/${encodeURIComponent(refId)}`);
   if (kind === "TESTIMONIAL") return refId ? safe(`/u/${encodeURIComponent(refId)}`) : "/depoimentos";
   return "/notificacoes";
 }

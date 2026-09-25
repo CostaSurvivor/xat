@@ -8,6 +8,9 @@ export const CONTOS = {
   /** contos novos por pessoa em 24 h */
   perDay: 3,
   pageSize: 20,
+  commentMax: 1000,
+  /** comentários mostrados por conto */
+  commentsShown: 200,
   /** palavras por minuto para o "tempo de leitura" */
   wpm: 200,
 };
@@ -105,4 +108,20 @@ export function canEditConto(c: { authorId: string; deletedAt: Date | null }, v:
 }
 export function canDeleteConto(c: { authorId: string; deletedAt: Date | null }, v: { id: string; role: string }) {
   return !c.deletedAt && (c.authorId === v.id || v.role === "ADMIN" || v.role === "MODERATOR");
+}
+
+/** Comentário: 1 a 1000 caracteres, sem links nem conteúdo proibido. */
+export function parseComment(raw: unknown): { body: string } | { error: string } {
+  const body = String(raw ?? "").replace(/\r\n?/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+  if (!body) return { error: "Escreva o comentário" };
+  if (body.length > CONTOS.commentMax) return { error: `O comentário pode ter até ${CONTOS.commentMax} caracteres` };
+  if (/https?:\/\/|www\./i.test(body)) return { error: "Links não são permitidos" };
+  const why = forbiddenReason(body);
+  if (why) return { error: `Comentários com ${why} não são permitidos.` };
+  return { body };
+}
+
+/** Apaga um comentário: quem escreveu, o autor do conto ou a equipe. */
+export function canDeleteComment(c: { authorId: string; deletedAt: Date | null }, conto: { authorId: string }, v: { id: string; role: string }) {
+  return !c.deletedAt && (c.authorId === v.id || conto.authorId === v.id || v.role === "ADMIN" || v.role === "MODERATOR");
 }

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { limiter } from "@/lib/ratelimit";
-import { canDeleteConto, canEditConto, parseConto, publishError } from "@/lib/contos";
+import { canDeleteComment, canDeleteConto, canEditConto, parseComment, parseConto, publishError } from "@/lib/contos";
 import { requireUser } from "@/server/auth";
 import { getConto } from "@/server/contos";
 import { audit, notify } from "@/server/notify";
@@ -66,4 +66,37 @@ export async function toggleContoLike(id: string): Promise<{ liked: boolean; cou
   }
   const fresh = await db.conto.findUnique({ where: { id }, select: { likeCount: true } });
   return { liked: !c.liked, count: Math.max(0, fresh?.likeCount ?? 0) };
+}
+
+export type CommentState = { ok?: boolean; error?: string; n?: number } | undefined;
+
+/** Comenta num conto visível (bloqueios valem nos dois sentidos). Avisa o autor do conto. */
+export async function addContoComment(contoId: string, prev: CommentState, fd: FormData): Promise<CommentState> {
+  const user = await requireUser();
+  const n = (prev?.n ?? 0) + 1;
+  const parsed = parseComment(fd.get("body"));
+  if ("error" in parsed) return { ok: false, error: parsed.error, n };
+  if (!limiter("conto-comment", 20, 20 / 600).take(user.id)) return { ok: false, error: "Calma! Muitos comentários seguidos.", n };
+  const c = await getConto(user, contoId);
+  if (!c || c.deletedAt) return { ok: false, error: "Conto não encontrado", n };
+  await db.$transaction([
+    db.contoComment.create({ data: { contoId, authorId: user.id, body: parsed.body } }),
+    db.conto.update({ where: { id: contoId }, data: { commentCount: { increment: 1 } } }),
+  ]);
+  await notify(c.authorId, "CONTO_COMMENT", `@${user.nick} comentou no seu conto “${c.title.slice(0, 40)}”: ${parsed.body.slice(0, 80)}`, user.id, contoId);
+  revalidatePath(`/contos/${contoId}`);
+  return { ok: true, n };
+}
+
+/** Apaga: quem escreveu, o autor do conto ou a equipe (registrado). */
+export async function deleteContoComment(id: string) {
+  const user = await requireUser();
+  const cm = await db.contoComment.findUnique({ where: { id }, include: { conto: { select: { id: true, authorId: true } } } });
+  if (!cm || !canDeleteComment(cm, cm.conto, user)) return;
+  // só quem de fato apagou desconta do contador (dois cliques ao mesmo tempo não descontam duas vezes)
+  const r = await db.contoComment.updateMany({ where: { id, deletedAt: null }, data: { deletedAt: new Date() } });
+  if (!r.count) return;
+  await db.conto.update({ where: { id: cm.contoId }, data: { commentCount: { decrement: 1 } } });
+  if (cm.authorId !== user.id && cm.conto.authorId !== user.id) await audit(user.id, "conto-comment.delete", "ContoComment", id, { authorId: cm.authorId });
+  revalidatePath(`/contos/${cm.contoId}`);
 }

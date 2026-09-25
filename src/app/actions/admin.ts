@@ -112,6 +112,12 @@ async function removeTarget(type: string, id: string) {
     case "CONTO":
       await db.conto.updateMany({ where: { id }, data: { deletedAt: new Date() } });
       break;
+    case "CONTO_COMMENT": {
+      const r = await db.contoComment.updateMany({ where: { id, deletedAt: null }, data: { deletedAt: new Date() } });
+      const cm = r.count ? await db.contoComment.findUnique({ where: { id }, select: { contoId: true } }) : null;
+      if (cm) await db.conto.update({ where: { id: cm.contoId }, data: { commentCount: { decrement: 1 } } });
+      break;
+    }
   }
 }
 

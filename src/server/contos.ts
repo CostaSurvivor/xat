@@ -64,3 +64,14 @@ export async function recordRead(viewerId: string, c: { id: string; authorId: st
   const r = await db.contoRead.createMany({ data: [{ contoId: c.id, userId: viewerId }], skipDuplicates: true });
   if (r.count) await db.conto.update({ where: { id: c.id }, data: { readCount: { increment: 1 } } });
 }
+
+/** Comentários visíveis de um conto (sem quem está bloqueado, nos dois sentidos). */
+export async function contoComments(viewer: Viewer, contoId: string) {
+  const blocked = await blockedIds(viewer.id);
+  return db.contoComment.findMany({
+    where: { contoId, deletedAt: null, authorId: blocked.length ? { notIn: blocked } : undefined, author: { status: "ACTIVE" } },
+    orderBy: { createdAt: "asc" },
+    take: CONTOS.commentsShown,
+    include: { author: { select: { nick: true } } },
+  });
+}
