@@ -2,8 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { PROFILE_TYPES } from "@/lib/config";
-import { requireUser } from "@/server/auth";
-import { canMessage, canSendAudio, canSendPhoto, findConversation, markRead, pmMessages } from "@/server/pm";
+import { isVerified, requireUser } from "@/server/auth";
+import { audioConsentOf, canMessage, canSendPhoto, findConversation, markRead, pmMessages } from "@/server/pm";
 import { stylesFor } from "@/server/styles";
 import { Avatar } from "@/components/Avatar";
 import { Nick } from "@/components/Nick";
@@ -19,7 +19,7 @@ export default async function Thread({ params }: { params: Promise<{ nick: strin
   const conv = await findConversation(user.id, o.id);
   const initial = conv ? await pmMessages(conv.id, user.id) : [];
   if (conv) await markRead(conv.id, user.id);
-  const [blockedReason, st, canAudio] = await Promise.all([canMessage(user, o), stylesFor([o.id]), canSendAudio(user, o.id)]);
+  const [blockedReason, st] = await Promise.all([canMessage(user, o), stylesFor([o.id])]);
   const online = !!o.lastSeenAt && Date.now() - o.lastSeenAt.getTime() < 5 * 60_000;
   return (
     <section className="card flex min-h-0 flex-col overflow-hidden">
@@ -32,7 +32,7 @@ export default async function Thread({ params }: { params: Promise<{ nick: strin
         </div>
         <Link href={`/u/${o.nick}`} className="btn-ghost py-1 text-xs">Ver perfil</Link>
       </header>
-      <PmThread nick={o.nick} initial={initial} canPhoto={canSendPhoto(user, o)} canAudio={canAudio} blockedReason={blockedReason} />
+      <PmThread nick={o.nick} initial={initial} canPhoto={canSendPhoto(user, o)} audio={audioConsentOf(conv, user.id)} audioVerify={isVerified(user) ? null : "Verifique seu perfil para enviar áudios."} blockedReason={blockedReason} />
     </section>
   );
 }
