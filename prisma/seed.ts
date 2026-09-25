@@ -129,6 +129,16 @@ async function main() {
     await db.platformSetting.upsert({ where: { key: "rooms-v2" }, create: { key: "rooms-v2", value: { at: new Date().toISOString() } }, update: {} });
   }
   await migrateRoomsV2();
+  // pedido do dono: a sala antiga "Região Sul" (/sul) sai de vez, com as mensagens (uma vez só)
+  if (!(await db.platformSetting.findUnique({ where: { key: "remove-sul-v1" } }))) {
+    const sul = await db.room.findUnique({ where: { slug: "sul" } });
+    if (sul && !sul.ownerId && !sul.state) {
+      await db.roomPoll.deleteMany({ where: { roomId: sul.id } });
+      await db.room.delete({ where: { id: sul.id } });
+      console.log("Sala antiga /sul removida");
+    }
+    await db.platformSetting.create({ data: { key: "remove-sul-v1", value: { at: new Date().toISOString(), removed: !!sul } } });
+  }
   // desfaz as descrições regionais (todas as salas de estado com o mesmo texto padrão), sem mexer em edição do admin
   const REGIONAL_OLD: Record<string, string> = {
     RS: "Bah, tchê! O chat dos gaúchos: casais, prendas e peões liberais do Rio Grande do Sul. Chega mais e puxa um chimarrão 🧉",
