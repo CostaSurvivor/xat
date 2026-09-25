@@ -24,6 +24,7 @@ import { todayBR, tripLabel } from "@/lib/trips";
 import { profileTrip } from "@/server/trips";
 import { listContos } from "@/server/contos";
 import { ContoCard } from "@/components/ContoCard";
+import { FavoriteBox } from "@/components/Favorite";
 import { AFFINITY_MIN_TAGS, affinity, affinityTier, tagsOf } from "@/lib/affinity";
 
 export async function generateMetadata({ params }: { params: Promise<{ nick: string }> }) {
@@ -47,6 +48,7 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
     profileTrip(u.id, today),
     listContos(viewer, { order: "populares", page: 1, authorId: u.id }),
   ]);
+  const fav = me ? null : await db.favorite.findUnique({ where: { ownerId_targetId: { ownerId: viewer.id, targetId: u.id } } });
   const [followers, following, isFollowing, album, access, posts, styles] = await Promise.all([
     db.follow.count({ where: { followeeId: u.id } }),
     db.follow.count({ where: { followerId: u.id } }),
@@ -112,6 +114,7 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
                 <ReportButton targetType="USER" targetId={u.id} />
               </div>
             )}
+            {!me && !iBlocked && <div className="mt-2"><FavoriteBox targetId={u.id} initialOn={!!fav} initialNote={fav?.note ?? null} /></div>}
             {me && <Link href="/perfil" className="btn-ghost mt-3">Editar perfil</Link>}
           </div>
         </div>
