@@ -117,6 +117,14 @@ async function removeTarget(type: string, id: string) {
     case "CONTO":
       await db.conto.updateMany({ where: { id }, data: { deletedAt: new Date() } });
       break;
+    case "PLACE_REVIEW": {
+      const pr = await db.placeReview.findUnique({ where: { id } });
+      if (pr) {
+        await db.placeReview.delete({ where: { id } });
+        await db.place.update({ where: { id: pr.placeId }, data: { ratingSum: { decrement: pr.stars }, ratingCount: { decrement: 1 } } });
+      }
+      break;
+    }
     case "CONTO_COMMENT": {
       const r = await db.contoComment.updateMany({ where: { id, deletedAt: null }, data: { deletedAt: new Date() } });
       const cm = r.count ? await db.contoComment.findUnique({ where: { id }, select: { contoId: true } }) : null;

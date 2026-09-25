@@ -14,10 +14,11 @@ const REASON_PT: Record<string, string> = {
 
 export default async function Fila() {
   await requireStaff();
-  const [verifs, events, reports] = await Promise.all([
+  const [verifs, events, reports, places] = await Promise.all([
     db.verificationRequest.findMany({ where: { status: "PENDING" }, include: { user: { include: { persons: true } } }, orderBy: { createdAt: "asc" }, take: 50 }),
     db.event.findMany({ where: { status: "PENDING" }, include: { creator: { select: { nick: true } } }, orderBy: { createdAt: "asc" }, take: 50 }),
     db.report.findMany({ where: { status: "OPEN" }, include: { reporter: { select: { nick: true } } }, orderBy: [{ priority: "desc" }, { createdAt: "asc" }], take: 100 }),
+    db.place.findMany({ where: { status: "PENDING" }, include: { suggestedBy: { select: { nick: true } } }, orderBy: { createdAt: "asc" }, take: 50 }),
   ]);
   const targets = await db.user.findMany({ where: { id: { in: reports.map((r) => r.targetUserId).filter(Boolean) as string[] } }, select: { id: true, nick: true } });
   const nickOf = new Map(targets.map((t) => [t.id, t.nick]));
@@ -36,6 +37,13 @@ export default async function Fila() {
       lines: [`por @${e.creator.nick} · ${e.city}/${e.state} · ${e.startsAt.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}`, e.description.slice(0, 600)],
       images: e.coverMediaId ? [{ id: e.coverMediaId, blur: false }] : [],
       link: `/eventos/${e.id}`,
+    })),
+    ...places.map((p) => ({
+      kind: "place" as const, id: p.id, priority: 0, createdAt: p.createdAt.toISOString(),
+      title: `Lugar: ${p.name}`,
+      lines: [`sugerido por @${p.suggestedBy.nick} · ${p.kind} · ${p.city}/${p.state}${p.address ? ` · ${p.address}` : ""}`, ...(p.site ? [`Site: ${p.site}`] : []), ...(p.description ? [p.description.slice(0, 600)] : [])],
+      images: [],
+      link: `/lugares/${p.id}`,
     })),
     ...reports.map((r) => {
       const ev = r.evidence as { media?: string[]; mediaId?: string; body?: string; audio?: boolean } | null;

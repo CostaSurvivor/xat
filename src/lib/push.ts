@@ -64,6 +64,7 @@ export function pushUrl(kind: string, refId?: string | null, actorNick?: string 
   if (kind === "LIVE" && refId) return safe(`/ao-vivo/${refId}`);
   if (kind === "TICKET" && refId) return safe(`/suporte/${refId}`);
   if ((kind === "CONTO" || kind === "CONTO_COMMENT") && refId) return safe(`/contos/${encodeURIComponent(refId)}`);
+  if (kind === "PLACE" && refId) return safe(`/lugares/${encodeURIComponent(refId)}`);
   if (kind === "SEARCH_ALERT" && actorNick) return safe(`/u/${encodeURIComponent(actorNick)}`);
   if (kind === "TESTIMONIAL") return refId ? safe(`/u/${encodeURIComponent(refId)}`) : "/depoimentos";
   return "/notificacoes";

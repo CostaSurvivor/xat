@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { startTransition, useActionState, useEffect, useRef } from "react";
 
 type Act = (state: { ok?: boolean; error?: string } | undefined, fd: FormData) => Promise<{ ok?: boolean; error?: string } | undefined>;
 
@@ -12,7 +12,17 @@ export function ActionForm({ action, children, className = "", okText = "Salvo!"
     if (state?.ok && resetOnOk) ref.current?.reset();
   }, [state, resetOnOk]);
   return (
-    <form ref={ref} action={formAction} className={className} aria-busy={pending}>
+    // envia por onSubmit (e não por action=) para o React não limpar os campos quando a validação falha
+    <form
+      ref={ref}
+      onSubmit={(e) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget, (e.nativeEvent as SubmitEvent).submitter);
+        startTransition(() => formAction(fd));
+      }}
+      className={className}
+      aria-busy={pending}
+    >
       <fieldset disabled={pending} className="contents">{children}</fieldset>
       {state?.error && <p className="mt-2 text-sm text-red-700">{state.error}</p>}
       {state?.ok && <p className="mt-2 text-sm text-gold">{okText}</p>}

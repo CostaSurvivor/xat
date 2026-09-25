@@ -23,7 +23,7 @@ const ICON: Record<string, string> = {
   TICKET: "🎫",
   TRADE: "🔄",
   FOLLOW: "👀", FRIEND_REQUEST: "🤝", FRIEND_ACCEPTED: "🤝", POST_REACTION: "🔥", POST_COMMENT: "💬", COMMENT_REPLY: "↩️",
-  COMMENT_REACTION: "❤️", MENTION: "@", ALBUM_REQUEST: "🔒", ALBUM_GRANTED: "🔓", GIFT: "🎁", COINS_CREDITED: "🌶️", VERIFICATION: "✅", SEARCH_ALERT: "🔔", SYSTEM: "📢",
+  COMMENT_REACTION: "❤️", MENTION: "@", ALBUM_REQUEST: "🔒", ALBUM_GRANTED: "🔓", GIFT: "🎁", COINS_CREDITED: "🌶️", VERIFICATION: "✅", SEARCH_ALERT: "🔔", PLACE: "📍", SYSTEM: "📢",
 };
 
 export default async function Notificacoes({ searchParams }: { searchParams: Promise<{ aba?: string }> }) {
@@ -61,6 +61,7 @@ export default async function Notificacoes({ searchParams }: { searchParams: Pro
     if ((n.kind === "CONTO" || n.kind === "CONTO_COMMENT") && n.refId) return `/contos/${n.refId}`;
     if (n.kind === "TESTIMONIAL") return n.refId ? `/u/${n.refId}` : "/depoimentos";
     if (n.kind === "EVENT" && n.refId) return `/eventos/${n.refId}`;
+    if (n.kind === "PLACE" && n.refId) return `/lugares/${n.refId}`;
     return nick ? `/u/${nick}` : "#";
   };
 

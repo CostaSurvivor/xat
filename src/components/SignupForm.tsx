@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { startTransition, useActionState, useState } from "react";
 import Link from "next/link";
 import { completeGoogleSignup, signup } from "@/app/actions/auth";
 import { PROFILE_TYPES, type ProfileTypeKey } from "@/lib/config";
@@ -11,7 +11,15 @@ export function SignupForm({ google }: { google?: { email: string } }) {
   const [type, setType] = useState<ProfileTypeKey>("COUPLE_MF");
   const persons = PROFILE_TYPES[type].persons;
   return (
-    <form action={action} className="space-y-4">
+    // onSubmit (e não action=): se o cadastro der erro, os campos preenchidos continuam lá
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget, (e.nativeEvent as SubmitEvent).submitter);
+        startTransition(() => action(fd));
+      }}
+      className="space-y-4"
+    >
       <div>
         <span className="label">Quem são vocês?</span>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">

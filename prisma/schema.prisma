@@ -163,6 +163,7 @@ enum ReportTargetType {
   TESTIMONIAL
   CONTO
   CONTO_COMMENT
+  PLACE_REVIEW
 }
 
 enum ReportReason {
@@ -206,6 +207,7 @@ enum NotificationKind {
   COINS_CREDITED
   VERIFICATION
   SEARCH_ALERT
+  PLACE
   SYSTEM
 }
 
@@ -298,6 +300,9 @@ model User {
   favorites            Favorite[]            @relation("FavoritesOwned")
   favoritedBy          Favorite[]            @relation("FavoritesTarget")
   searchAlerts         SearchAlert[]
+  placesSuggested      Place[]               @relation("PlacesSuggested")
+  placeReviews         PlaceReview[]         @relation("PlaceReviews")
+  placeCheckins        PlaceCheckin[]        @relation("PlaceCheckins")
   /// convite: quem trouxe esta pessoa e quando o prêmio foi pago (na verificação)
   referredById         String?
   referralRewardedAt   DateTime?
@@ -1502,4 +1507,59 @@ model SearchAlert {
 
   @@index([userId])
   @@index([uf])
+}
+
+/// Lugares do meio liberal (clubes, bares, saunas…): sugeridos pela comunidade, aprovados pela equipe.
+model Place {
+  id            String         @id @default(cuid())
+  name          String         @db.VarChar(80)
+  kind          String         @db.VarChar(12)
+  state         String         @db.VarChar(2)
+  city          String         @db.VarChar(80)
+  address       String?        @db.VarChar(160)
+  site          String?        @db.VarChar(120)
+  description   String?        @db.Text
+  /// PENDING | APPROVED | REJECTED
+  status        String         @default("PENDING") @db.VarChar(10)
+  reviewNote    String?        @db.VarChar(200)
+  suggestedById String
+  reviewedById  String?
+  ratingSum     Int            @default(0)
+  ratingCount   Int            @default(0)
+  createdAt     DateTime       @default(now())
+  suggestedBy   User           @relation("PlacesSuggested", fields: [suggestedById], references: [id], onDelete: Cascade)
+  reviews       PlaceReview[]
+  checkins      PlaceCheckin[]
+
+  @@index([status, state, city])
+  @@index([suggestedById])
+}
+
+model PlaceReview {
+  id        String   @id @default(cuid())
+  placeId   String
+  userId    String
+  stars     Int
+  body      String?  @db.VarChar(1000)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  place     Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  user      User     @relation("PlaceReviews", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([placeId, userId])
+  @@index([userId])
+}
+
+/// "Vou hoje": vale só para o dia (horário de Brasília) e só perfis verificados veem quem vai.
+model PlaceCheckin {
+  placeId   String
+  userId    String
+  day       String   @db.VarChar(10)
+  createdAt DateTime @default(now())
+  place     Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  user      User     @relation("PlaceCheckins", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([placeId, userId, day])
+  @@index([placeId, day])
+  @@index([userId])
 }
