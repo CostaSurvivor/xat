@@ -82,6 +82,8 @@ export async function signup(_: FormState, formData: FormData): Promise<FormStat
     },
   });
   await createSession(user.id);
+  // promoção de lançamento: os primeiros cadastros ganham Pimentas + VIP
+  if (!isAdmin) await (await import("@/server/welcome")).claimWelcome(user.id);
   redirect(isAdmin ? "/feed" : "/verificacao?novo=1");
 }
 
@@ -126,6 +128,7 @@ export async function completeGoogleSignup(_: FormState, formData: FormData): Pr
   });
   await clearPending(pending.id);
   await createSession(user.id);
+  await (await import("@/server/welcome")).claimWelcome(user.id);
   redirect("/verificacao?novo=1");
 }
 

@@ -3,7 +3,8 @@ import { db } from "@/lib/db";
 import { requireUser } from "@/server/auth";
 import { randomGesture, submitVerification } from "@/app/actions/profile";
 import { ActionForm } from "@/components/Forms";
-import { isCouple } from "@/lib/config";
+import { CURRENCY_ICON, CURRENCY_NAME, isCouple } from "@/lib/config";
+import { WELCOME } from "@/lib/welcome";
 
 export const metadata = { title: "Verificação" };
 
@@ -16,6 +17,9 @@ export default async function Verificacao({ searchParams }: { searchParams: Prom
   return (
     <div className="card mx-auto max-w-lg space-y-4 p-6">
       {novo && <p className="rounded-xl bg-gold/10 p-3 text-sm text-gold2">Conta criada! 🎉 Falta só um passo para liberar tudo.</p>}
+      {novo && (await db.welcomeBonus.findUnique({ where: { userId: user.id } })) && (
+        <p className="rounded-xl border border-gold/40 bg-amber-50 p-3 text-sm font-medium text-fg" data-testid="ganhou">🎁 Você está entre as {WELCOME.slots} primeiras pessoas! Ganhou {WELCOME.coins} {CURRENCY_ICON} {CURRENCY_NAME} e {WELCOME.vipDays} dias de VIP. Já estão na sua conta.</p>
+      )}
       <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold">Verificação de perfil</h1>
       {user.ageVerification === "PENDING" ? (
         <p className="text-mute">⏳ Sua selfie está em análise pela moderação. Normalmente leva poucas horas. Enquanto isso, você já pode conversar nas salas.</p>
