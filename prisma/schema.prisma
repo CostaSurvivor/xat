@@ -286,6 +286,7 @@ model User {
   /// não aparecer para outros na Paquera
   paqueraHidden        Boolean               @default(false)
   contos               Conto[]               @relation("ContosWritten")
+  trips                Trip[]                @relation("TripsPlanned")
 
   @@index([state, city])
   @@index([createdAt])
@@ -1375,4 +1376,27 @@ model ContoRead {
 
   @@id([contoId, userId])
   @@index([userId])
+}
+
+// -----------------------------------------------------------------------------
+// Modo Viagem ("Estou viajando"): quem mora no destino vê quem está chegando
+// -----------------------------------------------------------------------------
+
+model Trip {
+  id        String   @id @default(cuid())
+  userId    String
+  city      String   @db.VarChar(80)
+  state     String   @db.VarChar(2)
+  /// coordenadas da cidade de destino (IBGE), para os "visitantes perto de você"
+  lat       Float?
+  lng       Float?
+  startsOn  DateTime @db.Date
+  endsOn    DateTime @db.Date
+  note      String?  @db.VarChar(140)
+  createdAt DateTime @default(now())
+  user      User     @relation("TripsPlanned", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, endsOn])
+  @@index([state, startsOn])
+  @@index([endsOn, startsOn])
 }
