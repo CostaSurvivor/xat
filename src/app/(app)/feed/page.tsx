@@ -8,6 +8,7 @@ import { HotPhotos } from "@/components/HotPhotos";
 import { liveList } from "@/server/live";
 import { StoryTray } from "@/components/StoryTray";
 import { OnboardingCard } from "@/components/OnboardingCard";
+import { FeaturedProfiles, OnlineNow, VideoStrip } from "@/components/FeedSections";
 
 export const metadata = { title: "Feed" };
 
@@ -30,9 +31,12 @@ export default async function Feed({ searchParams }: { searchParams: Promise<{ t
         )}
         <OnboardingCard user={user} />
         <StoryTray viewer={user} />
+        <OnlineNow user={user} />
+        <FeaturedProfiles user={user} />
+        <div className="lg:hidden"><HotPhotos user={user} /></div>
+        <VideoStrip user={user} />
         <Composer verified={isVerified(user)} />
         <div className="flex flex-wrap gap-2">
-          <Link href="/destaques" className="rounded-full px-3 py-1 text-sm text-wine lg:hidden">🔥 Em alta</Link>
           {tabs.map(([k, l]) => (
             <Link key={k} href={`/feed?tab=${k}`} className={`rounded-full px-3 py-1 text-sm ${tab === k ? "bg-wine text-white" : "text-mute hover:text-fg"}`}>{l}</Link>
           ))}
