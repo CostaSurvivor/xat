@@ -37,6 +37,7 @@ const MORE = [
   { href: "/eventos", label: "Eventos", icon: "🎉" },
   { href: "/contos", label: "Contos", icon: "📖" },
   { href: "/viagens", label: "Viagens", icon: "✈️" },
+  { href: "/favoritos", label: "Favoritos", icon: "⭐" },
   { href: "/loja", label: "Loja", icon: "🛍️" },
   { href: "/trocas", label: "Trocas", icon: "🔄" },
 ];
@@ -59,6 +60,7 @@ const MENU = [
   { href: "/eventos", label: "Eventos", icon: "🎉" },
   { href: "/contos", label: "Contos", icon: "📖" },
   { href: "/viagens", label: "Viagens", icon: "✈️" },
+  { href: "/favoritos", label: "Favoritos", icon: "⭐" },
   { href: "/loja", label: "Loja", icon: "🛍️" },
   { href: "/trocas", label: "Trocas", icon: "🔄" },
   { href: "/carteira", label: "Carteira", icon: "🌶️" },

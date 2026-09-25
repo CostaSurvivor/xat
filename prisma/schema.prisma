@@ -293,6 +293,8 @@ model User {
   contos               Conto[]               @relation("ContosWritten")
   trips                Trip[]                @relation("TripsPlanned")
   contoComments        ContoComment[]        @relation("ContoComments")
+  favorites            Favorite[]            @relation("FavoritesOwned")
+  favoritedBy          Favorite[]            @relation("FavoritesTarget")
 
   @@index([state, city])
   @@index([createdAt])
@@ -1425,4 +1427,22 @@ model ContoComment {
 
   @@index([contoId, createdAt])
   @@index([authorId, createdAt])
+}
+
+// -----------------------------------------------------------------------------
+// Favoritos: lista privada de perfis com anotação que só o dono vê
+// -----------------------------------------------------------------------------
+
+model Favorite {
+  ownerId   String
+  targetId  String
+  note      String?  @db.VarChar(300)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  owner     User     @relation("FavoritesOwned", fields: [ownerId], references: [id], onDelete: Cascade)
+  target    User     @relation("FavoritesTarget", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@id([ownerId, targetId])
+  @@index([ownerId, createdAt])
+  @@index([targetId])
 }
