@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { db } from "@/lib/db";
 import { CONTO_CATEGORIES, isCategory } from "@/lib/contos";
 import { isVerified, requireUser } from "@/server/auth";
 import { listContos } from "@/server/contos";
@@ -7,17 +8,18 @@ import { ContoCard } from "@/components/ContoCard";
 export const metadata = { title: "Contos eróticos" };
 export const dynamic = "force-dynamic";
 
-export default async function Contos({ searchParams }: { searchParams: Promise<{ cat?: string; ordem?: string; p?: string; meus?: string }> }) {
+export default async function Contos({ searchParams }: { searchParams: Promise<{ cat?: string; ordem?: string; p?: string; meus?: string; autor?: string }> }) {
   const user = await requireUser();
   const sp = await searchParams;
   const category = isCategory(sp.cat) ? sp.cat : undefined;
   const order = sp.ordem === "populares" ? "populares" : "recentes";
   const mine = sp.meus === "1";
+  const autor = !mine && sp.autor ? await db.user.findUnique({ where: { nick: String(sp.autor).slice(0, 24) }, select: { id: true, nick: true } }) : null;
   const page = Math.max(1, Math.min(500, Number(sp.p) || 1));
-  const { items, total, pages } = await listContos(user, { category, order, page, authorId: mine ? user.id : undefined });
+  const { items, total, pages } = await listContos(user, { category, order, page, authorId: mine ? user.id : autor?.id });
   const q = (o: Record<string, string | undefined>) => {
     const u = new URLSearchParams();
-    const all = { cat: category, ordem: order === "populares" ? "populares" : undefined, meus: mine ? "1" : undefined, ...o };
+    const all = { cat: category, ordem: order === "populares" ? "populares" : undefined, meus: mine ? "1" : undefined, autor: autor?.nick, ...o };
     for (const [k, v] of Object.entries(all)) if (v) u.set(k, v);
     const s = u.toString();
     return s ? `/contos?${s}` : "/contos";
@@ -27,7 +29,7 @@ export default async function Contos({ searchParams }: { searchParams: Promise<{
   return (
     <div className="mx-auto max-w-3xl space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <h1 className="mr-auto font-[family-name:var(--font-display)] text-2xl font-bold">📖 Contos</h1>
+        <h1 className="mr-auto font-[family-name:var(--font-display)] text-2xl font-bold">📖 Contos{autor && <span className="text-lg font-normal text-mute"> de @{autor.nick} · <Link href="/contos" className="underline">todos</Link></span>}</h1>
         {isVerified(user) ? (
           <Link href="/contos/novo" className="btn-gold">✍️ Escrever conto</Link>
         ) : (

@@ -22,6 +22,9 @@ import { TestimonialsSection } from "@/components/Testimonials";
 import { ThemedAlbumsViewer } from "@/components/ThemedAlbums";
 import { todayBR, tripLabel } from "@/lib/trips";
 import { profileTrip } from "@/server/trips";
+import { listContos } from "@/server/contos";
+import { ContoCard } from "@/components/ContoCard";
+import { AFFINITY_MIN_TAGS, affinity, affinityTier, tagsOf } from "@/lib/affinity";
 
 export async function generateMetadata({ params }: { params: Promise<{ nick: string }> }) {
   return { title: `@${decodeURIComponent((await params).nick)}` };
@@ -38,7 +41,12 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
   if (!me && !iBlocked) await recordVisit(viewer, u.id);
 
   const today = todayBR();
-  const [fStatus, friends, trip] = await Promise.all([friendStatus(viewer.id, u.id), friendIds(u.id), profileTrip(u.id, today)]);
+  const [fStatus, friends, trip, contos] = await Promise.all([
+    friendStatus(viewer.id, u.id),
+    friendIds(u.id),
+    profileTrip(u.id, today),
+    listContos(viewer, { order: "populares", page: 1, authorId: u.id }),
+  ]);
   const [followers, following, isFollowing, album, access, posts, styles] = await Promise.all([
     db.follow.count({ where: { followeeId: u.id } }),
     db.follow.count({ where: { followerId: u.id } }),
@@ -50,6 +58,8 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
   ]);
   const st = styles[u.id];
   const likes = (u.likes as string[] | null) ?? [];
+  const aff = me ? null : affinity(viewer.likes, u.likes);
+  const shared = new Set(aff?.common);
   const { canSeeAlbum: albumCheck } = await import("@/server/access");
   const canSeeAlbum = me || (await albumCheck(viewer.id, u.id, u.albumVisibility, { viewerVerified: isVerified(viewer) }));
   const hidden = u.hideFromUnverified && !isVerified(viewer) && !me;
@@ -78,6 +88,7 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
               {PROFILE_TYPES[u.profileType].label} · {agesLabel(u.persons.map((p) => ({ label: p.label, age: ageOn(p.birthDate) })))}
               {!u.hideCity && u.city ? ` · ${u.city}/${u.state}` : u.state ? ` · ${u.state}` : ""}
               {top && <Link href="/destaques?aba=perfis" className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">🏆 Top {top.rank <= 3 ? top.rank : 10} da semana · {top.group}</Link>}
+              {aff && !hidden && <a href="#curtem" title={affinityTier(aff.pct).label} className={`ml-1 rounded-full px-2 py-0.5 text-xs font-semibold ${affinityTier(aff.pct).cls}`} data-testid="afinidade">🔥 {aff.pct}% de afinidade</a>}
               {!me && km != null && <span className="ml-1 rounded-full bg-pink-50 px-2 py-0.5 text-xs font-semibold text-wine">📍 {distanceLabel(km)}</span>}
             </p>
             {trip && !hidden && <Link href={me ? "/viagens" : `/viagens?uf=${trip.state}`} className="mt-1 inline-block rounded-full bg-sky-50 px-2 py-0.5 text-xs font-semibold text-sky-800" title={trip.note ?? undefined}>{tripLabel(trip, today)}</Link>}
@@ -127,7 +138,17 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
           </div>
         )}
         {likes.length > 0 && !hidden && (
-          <div className="mt-3 flex flex-wrap gap-1.5">{likes.map((t) => <span key={t} className="rounded-full border border-wine2/60 bg-wine/20 px-2.5 py-0.5 text-xs">{t}</span>)}</div>
+          <div id="curtem" className="mt-3">
+            {aff && aff.common.length > 0 && <p className="mb-1.5 text-xs text-mute">Vocês curtem {aff.common.length === 1 ? "1 coisa" : `${aff.common.length} coisas`} em comum (em destaque):</p>}
+            <div className="flex flex-wrap gap-1.5">
+              {likes.map((t) => shared.has(t)
+                ? <span key={t} className="rounded-full bg-wine px-2.5 py-0.5 text-xs font-semibold text-white">✓ {t}</span>
+                : <span key={t} className="rounded-full border border-wine2/60 bg-wine/20 px-2.5 py-0.5 text-xs">{t}</span>)}
+            </div>
+            {!me && !aff && tagsOf(viewer.likes).length < AFFINITY_MIN_TAGS && tagsOf(u.likes).length >= AFFINITY_MIN_TAGS && (
+              <p className="mt-1.5 text-xs text-mute"><Link href="/perfil" className="text-wine underline">Marque o que vocês curtem</Link> para ver a afinidade com este perfil.</p>
+            )}
+          </div>
         )}
         {hidden && <p className="mt-4 text-sm text-mute">Este perfil só é visível para perfis verificados. <Link href="/verificacao" className="text-gold underline">Verificar agora</Link></p>}
       </section>
@@ -147,6 +168,15 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
 
       {!iBlocked && !hidden && !me && <ThemedAlbumsViewer owner={{ id: u.id, nick: u.nick }} viewerId={viewer.id} viewerVerified={isVerified(viewer)} />}
 
+      {!iBlocked && !hidden && contos.total > 0 && (
+        <section className="space-y-2" aria-label="Contos">
+          <div className="flex items-baseline justify-between px-1">
+            <h2 className="font-semibold">📖 Contos de @{u.nick} ({contos.total})</h2>
+            {contos.total > 3 && <Link href={`/contos?autor=${encodeURIComponent(u.nick)}`} className="text-xs text-mute underline">ver todos</Link>}
+          </div>
+          {contos.items.slice(0, 3).map((c) => <ContoCard key={c.id} c={c} compact />)}
+        </section>
+      )}
       {!iBlocked && !hidden && <TestimonialsSection profile={{ id: u.id, nick: u.nick }} viewer={viewer} />}
 
       {!hidden && posts.map((p) => <PostCard key={p.id} post={p} viewer={{ nick: viewer.nick, subscriber: isSubscriber(viewer) }} />)}

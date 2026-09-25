@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Dot, useBadges } from "./Badges";
+import { QuickExitButton } from "./QuickExit";
 
 /** Ícones do topo do computador (traço fino, cor do texto). */
 const I = {
@@ -142,7 +143,10 @@ export function MobileMenu({ admin, balance }: { admin?: boolean; balance?: stri
                 </Link>
               ))}
             </div>
-            <button onClick={() => setOpen(false)} className="btn-ghost mt-3 w-full">Fechar</button>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <QuickExitButton className="rounded-xl border border-line py-2.5 text-sm text-mute" />
+              <button onClick={() => setOpen(false)} className="btn-ghost w-full">Fechar</button>
+            </div>
           </nav>
         </div>,
         document.body,
@@ -223,6 +227,7 @@ function DesktopNav({ path, admin }: { path: string; admin?: boolean }) {
                   <span>{l.icon}</span>{l.label}
                 </Link>
               ))}
+              <QuickExitButton className="col-span-2 mt-1 rounded-lg border-t border-line px-3 pt-2 text-left text-xs text-mute hover:text-fg" />
             </div>
           </>
         )}

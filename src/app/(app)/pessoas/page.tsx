@@ -11,11 +11,12 @@ import { Nick } from "@/components/Nick";
 import { LocationButton } from "@/components/LocationButton";
 import { visitors } from "@/server/trips";
 import { TRIPS, todayBR } from "@/lib/trips";
+import { affinity } from "@/lib/affinity";
 
 export const metadata = { title: "Pessoas" };
 export const dynamic = "force-dynamic";
 
-type SP = { tipo?: string; uf?: string; q?: string; on?: string; ver?: string; curte?: string; foto?: string; raio?: string };
+type SP = { ordem?: string; tipo?: string; uf?: string; q?: string; on?: string; ver?: string; curte?: string; foto?: string; raio?: string };
 
 export default async function Pessoas({ searchParams }: { searchParams: Promise<SP> }) {
   const viewer = await requireUser();
@@ -41,12 +42,18 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
     Object.assign(where, { showDistance: true, hideCity: false, lat: { gte: b.minLat, lte: b.maxLat }, lng: { gte: b.minLng, lte: b.maxLng } });
   }
 
-  const select = { id: true, nick: true, avatarId: true, profileType: true, city: true, state: true, hideCity: true, ageVerification: true, lastSeenAt: true, lat: true, lng: true, showDistance: true } as const;
-  const rows = await db.user.findMany({ where, orderBy: { lastSeenAt: "desc" }, take: raio ? 600 : 60, select });
+  const select = { id: true, nick: true, avatarId: true, profileType: true, city: true, state: true, hideCity: true, ageVerification: true, lastSeenAt: true, lat: true, lng: true, showDistance: true, likes: true } as const;
+  const rows = await db.user.findMany({ where, orderBy: { lastSeenAt: "desc" }, take: raio || sp.ordem === "afinidade" ? 600 : 60, select });
   const withDist = rows.map((u) => ({ ...u, km: me && distanceVisible(u) ? haversineKm(me, { lat: u.lat!, lng: u.lng! }) : null }));
-  const users = raio
-    ? withDist.filter((u) => u.km != null && u.km <= raio).sort((a, b) => a.km! - b.km! || (b.lastSeenAt?.getTime() ?? 0) - (a.lastSeenAt?.getTime() ?? 0)).slice(0, 60)
-    : withDist;
+  const byAffinity = sp.ordem === "afinidade";
+  const scored = withDist.map((u) => ({ ...u, aff: affinity(viewer.likes, u.likes)?.pct ?? null }));
+  const inRange = raio ? scored.filter((u) => u.km != null && u.km <= raio) : scored;
+  // afinidade: maior primeiro (quem não dá para calcular vai para o fim); senão, distância / último acesso
+  const users = byAffinity
+    ? [...inRange].sort((a, b) => (b.aff ?? -1) - (a.aff ?? -1) || (a.km ?? 0) - (b.km ?? 0)).slice(0, 60)
+    : raio
+      ? inRange.sort((a, b) => a.km! - b.km! || (b.lastSeenAt?.getTime() ?? 0) - (a.lastSeenAt?.getTime() ?? 0)).slice(0, 60)
+      : inRange;
   const styles = await stylesFor(users.map((u) => u.id));
   const confirmed = await import("@/server/testimonials").then((m) => m.confirmedIds(users.map((u) => u.id)));
   const coming = await visitors(viewer, todayBR());
@@ -77,6 +84,10 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
           <option value="CASAIS">Casais</option>
           {Object.entries(PROFILE_TYPES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
+        <select name="ordem" defaultValue={byAffinity ? "afinidade" : ""} className="input w-auto" aria-label="Ordenar">
+          <option value="">{raio ? "Mais perto" : "Online recente"}</option>
+          <option value="afinidade">🔥 Mais afinidade</option>
+        </select>
         <select name="uf" defaultValue={sp.uf ?? ""} className="input w-auto"><option value="">UF</option>{UFS.map((u) => <option key={u}>{u}</option>)}</select>
         <select name="curte" defaultValue={sp.curte ?? ""} className="input w-auto max-w-56">
           <option value="">Curte…</option>
@@ -102,7 +113,10 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
               {confirmed.has(u.id) && <div title="Confirmado por quem conheceu pessoalmente" className="mt-0.5 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">🤝 Confirmado</div>}
               <div className="text-xs text-mute">{PROFILE_TYPES[u.profileType].label}</div>
               <div className="max-w-full truncate text-xs text-mute">{!u.hideCity && u.city ? `${u.city}/` : ""}{u.state}</div>
-              {u.km != null && <div className="mt-1 rounded-full bg-pink-50 px-2 py-0.5 text-[11px] font-semibold text-wine">📍 {distanceLabel(u.km)}</div>}
+              <div className="mt-1 flex flex-wrap justify-center gap-1">
+                {u.km != null && <span className="rounded-full bg-pink-50 px-2 py-0.5 text-[11px] font-semibold text-wine">📍 {distanceLabel(u.km)}</span>}
+                {u.aff != null && u.aff >= 40 && <span className="rounded-full bg-wine px-2 py-0.5 text-[11px] font-semibold text-white" title="Afinidade pelo que vocês curtem">🔥 {u.aff}%</span>}
+              </div>
             </Link>
           );
         })}

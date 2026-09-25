@@ -4,6 +4,7 @@ import { balanceOf } from "@/server/ledger";
 import { CURRENCY_ICON } from "@/lib/config";
 import { Logo } from "@/components/Logo";
 import { AppNav, HeaderIcons } from "@/components/AppNav";
+import { QuickExitKeys } from "@/components/QuickExit";
 import { Avatar } from "@/components/Avatar";
 import { db } from "@/lib/db";
 import { InstallApp } from "@/components/InstallApp";
@@ -34,6 +35,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         {ann && <div className="bg-gold/15 px-4 py-1.5 text-center text-xs text-gold2">📢 {ann.body}</div>}
       </header>
       <main className="mx-auto max-w-6xl px-3 py-4 sm:px-4">{children}</main>
+      <QuickExitKeys />
       <AppNav variant="bottom" admin={user.role === "ADMIN" || user.role === "MODERATOR"} balance={`${CURRENCY_ICON} ${balance.toLocaleString("pt-BR")}`} />
     </div>
   );
