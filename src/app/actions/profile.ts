@@ -10,6 +10,7 @@ import { limiter } from "@/lib/ratelimit";
 import { isVerified, requireUser } from "@/server/auth";
 import { MediaError, processUpload } from "@/server/media";
 import { notify } from "@/server/notify";
+import { createHash } from "node:crypto";
 
 type R = { ok?: boolean; error?: string } | undefined;
 
@@ -136,8 +137,16 @@ const GESTURES = [
   "sinal de OK (👌)",
 ];
 
+/** Gesto definido pelo servidor (por pessoa e por dia): ninguém escolhe o gesto de uma selfie já tirada. */
+function gestureFor(userId: string, day: string) {
+  const h = createHash("sha256").update(`${userId}:${day}:${process.env.SESSION_SECRET ?? "sp"}`).digest();
+  return GESTURES[h[0] % GESTURES.length];
+}
+const brDay = (offset = 0) => new Date(Date.now() - 3 * 3600_000 + offset * 86_400_000).toISOString().slice(0, 10);
+
 export async function randomGesture() {
-  return GESTURES[Math.floor(Math.random() * GESTURES.length)];
+  const user = await requireUser();
+  return gestureFor(user.id, brDay());
 }
 
 export async function submitVerification(_: R, formData: FormData): Promise<R> {
@@ -145,13 +154,15 @@ export async function submitVerification(_: R, formData: FormData): Promise<R> {
   if (user.ageVerification === "APPROVED") return { ok: true };
   if (!limiter("verif", 3, 3 / 86400).take(user.id)) return { error: "Limite de envios atingido. Tente amanhã." };
   const gesture = String(formData.get("gesture") || "");
-  if (!GESTURES.includes(gesture)) return { error: "Gesto inválido, recarregue a página." };
+  // aceita o gesto de hoje (ou de ontem, para quem abriu a página perto da meia-noite)
+  if (gesture !== gestureFor(user.id, brDay()) && gesture !== gestureFor(user.id, brDay(-1))) return { error: "Gesto inválido, recarregue a página." };
   const file = formData.get("selfie");
   if (!(file instanceof File) || !file.size) return { error: "Envie a selfie" };
   try {
     const m = await processUpload({ file, ownerId: user.id, ownerNick: user.nick, kind: "VERIFICATION_SELFIE", watermark: false });
     await db.verificationRequest.create({ data: { userId: user.id, gesture, mediaId: m.id } });
     await db.user.update({ where: { id: user.id }, data: { ageVerification: "PENDING" } });
+    await (await import("@/server/staffAlerts")).alertStaffVerification();
   } catch (e) {
     return { error: e instanceof MediaError ? e.message : "Falha ao processar a foto" };
   }

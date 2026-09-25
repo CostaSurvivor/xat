@@ -50,7 +50,7 @@ export default async function Notificacoes({ searchParams }: { searchParams: Pro
     if (n.kind === "ALBUM_REQUEST") return "/perfil";
     if (n.kind === "COINS_CREDITED") return "/carteira";
     if (n.kind === "GIFT") return "/loja/inventario";
-    if (n.kind === "VERIFICATION") return "/verificacao";
+    if (n.kind === "VERIFICATION") return n.refId === "fila" ? "/admin/fila" : "/verificacao";
     if (n.kind === "FRIEND_REQUEST") return "/notificacoes?aba=pedidos";
     if (n.kind === "TICKET" && n.refId) return `/suporte/${n.refId}`;
     if (n.kind === "MENTION" && n.refId) return `/${n.refId}`;

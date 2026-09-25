@@ -5,7 +5,7 @@ import { ageOn } from "@/lib/age";
 import { PERSON_FIELDS, PROFILE_TYPES, agesLabel } from "@/lib/config";
 import { distanceLabel, distanceVisible, haversineKm } from "@/lib/geo";
 import { isSubscriber, isVerified, requireUser } from "@/server/auth";
-import { isBlockedBetween } from "@/server/access";
+import { blockedIds, isBlockedBetween } from "@/server/access";
 import { getFeed } from "@/server/feed";
 import { stylesFor } from "@/server/styles";
 import { removeFriend, requestAlbum, respondFriendRequest, sendFriendRequest, toggleBlock, toggleFollow } from "@/app/actions/profile";
@@ -57,12 +57,20 @@ export default async function UserPage({ params, searchParams }: { params: Promi
   // rede (amigos / seguidores / seguindo) e, no próprio perfil, visitas, favoritos e depoimentos pendentes
   const abaRaw = (await searchParams).aba;
   const aba: NetworkTab = NETWORK_TABS.includes(abaRaw as NetworkTab) ? (abaRaw as NetworkTab) : "amigos";
-  const net = iBlocked ? { total: 0, users: [] } : await networkOf(viewer, u.id, aba, 24);
-  const achievements = iBlocked ? [] : await achievementsOf(u.id);
+  const skipHeavy = iBlocked || (u.hideFromUnverified && !isVerified(viewer) && !me);
+  const net = skipHeavy ? { total: 0, users: [] } : await networkOf(viewer, u.id, aba, 24);
+  const achievements = skipHeavy ? [] : await achievementsOf(u.id);
   const mine = me
     ? await Promise.all([
         import("@/server/visits").then((m) => m.visitsFor(u.id)).then((v) => v.slice(0, 10)),
-        db.favorite.findMany({ where: { ownerId: u.id, target: { status: "ACTIVE" } }, orderBy: { createdAt: "desc" }, take: 8, include: { target: { select: { nick: true, avatarId: true } } } }),
+        blockedIds(u.id).then((blocked) =>
+          db.favorite.findMany({
+            where: { ownerId: u.id, targetId: blocked.length ? { notIn: blocked } : undefined, target: { status: "ACTIVE", ...(isVerified(viewer) ? {} : { hideFromUnverified: false }) } },
+            orderBy: { createdAt: "desc" },
+            take: 8,
+            include: { target: { select: { nick: true, avatarId: true } } },
+          }),
+        ),
         db.favorite.count({ where: { ownerId: u.id } }),
         db.testimonial.count({ where: { profileId: u.id, status: "PENDING", withdrawnAt: null } }),
         referralStats(u.id),

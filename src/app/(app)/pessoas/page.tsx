@@ -33,7 +33,8 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
   if (sp.tipo && sp.tipo in PROFILE_TYPES) where.profileType = sp.tipo as ProfileType;
   if (sp.tipo === "CASAIS") where.profileType = { in: ["COUPLE_MF", "COUPLE_MM", "COUPLE_FF"] };
   if (sp.uf) where.state = sp.uf;
-  if (sp.q) where.OR = [{ nick: { contains: sp.q } }, { city: { contains: sp.q }, hideCity: false }];
+  const qText = typeof sp.q === "string" ? sp.q.trim().slice(0, 60) : "";
+  if (qText) where.OR = [{ nick: { contains: qText } }, { city: { contains: qText }, hideCity: false }];
   if (sp.on) where.lastSeenAt = { gt: new Date(Date.now() - 5 * 60_000) };
   if (sp.ver) where.ageVerification = "APPROVED";
   if (sp.foto) where.avatarId = { not: null };

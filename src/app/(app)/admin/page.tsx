@@ -63,7 +63,7 @@ export default async function Dashboard() {
       </div>
       <section className="card p-4" data-testid="admin-promo">
         <h2 className="mb-2 font-semibold text-gold">🎁 Promoção de lançamento: {bonus.length}/{WELCOME.slots} vagas usadas</h2>
-        <p className="mb-2 text-xs text-mute">{WELCOME.coins} Pimentas + {WELCOME.vipDays} dias de VIP no cadastro (um por aparelho/IP).</p>
+        <p className="mb-2 text-xs text-mute">{WELCOME.coins} Pimentas + {WELCOME.vipDays} dias de VIP quando a selfie é aprovada (um por aparelho/IP).</p>
         {bonus.length === 0 ? <p className="text-sm text-mute">Ninguém ganhou ainda.</p> : (
           <ol className="flex flex-wrap gap-2 text-sm">{bonus.map((b) => <li key={b.slot}><Link href={`/u/${bonusNicks.get(b.userId) ?? ""}`} className="rounded-full border border-line px-2 py-0.5 hover:border-wine">{b.slot}º @{bonusNicks.get(b.userId) ?? "?"}</Link></li>)}</ol>
         )}

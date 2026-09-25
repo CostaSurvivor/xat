@@ -12,7 +12,7 @@ export async function achievementsOf(userId: string) {
     friendIds(userId).then((f) => f.length),
     db.follow.count({ where: { followeeId: userId } }),
     db.conto.count({ where: { authorId: userId, deletedAt: null } }),
-    db.user.count({ where: { referredById: userId, referralRewardedAt: { not: null } } }),
+    db.user.findUnique({ where: { id: userId }, select: { referralRewardCount: true } }).then((u) => u?.referralRewardCount ?? 0),
     db.ledgerTransaction.count({ where: { idempotencyKey: { startsWith: `daily:${userId}:` } } }),
     db.eventRsvp.count({ where: { userId, status: "GOING" } }),
     db.testimonial.count({ where: { profileId: userId, status: "APPROVED", withdrawnAt: null } }),
