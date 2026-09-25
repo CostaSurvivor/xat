@@ -63,9 +63,11 @@ export async function sendPushTo(userId: string, payload: { title: string; body:
 export async function pushNotification(userId: string, kind: string, text: string, opts: { refId?: string | null; actorId?: string | null } = {}) {
   try {
     if (!(await db.pushSubscription.count({ where: { userId } }))) return;
-    const u = await db.user.findUnique({ where: { id: userId }, select: { pushPrefs: true, status: true } });
+    const u = await db.user.findUnique({ where: { id: userId }, select: { pushPrefs: true, status: true, pinHash: true } });
     if (!u || u.status !== "ACTIVE") return;
     const prefs = readPrefs(u.pushPrefs);
+    // com PIN ativo, o texto nunca aparece na tela de bloqueio do celular
+    if (u.pinHash) prefs.discreet = true;
     if (!wantsPush(prefs, kind)) return;
     // no máximo 1 push por remetente+tipo a cada 3 min (conversa no PV não vira metralhadora)
     if (!limiter("push", 1, 1 / 180).take(`${userId}:${kind}:${opts.actorId ?? ""}`)) return;

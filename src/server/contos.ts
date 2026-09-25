@@ -20,10 +20,9 @@ export async function visibleWhere(viewer: Viewer): Promise<Prisma.ContoWhereInp
 const authorSelect = { select: { id: true, nick: true, avatarId: true, profileType: true, ageVerification: true } } as const;
 
 export async function listContos(viewer: Viewer, opts: { category?: ContoCategory; order: "recentes" | "populares"; page: number; authorId?: string }) {
+  // AND: o filtro de autor não pode sobrescrever o "authorId notIn bloqueados" da visibilidade
   const where: Prisma.ContoWhereInput = {
-    ...(await visibleWhere(viewer)),
-    ...(opts.category ? { category: opts.category } : {}),
-    ...(opts.authorId ? { authorId: opts.authorId } : {}),
+    AND: [await visibleWhere(viewer), ...(opts.category ? [{ category: opts.category }] : []), ...(opts.authorId ? [{ authorId: opts.authorId }] : [])],
   };
   const [items, total] = await Promise.all([
     db.conto.findMany({
@@ -69,7 +68,12 @@ export async function recordRead(viewerId: string, c: { id: string; authorId: st
 export async function contoComments(viewer: Viewer, contoId: string) {
   const blocked = await blockedIds(viewer.id);
   return db.contoComment.findMany({
-    where: { contoId, deletedAt: null, authorId: blocked.length ? { notIn: blocked } : undefined, author: { status: "ACTIVE" } },
+    where: {
+      contoId,
+      deletedAt: null,
+      authorId: blocked.length ? { notIn: blocked } : undefined,
+      author: { status: "ACTIVE", ...(isVerified(viewer) || isStaff(viewer) ? {} : { OR: [{ hideFromUnverified: false }, { id: viewer.id }] }) },
+    },
     orderBy: { createdAt: "asc" },
     take: CONTOS.commentsShown,
     include: { author: { select: { nick: true } } },

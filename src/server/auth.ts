@@ -50,6 +50,7 @@ export async function createSession(userId: string) {
       tokenHash: sha256(token),
       ip,
       userAgent,
+      lastActiveAt: new Date(),
       expiresAt: new Date(Date.now() + SESSION_DAYS * 86400_000),
     },
   });

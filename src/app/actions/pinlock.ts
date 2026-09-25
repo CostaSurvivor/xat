@@ -27,6 +27,8 @@ export async function setPin(_: PinState, fd: FormData): Promise<PinState> {
   await db.user.update({ where: { id: user.id }, data: { pinHash: await hashPassword(pin), pinLockMinutes: lockMinutes(fd.get("minutes")) } });
   const st = await loadSession();
   if (st) await db.session.update({ where: { id: st.session.id }, data: { lastActiveAt: new Date(), lockedAt: null, pinFails: 0 } });
+  // os outros aparelhos logados passam a pedir o PIN na hora
+  await db.session.updateMany({ where: { userId: user.id, ...(st ? { NOT: { id: st.session.id } } : {}) }, data: { lockedAt: new Date() } });
   await logAccess(user.id, "pin.set");
   return { ok: true, msg: "PIN ativado 🔒" };
 }
@@ -62,15 +64,20 @@ export async function unlock(_: PinState, fd: FormData): Promise<PinState> {
   const next = safeNext(fd.get("next"));
   if (!st.locked) redirect(next);
   if (!limiter("pin-unlock", 10, 10 / 300).take(st.session.id)) return { ok: false, error: "Muitas tentativas. Aguarde um pouco." };
+  // reserva a tentativa ANTES de conferir: pedidos em paralelo não passam do limite
+  const reserved = await db.session.updateMany({ where: { id: st.session.id, pinFails: { lt: PIN_LOCK.maxFails } }, data: { pinFails: { increment: 1 } } });
+  const out = async () => {
+    await logAccess(st.user.id, "pin.logout");
+    await destroySession();
+    redirect("/login?erro=pin");
+  };
+  if (!reserved.count) return out();
   const ok = !!st.user.pinHash && (await verifyPassword(st.user.pinHash, String(fd.get("pin") ?? "")));
   if (!ok) {
-    const s = await db.session.update({ where: { id: st.session.id }, data: { pinFails: { increment: 1 } } });
-    if (s.pinFails >= PIN_LOCK.maxFails) {
-      await logAccess(st.user.id, "pin.logout");
-      await destroySession();
-      redirect("/login?erro=pin");
-    }
-    return { ok: false, error: `PIN incorreto. ${PIN_LOCK.maxFails - s.pinFails} ${PIN_LOCK.maxFails - s.pinFails === 1 ? "tentativa" : "tentativas"} antes de sair da conta.` };
+    const fails = (await db.session.findUnique({ where: { id: st.session.id }, select: { pinFails: true } }))?.pinFails ?? PIN_LOCK.maxFails;
+    if (fails >= PIN_LOCK.maxFails) return out();
+    const left = PIN_LOCK.maxFails - fails;
+    return { ok: false, error: `PIN incorreto. ${left} ${left === 1 ? "tentativa" : "tentativas"} antes de sair da conta.` };
   }
   await db.session.update({ where: { id: st.session.id }, data: { lockedAt: null, pinFails: 0, lastActiveAt: new Date() } });
   redirect(next);

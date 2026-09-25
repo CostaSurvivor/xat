@@ -83,7 +83,8 @@ export async function addContoComment(contoId: string, prev: CommentState, fd: F
     db.contoComment.create({ data: { contoId, authorId: user.id, body: parsed.body } }),
     db.conto.update({ where: { id: contoId }, data: { commentCount: { increment: 1 } } }),
   ]);
-  await notify(c.authorId, "CONTO_COMMENT", `@${user.nick} comentou no seu conto “${c.title.slice(0, 40)}”: ${parsed.body.slice(0, 80)}`, user.id, contoId);
+  if (limiter("conto-comment-notify", 1, 1 / 1800).take(`${user.id}:${contoId}`))
+    await notify(c.authorId, "CONTO_COMMENT", `@${user.nick} comentou no seu conto “${c.title.slice(0, 40)}”: ${parsed.body.slice(0, 80)}`, user.id, contoId);
   revalidatePath(`/contos/${contoId}`);
   return { ok: true, n };
 }
