@@ -31,3 +31,10 @@ describe("push", () => {
     expect(pushUrl("TESTIMONIAL", "//evil.com")).toBe("/u/%2F%2Fevil.com");
   });
 });
+
+describe("push: links com barra invertida", () => {
+  it("caminho com \\ não sai do site", () => {
+    expect(pushUrl("TRADE", "\\\\evil.com")).toBe("/notificacoes");
+    expect(pushUrl("EVENT", "/\\evil.com")).toBe("/notificacoes");
+  });
+});

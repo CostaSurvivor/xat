@@ -40,11 +40,16 @@ export async function deleteStory(id: string) {
   const s = await db.story.findUnique({ where: { id } });
   if (!s || (s.authorId !== user.id && !isStaff(user))) return;
   await db.story.update({ where: { id }, data: { deletedAt: new Date() } });
+  if (s.authorId !== user.id) {
+    const { audit } = await import("@/server/notify");
+    await audit(user.id, "story.delete", "Story", id, { authorId: s.authorId });
+  }
   revalidatePath("/feed");
 }
 
 export async function markStoryViewed(id: string) {
   const user = await requireUser();
+  if (!limiter("story-view", 120, 2).take(user.id)) return;
   await recordStoryView(user, id);
 }
 

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
+import { limiter } from "@/lib/ratelimit";
 import { isMatch, likeError } from "@/lib/paquera";
 import { requireUser } from "@/server/auth";
 import { isBlockedBetween } from "@/server/access";
@@ -16,18 +17,25 @@ export async function likeProfile(targetId: string): Promise<R> {
   const today = await db.profileLike.count({ where: { likerId: user.id, createdAt: { gt: new Date(Date.now() - 86400_000) } } });
   const err = likeError(user, target, await isBlockedBetween(user.id, target.id), today);
   if (err) return { ok: false, error: err };
+  if (!limiter("paquera-like", 60, 60 / 3600).take(user.id)) return { ok: false, error: "Devagar! Muitas curtidas em pouco tempo." };
   const key = { likerId_likedId: { likerId: user.id, likedId: target.id } };
-  if (await db.profileLike.findUnique({ where: key })) return { ok: true };
-  await db.profileLike.create({ data: { likerId: user.id, likedId: target.id } });
+  const existing = await db.profileLike.findUnique({ where: key });
+  if (existing && !existing.withdrawnAt) return { ok: true };
+  if (existing) await db.profileLike.update({ where: key, data: { withdrawnAt: null } });
+  else await db.profileLike.create({ data: { likerId: user.id, likedId: target.id } });
   await db.profileSkip.deleteMany({ where: { userId: user.id, skippedId: target.id } });
-  const back = !!(await db.profileLike.findUnique({ where: { likerId_likedId: { likerId: target.id, likedId: user.id } } }));
-  if (isMatch(true, back)) {
-    // match: agora os dois sabem quem é
-    await notify(target.id, "MATCH", `💘 Deu match com @${user.nick}! Mandem um oi no PV.`, user.id);
-    await notify(user.id, "MATCH", `💘 Deu match com @${target.nick}! Mandem um oi no PV.`, target.id);
-  } else {
-    // curtida sem match: não revela quem foi (ver quem curtiu é benefício de assinante)
-    await notify(target.id, "PROFILE_LIKE", "💘 Alguém curtiu vocês na Paquera. Veja em Paquera → Quem curtiu.");
+  const other = await db.profileLike.findUnique({ where: { likerId_likedId: { likerId: target.id, likedId: user.id } } });
+  const back = !!other && !other.withdrawnAt;
+  // curtir de novo (depois de desfazer) não avisa ninguém de novo: fecha o spam de curtir/descurtir
+  if (!existing) {
+    if (isMatch(true, back)) {
+      // match: agora os dois sabem quem é
+      await notify(target.id, "MATCH", `💘 Deu match com @${user.nick}! Mandem um oi no PV.`, user.id);
+      await notify(user.id, "MATCH", `💘 Deu match com @${target.nick}! Mandem um oi no PV.`, target.id);
+    } else {
+      // curtida sem match: não revela quem foi (ver quem curtiu é benefício de assinante)
+      await notify(target.id, "PROFILE_LIKE", "💘 Alguém curtiu vocês na Paquera. Veja em Paquera → Quem curtiu.");
+    }
   }
   revalidatePath("/paquera");
   return { ok: true, match: back, nick: target.nick };
@@ -42,7 +50,7 @@ export async function skipProfile(targetId: string) {
 /** Desfazer curtida (também desfaz o match). */
 export async function unlikeProfile(targetId: string) {
   const user = await requireUser();
-  await db.profileLike.deleteMany({ where: { likerId: user.id, likedId: targetId } });
+  await db.profileLike.updateMany({ where: { likerId: user.id, likedId: targetId, withdrawnAt: null }, data: { withdrawnAt: new Date() } });
   revalidatePath("/paquera/matches");
   revalidatePath("/paquera/curtidas");
 }

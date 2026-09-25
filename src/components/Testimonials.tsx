@@ -17,16 +17,18 @@ type Viewer = { id: string; ageVerification: string };
 export async function TestimonialsSection({ profile, viewer }: { profile: { id: string; nick: string }; viewer: Viewer }) {
   const me = profile.id === viewer.id;
   const blocked = await blockedIds(viewer.id);
-  const [list, mine, pending] = await Promise.all([
+  const [list, mineRaw, pending] = await Promise.all([
     db.testimonial.findMany({
-      where: { profileId: profile.id, status: "APPROVED", authorId: { notIn: blocked }, author: { status: "ACTIVE" } },
+      where: { profileId: profile.id, status: "APPROVED", withdrawnAt: null, authorId: { notIn: blocked }, author: { status: "ACTIVE" } },
       orderBy: { createdAt: "desc" },
       take: 30,
       include: { author: { select: { id: true, nick: true, avatarId: true, profileType: true } } },
     }),
     me ? Promise.resolve(null) : db.testimonial.findUnique({ where: { profileId_authorId: { profileId: profile.id, authorId: viewer.id } } }),
-    me ? db.testimonial.count({ where: { profileId: profile.id, status: "PENDING" } }) : Promise.resolve(0),
+    me ? db.testimonial.count({ where: { profileId: profile.id, status: "PENDING", withdrawnAt: null } }) : Promise.resolve(0),
   ]);
+  // apagado pelo autor conta como "não escrito", exceto se o dono tinha ocultado (continua discreto)
+  const mine = mineRaw && (!mineRaw.withdrawnAt || mineRaw.status === "HIDDEN") ? mineRaw : null;
   const styles = await stylesFor(list.map((t) => t.author.id));
   const met = list.filter((t) => t.metInPerson).length;
 

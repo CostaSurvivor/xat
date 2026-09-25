@@ -21,7 +21,14 @@ export async function storyTray(viewer: Viewer) {
   const close = new Set([viewer.id, ...friends, ...following.map((f) => f.followeeId)]);
   const blockedSet = new Set(blocked);
   const stories = await db.story.findMany({
-    where: { deletedAt: null, expiresAt: { gt: new Date() }, author: { status: "ACTIVE" } },
+    // só quem interessa: eu, amigos e quem sigo, ou perfis do meu estado com story aberto a todos
+    where: {
+      deletedAt: null,
+      expiresAt: { gt: new Date() },
+      author: { status: "ACTIVE" },
+      authorId: { notIn: blocked },
+      OR: [{ authorId: { in: [...close] } }, ...(viewer.state ? [{ audience: "ALL", author: { state: viewer.state } }] : [])],
+    },
     orderBy: { createdAt: "desc" },
     take: 400,
     include: { author: { select: authorSelect }, views: { where: { viewerId: viewer.id }, select: { viewerId: true } } },
@@ -60,8 +67,14 @@ export async function storiesOf(authorId: string, viewer: Viewer) {
 /** Registra que viu (silencioso). */
 export async function recordStoryView(viewer: { id: string; role: string }, storyId: string) {
   try {
-    const s = await db.story.findUnique({ where: { id: storyId }, select: { authorId: true } });
+    const s = await db.story.findUnique({ where: { id: storyId } });
     if (!s) return;
+    // só registra quem de fato pode ver este story (ativo, sem bloqueio, amigos se for "só amigos")
+    const [friends, blocked] = await Promise.all([
+      s.audience === "FRIENDS" ? import("@/server/friends").then((m) => m.areFriends(viewer.id, s.authorId)) : Promise.resolve(false),
+      import("@/server/access").then((m) => m.isBlockedBetween(viewer.id, s.authorId)),
+    ]);
+    if (!canSeeStory(s, viewer, { friends, blocked })) return;
     const invisible = !!(await stylesFor([viewer.id]))[viewer.id]?.powers.includes("INVISIBLE");
     if (!shouldRecordView({ viewerId: viewer.id, authorId: s.authorId, viewerRole: viewer.role, invisible })) return;
     await db.storyView.upsert({ where: { storyId_viewerId: { storyId, viewerId: viewer.id } }, create: { storyId, viewerId: viewer.id }, update: {} });

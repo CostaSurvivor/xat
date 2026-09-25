@@ -53,7 +53,8 @@ export function pushText(kind: string, full: string, discreet: boolean) {
 
 /** Para onde o toque no push leva (só caminhos internos). */
 export function pushUrl(kind: string, refId?: string | null, actorNick?: string | null) {
-  const safe = (p: string) => (p.startsWith("/") && !p.startsWith("//") ? p : "/notificacoes");
+  // só caminho interno: começa com "/", sem "//" nem barra invertida (o navegador trata "\\" como "/")
+  const safe = (p: string) => (p.startsWith("/") && !p.startsWith("//") && !p.includes("\\") ? p : "/notificacoes");
   if (kind === "PM" && actorNick) return safe(`/mensagens/${encodeURIComponent(actorNick)}`);
   if (kind === "MATCH") return "/paquera/matches";
   if (kind === "PROFILE_LIKE") return "/paquera/curtidas";

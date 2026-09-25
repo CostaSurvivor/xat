@@ -59,7 +59,7 @@ export async function resolveMediaAccess(viewer: CurrentUser, mediaId: string, w
     case "PRIVATE_ALBUM": {
       // álbum por tema: vale a visibilidade do álbum; sem álbum, a do álbum privado padrão
       const album = m.albumId ? await db.album.findUnique({ where: { id: m.albumId }, select: { visibility: true } }) : null;
-      if (!(await canSeeAlbum(viewer.id, m.ownerId, album?.visibility ?? m.owner.albumVisibility))) return { media: m, variant: "b" as const };
+      if (!(await canSeeAlbum(viewer.id, m.ownerId, album?.visibility ?? m.owner.albumVisibility, { viewerVerified: verified, albumId: album ? m.albumId : null }))) return { media: m, variant: "b" as const };
       break;
     }
     case "PM_PHOTO": {
@@ -78,11 +78,15 @@ export async function resolveMediaAccess(viewer: CurrentUser, mediaId: string, w
  * Álbum privado: o dono escolhe quem vê (PRIVATE = só liberados um a um,
  * FRIENDS = amigos, FOLLOWERS = seguidores). Liberação individual vale sempre.
  */
-export async function canSeeAlbum(viewerId: string, ownerId: string, visibility: string) {
+export async function canSeeAlbum(viewerId: string, ownerId: string, visibility: string, opts: { viewerVerified?: boolean; albumId?: string | null } = {}) {
   if (viewerId === ownerId) return true;
-  if (visibility === "VERIFIED") return true; // quem não é verificado já recebe a versão borrada
-  const acc = await db.albumAccess.findUnique({ where: { ownerId_viewerId: { ownerId, viewerId } } });
-  if (acc?.granted) return true;
+  // "só verificados" vale por si (não depende da configuração global de borrar para não verificados)
+  if (visibility === "VERIFIED") return opts.viewerVerified === true;
+  // liberação individual: no álbum por tema vale só para AQUELE álbum; no álbum privado padrão, a do dono
+  const granted = opts.albumId
+    ? (await db.themedAlbumAccess.findUnique({ where: { albumId_viewerId: { albumId: opts.albumId, viewerId } } }))?.granted
+    : (await db.albumAccess.findUnique({ where: { ownerId_viewerId: { ownerId, viewerId } } }))?.granted;
+  if (granted) return true;
   if (visibility === "FRIENDS") {
     const { areFriends } = await import("./friends");
     return areFriends(viewerId, ownerId);

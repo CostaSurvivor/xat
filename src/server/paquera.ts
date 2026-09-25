@@ -1,11 +1,12 @@
 import "server-only";
 import type { Prisma, ProfileType } from "@prisma/client";
 import { db } from "@/lib/db";
+import { PROFILE_TYPES } from "@/lib/config";
 import { PAQUERA, candidateOrder } from "@/lib/paquera";
 import { blockedIds } from "@/server/access";
 import { stylesFor } from "@/server/styles";
 
-type Viewer = { id: string; state: string | null };
+type Viewer = { id: string; state: string | null; vipUntil: Date | null; role: string };
 
 const cardSelect = {
   id: true, nick: true, avatarId: true, profileType: true, city: true, state: true, hideCity: true, bio: true, likes: true, lastSeenAt: true,
@@ -20,13 +21,16 @@ export async function nextCandidate(viewer: Viewer, tipo?: string) {
     db.profileSkip.findMany({ where: { userId: viewer.id, createdAt: { gt: new Date(Date.now() - PAQUERA.skipDays * 86400_000) } }, select: { skippedId: true } }),
   ]);
   const exclude = [viewer.id, ...blocked, ...liked.map((l) => l.likedId), ...skipped.map((s) => s.skippedId)];
-  const where: Prisma.UserWhereInput = { status: "ACTIVE", ageVerification: "APPROVED", avatarId: { not: null }, id: { notIn: exclude } };
+  // equipe do site e quem desligou "Aparecer na Paquera" não entram no baralho
+  const where: Prisma.UserWhereInput = { status: "ACTIVE", role: "USER", paqueraHidden: false, ageVerification: "APPROVED", avatarId: { not: null }, id: { notIn: exclude } };
   if (tipo === "CASAIS") where.profileType = { in: ["COUPLE_MF", "COUPLE_MM", "COUPLE_FF"] };
-  else if (tipo) where.profileType = tipo as ProfileType;
+  else if (tipo && tipo in PROFILE_TYPES) where.profileType = tipo as ProfileType;
   const rows = await db.user.findMany({ where, orderBy: { lastSeenAt: "desc" }, take: 40, select: cardSelect });
   const pick = candidateOrder(rows, viewer.state)[0];
   if (!pick) return null;
-  const likesMe = !!(await db.profileLike.findUnique({ where: { likerId_likedId: { likerId: pick.id, likedId: viewer.id } } }));
+  // "curtiu vocês" revela quem curtiu: benefício de assinante (igual à página Quem curtiu)
+  const { isSubscriber } = await import("@/server/auth");
+  const likesMe = isSubscriber(viewer) && !!(await db.profileLike.findUnique({ where: { likerId_likedId: { likerId: pick.id, likedId: viewer.id } }, select: { withdrawnAt: true } }).then((l) => l && !l.withdrawnAt));
   return { ...pick, style: (await stylesFor([pick.id]))[pick.id], likesMe };
 }
 
@@ -39,8 +43,8 @@ async function usersById(ids: string[], viewerId: string) {
 
 /** Quem curtiu você (mais recentes primeiro), marcando quem já virou match. */
 export async function likesReceived(userId: string) {
-  const rows = await db.profileLike.findMany({ where: { likedId: userId }, orderBy: { createdAt: "desc" }, take: 200 });
-  const mine = new Set((await db.profileLike.findMany({ where: { likerId: userId, likedId: { in: rows.map((r) => r.likerId) } }, select: { likedId: true } })).map((r) => r.likedId));
+  const rows = await db.profileLike.findMany({ where: { likedId: userId, withdrawnAt: null }, orderBy: { createdAt: "desc" }, take: 200 });
+  const mine = new Set((await db.profileLike.findMany({ where: { likerId: userId, withdrawnAt: null, likedId: { in: rows.map((r) => r.likerId) } }, select: { likedId: true } })).map((r) => r.likedId));
   const users = await usersById(rows.map((r) => r.likerId), userId);
   return rows.flatMap((r) => {
     const u = users.get(r.likerId);
@@ -50,8 +54,8 @@ export async function likesReceived(userId: string) {
 
 /** Matches: curtidas recíprocas. */
 export async function matchesOf(userId: string) {
-  const mineRows = await db.profileLike.findMany({ where: { likerId: userId }, select: { likedId: true, createdAt: true } });
-  const back = await db.profileLike.findMany({ where: { likedId: userId, likerId: { in: mineRows.map((r) => r.likedId) } }, select: { likerId: true, createdAt: true } });
+  const mineRows = await db.profileLike.findMany({ where: { likerId: userId, withdrawnAt: null }, select: { likedId: true, createdAt: true } });
+  const back = await db.profileLike.findMany({ where: { likedId: userId, withdrawnAt: null, likerId: { in: mineRows.map((r) => r.likedId) } }, select: { likerId: true, createdAt: true } });
   const when = new Map(back.map((b) => [b.likerId, b.createdAt]));
   const mineAt = new Map(mineRows.map((r) => [r.likedId, r.createdAt]));
   const users = await usersById(back.map((b) => b.likerId), userId);
@@ -65,5 +69,5 @@ export async function matchesOf(userId: string) {
 }
 
 export async function likesReceivedCount(userId: string) {
-  return db.profileLike.count({ where: { likedId: userId } });
+  return db.profileLike.count({ where: { likedId: userId, withdrawnAt: null } });
 }

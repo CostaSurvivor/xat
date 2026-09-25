@@ -44,6 +44,8 @@ export async function deleteAccount(_: { error?: string } | undefined, formData:
     db.profileLike.deleteMany({ where: { OR: [{ likerId: user.id }, { likedId: user.id }] } }),
     db.profileSkip.deleteMany({ where: { OR: [{ userId: user.id }, { skippedId: user.id }] } }),
     db.pushSubscription.deleteMany({ where: { userId: user.id } }),
+    db.roomPollVote.deleteMany({ where: { userId: user.id } }),
+    db.themedAlbumAccess.deleteMany({ where: { viewerId: user.id } }),
     db.album.deleteMany({ where: { ownerId: user.id } }),
     db.story.deleteMany({ where: { authorId: user.id } }),
     db.testimonial.deleteMany({ where: { OR: [{ profileId: user.id }, { authorId: user.id }] } }),

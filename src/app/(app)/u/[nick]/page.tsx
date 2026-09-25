@@ -48,7 +48,7 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
   const st = styles[u.id];
   const likes = (u.likes as string[] | null) ?? [];
   const { canSeeAlbum: albumCheck } = await import("@/server/access");
-  const canSeeAlbum = me || (await albumCheck(viewer.id, u.id, u.albumVisibility));
+  const canSeeAlbum = me || (await albumCheck(viewer.id, u.id, u.albumVisibility, { viewerVerified: isVerified(viewer) }));
   const hidden = u.hideFromUnverified && !isVerified(viewer) && !me;
   const { weeklyTopRank } = await import("@/server/ranking");
   const top = await weeklyTopRank(u);
@@ -141,7 +141,7 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
         </section>
       )}
 
-      {!iBlocked && !hidden && !me && <ThemedAlbumsViewer owner={{ id: u.id, nick: u.nick }} viewerId={viewer.id} requested={!!access} />}
+      {!iBlocked && !hidden && !me && <ThemedAlbumsViewer owner={{ id: u.id, nick: u.nick }} viewerId={viewer.id} viewerVerified={isVerified(viewer)} />}
 
       {!iBlocked && !hidden && <TestimonialsSection profile={{ id: u.id, nick: u.nick }} viewer={viewer} />}
 
