@@ -8,7 +8,7 @@ const REASON_PT: Record<string, string> = {
 };
 
 /** Série diária no horário de Brasília (UTC-3) a partir de uma consulta agregada. */
-async function daily(table: "User" | "Payment" | "Message", since: Date, value: Prisma.Sql, extra: Prisma.Sql = Prisma.empty, dateCol = "createdAt") {
+async function daily(table: "User" | "Payment" | "Message" | "LedgerTransaction", since: Date, value: Prisma.Sql, extra: Prisma.Sql = Prisma.empty, dateCol = "createdAt") {
   const col = Prisma.raw(`\`${dateCol}\``);
   const rows = await db.$queryRaw<{ day: string; value: bigint | number | string }[]>(
     Prisma.sql`SELECT DATE_FORMAT(CONVERT_TZ(${col}, '+00:00', '-03:00'), '%Y-%m-%d') AS day, ${value} AS value
@@ -44,6 +44,17 @@ export async function adminReport(days: number) {
     daily("Message", since, Prisma.sql`COUNT(*)`, Prisma.sql`AND kind = 'TEXT'`),
   ]);
 
+  // crescimento: convites premiados, presença diária, Pimentas de bônus e promoção de lançamento
+  const [invites, dailyClaims, bonusCoins, promoUsed, dDaily, inviterRows] = await Promise.all([
+    kpi((r) => db.user.count({ where: { referralRewardedAt: r } })),
+    kpi((r) => db.ledgerTransaction.count({ where: { idempotencyKey: { startsWith: "daily:" }, createdAt: r } })),
+    kpi((r) => db.ledgerEntry.aggregate({ where: { amount: { gt: 0 }, createdAt: r, transaction: { type: "REWARD" } }, _sum: { amount: true } }).then((a) => a._sum.amount ?? 0)),
+    db.welcomeBonus.count(),
+    daily("LedgerTransaction", since, Prisma.sql`COUNT(*)`, Prisma.sql`AND idempotencyKey LIKE 'daily:%'`),
+    db.user.groupBy({ by: ["referredById"], where: { referralRewardedAt: { gte: since }, referredById: { not: null } }, _count: { _all: true }, orderBy: { _count: { referredById: "desc" } }, take: 8 }),
+  ]);
+  const inviters = await db.user.findMany({ where: { id: { in: inviterRows.map((r) => r.referredById!) } }, select: { id: true, nick: true } });
+
   const [roomRows, reasonRows, itemRows] = await Promise.all([
     db.message.groupBy({ by: ["roomId"], where: { createdAt: { gte: since }, kind: "TEXT" }, _count: { _all: true }, orderBy: { _count: { roomId: "desc" } }, take: 8 }),
     db.report.groupBy({ by: ["reason"], where: { createdAt: { gte: since } }, _count: { _all: true } }),
@@ -66,5 +77,13 @@ export async function adminReport(days: number) {
     topRooms: roomRows.map((r) => ({ label: nameOf(rooms, r.roomId), value: r._count._all })),
     reportsByReason: reasonRows.map((r) => ({ label: REASON_PT[r.reason] ?? r.reason, value: r._count._all })).sort((a, b) => b.value - a.value),
     topItems: itemRows.map((r) => ({ label: nameOf(items, r.itemId), value: r._count._all })),
+    growth: {
+      invites,
+      dailyClaims,
+      bonusCoins,
+      promoUsed,
+      dailySeries: fillDays(dDaily, days, now),
+      topInviters: inviterRows.map((r) => ({ label: `@${inviters.find((u) => u.id === r.referredById)?.nick ?? "?"}`, value: r._count._all })),
+    },
   };
 }
