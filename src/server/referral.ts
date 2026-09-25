@@ -2,8 +2,8 @@ import "server-only";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { CURRENCY_ICON } from "@/lib/config";
-import { REFERRAL, cleanRefNick, rewardDecision } from "@/lib/referral";
-import { grantReward } from "@/server/ledger";
+import { REFERRAL, cleanRefNick, inviterReward, rewardDecision } from "@/lib/referral";
+import { grantReward, grantVip } from "@/server/ledger";
 import { notify } from "@/server/notify";
 
 /** No cadastro: liga a conta nova a quem mandou o convite (cookie do link /convite/<nick>). Nunca derruba o cadastro. */
@@ -36,8 +36,17 @@ export async function rewardReferral(inviteeId: string) {
     await grantReward(invitee.id, REFERRAL.inviteeCoins, `ref:invitee:${invitee.id}`, `🎁 Convite de @${inviter!.nick}`);
     await notify(invitee.id, "COINS_CREDITED", `🎁 Você entrou pelo convite de @${inviter!.nick} e ganhou ${REFERRAL.inviteeCoins} ${CURRENCY_ICON}!`, inviter!.id);
     if (d === "reward") {
-      await grantReward(inviter!.id, REFERRAL.inviterCoins, `ref:inviter:${invitee.id}`, `📣 Convite: @${invitee.nick} foi verificado`);
-      await notify(inviter!.id, "COINS_CREDITED", `📣 @${invitee.nick} entrou pelo seu convite e foi verificado: +${REFERRAL.inviterCoins} ${CURRENCY_ICON}!`, invitee.id);
+      // escada: o n-ésimo convite premiado vale mais (e o 10º/20º dão VIP)
+      const n = rewarded + 1;
+      const r = inviterReward(n);
+      await grantReward(inviter!.id, r.coins, `ref:inviter:${invitee.id}`, `📣 Convite nº ${n}: @${invitee.nick} foi verificado`);
+      if (r.vipDays) await grantVip(inviter!.id, r.vipDays);
+      await notify(
+        inviter!.id,
+        "COINS_CREDITED",
+        `📣 @${invitee.nick} entrou pelo seu convite e foi verificado (${n}º): +${r.coins} ${CURRENCY_ICON}${r.vipDays ? ` e ${r.vipDays} dias de VIP` : ""}!`,
+        invitee.id,
+      );
     }
   } catch (e) {
     console.error("rewardReferral", e);
