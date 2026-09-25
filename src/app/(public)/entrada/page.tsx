@@ -1,6 +1,8 @@
 import { acceptAgeGate } from "@/app/actions/auth";
 import { SITE_NAME } from "@/lib/config";
 
+export const metadata = { robots: { index: true, follow: true } };
+
 export default async function AgeGate({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const { next } = await searchParams;
   return (

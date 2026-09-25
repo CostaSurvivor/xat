@@ -8,7 +8,7 @@ import { welcomeOffer } from "@/server/welcome";
 import { WelcomePromo } from "@/components/WelcomePromo";
 import { InvitedBy } from "@/components/InvitedBy";
 
-export const metadata = { title: "Criar conta" };
+export const metadata = { title: "Criar conta", robots: { index: true, follow: true } };
 
 export default async function Cadastro() {
   if (await getCurrentUser()) redirect("/feed");

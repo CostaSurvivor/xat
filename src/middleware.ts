@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 /** Age gate: nada é exibido antes do aceite 18+ (cookie). */
-const OPEN = ["/entrada", "/termos", "/privacidade", "/_next", "/favicon", "/robots.txt", "/api/public", "/api/webhooks", "/hero", "/logo", "/icon", "/manifest.webmanifest", "/sw.js", "/offline.html"];
+const OPEN = ["/entrada", "/termos", "/privacidade", "/_next", "/favicon", "/robots.txt", "/sitemap.xml", "/opengraph-image", "/api/public", "/api/webhooks", "/hero", "/logo", "/icon", "/manifest.webmanifest", "/sw.js", "/offline.html"];
 
 /** Cookie de dispositivo persistente (usado para banimento por dispositivo). */
 function withDevice(req: NextRequest, res: NextResponse) {
