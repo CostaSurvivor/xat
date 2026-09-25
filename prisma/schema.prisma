@@ -298,6 +298,9 @@ model User {
   /// convite: quem trouxe esta pessoa e quando o prêmio foi pago (na verificação)
   referredById         String?
   referralRewardedAt   DateTime?
+  /// presença diária: dias seguidos e último dia pego ("AAAA-MM-DD", Brasília)
+  streakDays           Int                   @default(0)
+  streakLastDay        String?               @db.VarChar(10)
 
   @@index([state, city])
   @@index([referredById])
