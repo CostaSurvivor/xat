@@ -27,6 +27,8 @@ import { ContoCard } from "@/components/ContoCard";
 import { FavoriteBox } from "@/components/Favorite";
 import { InviteCard } from "@/components/InviteCard";
 import { Achievements } from "@/components/Achievements";
+import { AfimToggle } from "@/components/AfimToggle";
+import { afimUntilLabel, isAfim } from "@/lib/afim";
 import { achievementsOf } from "@/server/achievements";
 import { referralStats } from "@/server/referral";
 import { NETWORK_TABS, networkOf, type NetworkTab } from "@/server/network";
@@ -120,6 +122,12 @@ export default async function UserPage({ params, searchParams }: { params: Promi
               {aff && !hidden && <a href="#curtem" title={affinityTier(aff.pct).label} className={`ml-1 rounded-full px-2 py-0.5 text-xs font-semibold ${affinityTier(aff.pct).cls}`} data-testid="afinidade">🔥 {aff.pct}% de afinidade</a>}
               {!me && km != null && <span className="ml-1 rounded-full bg-pink-50 px-2 py-0.5 text-xs font-semibold text-wine">📍 {distanceLabel(km)}</span>}
             </p>
+            {isAfim(u) && !hidden && !me && (
+              <div className="mt-1 rounded-lg bg-wine px-3 py-1.5 text-sm text-white" data-testid="afim-perfil">
+                <b>🔥 Afim hoje</b> <span className="opacity-80">· {afimUntilLabel(u.afimUntil!)}</span>
+                {u.afimNote && <span className="block italic">“{u.afimNote}”</span>}
+              </div>
+            )}
             {trip && !hidden && <Link href={me ? "/viagens" : `/viagens?uf=${trip.state}`} className="mt-1 inline-block rounded-full bg-sky-50 px-2 py-0.5 text-xs font-semibold text-sky-800" title={trip.note ?? undefined}>{tripLabel(trip, today)}</Link>}
             <p className="mt-1 text-xs text-mute">
               <Link href="?aba=amigos#rede" className="hover:text-wine"><b className="text-fg">{friends.length}</b> amigos</Link> ·{" "}
@@ -191,6 +199,8 @@ export default async function UserPage({ params, searchParams }: { params: Promi
         )}
         {hidden && <p className="mt-4 text-sm text-mute">Este perfil só é visível para perfis verificados. <Link href="/verificacao" className="text-gold underline">Verificar agora</Link></p>}
       </section>
+
+      {me && <AfimToggle active={isAfim(u)} untilLabel={u.afimUntil ? afimUntilLabel(u.afimUntil) : undefined} note={u.afimNote} />}
 
       {me && mine && (
         <section className="card p-4" id="visitas" aria-label="Últimas visitas">
