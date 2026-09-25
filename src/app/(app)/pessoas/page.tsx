@@ -15,6 +15,9 @@ import { affinity } from "@/lib/affinity";
 import { searchOthers } from "@/server/search";
 import { SearchOthers } from "@/components/SearchOthers";
 import { AfimToggle } from "@/components/AfimToggle";
+import { SearchAlerts } from "@/components/SearchAlerts";
+import { myAlerts } from "@/server/searchAlerts";
+import { parseAlert } from "@/lib/searchAlerts";
 import { afimUntilLabel, isAfim } from "@/lib/afim";
 
 export const metadata = { title: "Pessoas" };
@@ -64,6 +67,9 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
   const styles = await stylesFor(users.map((u) => u.id));
   const confirmed = await import("@/server/testimonials").then((m) => m.confirmedIds(users.map((u) => u.id)));
   const coming = await visitors(viewer, todayBR());
+  const alerts = await myAlerts(viewer.id);
+  const alertInput = { tipo: sp.tipo, uf: sp.uf, raio: raio ? String(raio) : undefined, curte: sp.curte, foto: sp.foto ? "1" : undefined };
+  const canSaveAlert = !("error" in parseAlert(alertInput));
   const afimCount = sp.afim ? null : await db.user.count({ where: { ...where, afimUntil: { gt: new Date() } } });
   const q = String(sp.q ?? "").trim().slice(0, 60);
   const others = q.length >= 2 ? await searchOthers(viewer, q) : null;
@@ -139,6 +145,7 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
           );
         })}
       </div>
+      <SearchAlerts current={alertInput} alerts={alerts} canSave={canSaveAlert} />
       {others && <SearchOthers q={q} r={others} />}
       {users.length === 0 && (
         <p className="card p-6 text-center text-mute">
