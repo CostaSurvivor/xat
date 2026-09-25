@@ -22,6 +22,8 @@ import { TestimonialsSection } from "@/components/Testimonials";
 import { ThemedAlbumsViewer } from "@/components/ThemedAlbums";
 import { todayBR, tripLabel } from "@/lib/trips";
 import { profileTrip } from "@/server/trips";
+import { listContos } from "@/server/contos";
+import { ContoCard } from "@/components/ContoCard";
 import { AFFINITY_MIN_TAGS, affinity, affinityTier, tagsOf } from "@/lib/affinity";
 
 export async function generateMetadata({ params }: { params: Promise<{ nick: string }> }) {
@@ -39,7 +41,12 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
   if (!me && !iBlocked) await recordVisit(viewer, u.id);
 
   const today = todayBR();
-  const [fStatus, friends, trip] = await Promise.all([friendStatus(viewer.id, u.id), friendIds(u.id), profileTrip(u.id, today)]);
+  const [fStatus, friends, trip, contos] = await Promise.all([
+    friendStatus(viewer.id, u.id),
+    friendIds(u.id),
+    profileTrip(u.id, today),
+    listContos(viewer, { order: "populares", page: 1, authorId: u.id }),
+  ]);
   const [followers, following, isFollowing, album, access, posts, styles] = await Promise.all([
     db.follow.count({ where: { followeeId: u.id } }),
     db.follow.count({ where: { followerId: u.id } }),
@@ -161,6 +168,15 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
 
       {!iBlocked && !hidden && !me && <ThemedAlbumsViewer owner={{ id: u.id, nick: u.nick }} viewerId={viewer.id} viewerVerified={isVerified(viewer)} />}
 
+      {!iBlocked && !hidden && contos.total > 0 && (
+        <section className="space-y-2" aria-label="Contos">
+          <div className="flex items-baseline justify-between px-1">
+            <h2 className="font-semibold">📖 Contos de @{u.nick} ({contos.total})</h2>
+            {contos.total > 3 && <Link href={`/contos?autor=${encodeURIComponent(u.nick)}`} className="text-xs text-mute underline">ver todos</Link>}
+          </div>
+          {contos.items.slice(0, 3).map((c) => <ContoCard key={c.id} c={c} compact />)}
+        </section>
+      )}
       {!iBlocked && !hidden && <TestimonialsSection profile={{ id: u.id, nick: u.nick }} viewer={viewer} />}
 
       {!hidden && posts.map((p) => <PostCard key={p.id} post={p} viewer={{ nick: viewer.nick, subscriber: isSubscriber(viewer) }} />)}
