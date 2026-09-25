@@ -4,7 +4,7 @@ import { isCouple } from "@/lib/config";
 import { isStaff, isVerified, type CurrentUser } from "./auth";
 import { isBlockedBetween } from "./access";
 import { stylesFor } from "./styles";
-import { AUDIO_NEEDS_REPLY, voiceClock } from "@/lib/voice";
+import { type AudioConsent, voiceClock } from "@/lib/voice";
 
 export const pairOf = (a: string, b: string) => (a < b ? { userAId: a, userBId: b } : { userAId: b, userBId: a });
 
@@ -47,16 +47,23 @@ export function canSendPhoto(sender: CurrentUser, recipient: { acceptPmPhotos: b
   return null;
 }
 
+/** Quem aceitou áudio nesta conversa (visto por `userId`). */
+export function audioConsentOf(conv: { userAId: string; aAudioOk: boolean; bAudioOk: boolean } | null, userId: string): AudioConsent {
+  if (!conv) return { mine: false, theirs: false };
+  const a = conv.userAId === userId;
+  return { mine: a ? conv.aAudioOk : conv.bAudioOk, theirs: a ? conv.bAudioOk : conv.aAudioOk };
+}
+
 /**
- * Áudio no PV: além das regras do PV, só depois que a outra pessoa já respondeu
- * (ninguém recebe áudio de quem nunca conversou com ela).
+ * Áudio no PV: desligado por padrão; só libera quando OS DOIS aceitam naquela conversa
+ * (vale para todo mundo, inclusive a equipe). Além disso, quem envia precisa ser verificado.
  */
 export async function canSendAudio(sender: CurrentUser, recipientId: string) {
-  if (isStaff(sender)) return null;
   if (!isVerified(sender)) return "Verifique seu perfil para enviar áudios.";
-  const conv = await findConversation(sender.id, recipientId);
-  const replied = conv ? await db.privateMessage.count({ where: { conversationId: conv.id, senderId: recipientId } }) : 0;
-  return replied > 0 ? null : AUDIO_NEEDS_REPLY;
+  const c = audioConsentOf(await findConversation(sender.id, recipientId), sender.id);
+  if (!c.mine) return "Ative “Aceito áudio” nesta conversa.";
+  if (!c.theirs) return "A outra pessoa ainda não aceitou áudio nesta conversa.";
+  return null;
 }
 
 export async function pmMessages(convId: string, viewerId: string, after?: bigint) {

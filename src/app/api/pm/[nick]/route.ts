@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { limiter } from "@/lib/ratelimit";
 import { assertSameOrigin, getCurrentUser } from "@/server/auth";
-import { canMessage, findConversation, markRead, pairOf, pmMessages } from "@/server/pm";
+import { audioConsentOf, canMessage, findConversation, markRead, pairOf, pmMessages } from "@/server/pm";
 
 async function other(nick: string) {
   return db.user.findFirst({ where: { nick: decodeURIComponent(nick) } });
@@ -14,11 +14,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ nick: st
   const o = await other((await params).nick);
   if (!o) return NextResponse.json({ error: "not_found" }, { status: 404 });
   const conv = await findConversation(user.id, o.id);
-  if (!conv) return NextResponse.json({ messages: [] });
+  if (!conv) return NextResponse.json({ messages: [], audio: audioConsentOf(null, user.id) });
   const after = new URL(req.url).searchParams.get("after");
   const messages = await pmMessages(conv.id, user.id, after && after !== "0" ? BigInt(after) : undefined);
   if (messages.some((m) => !m.mine)) await markRead(conv.id, user.id);
-  return NextResponse.json({ messages });
+  return NextResponse.json({ messages, audio: audioConsentOf(conv, user.id) });
 }
 
 export async function POST(req: Request, { params }: { params: Promise<{ nick: string }> }) {

@@ -8,6 +8,7 @@ import { MediaError, processUpload } from "@/server/media";
 import { canMessage, canSendAudio, canSendPhoto, pairOf } from "@/server/pm";
 import { createHash, randomBytes } from "node:crypto";
 import { storage } from "@/server/storage";
+import { isBlockedBetween } from "@/server/access";
 import { VOICE, clampSecs, sniffAudio, voiceClock } from "@/lib/voice";
 
 export async function sendPmPhoto(nick: string, formData: FormData): Promise<{ ok: boolean; error?: string }> {
@@ -60,6 +61,19 @@ export async function sendPmAudio(nick: string, formData: FormData): Promise<{ o
   const m = await db.privateMessage.create({ data: { conversationId: conv.id, senderId: user.id, mediaId: media.id, audioSecs: secs } });
   await db.conversation.update({ where: { id: conv.id }, data: { lastMessageAt: m.createdAt, lastSenderId: user.id } });
   void import("@/server/push").then((p) => p.pushNotification(o.id, "PM", `@${user.nick} enviou um áudio 🎤 (${voiceClock(secs)})`, { actorId: user.id }));
+  return { ok: true };
+}
+
+/** Liga/desliga o "Aceito áudio" do meu lado desta conversa. */
+export async function setAudioConsent(nick: string, on: boolean): Promise<{ ok: boolean; error?: string }> {
+  const user = await requireUser();
+  const o = await db.user.findFirst({ where: { nick } });
+  if (!o || o.id === user.id) return { ok: false, error: "Usuário não encontrado" };
+  if (on && (await isBlockedBetween(user.id, o.id))) return { ok: false, error: "Usuário indisponível." };
+  const pair = pairOf(user.id, o.id);
+  const conv = await db.conversation.findUnique({ where: { userAId_userBId: pair } });
+  if (!conv) return { ok: false, error: "Converse primeiro por texto." };
+  await db.conversation.update({ where: { id: conv.id }, data: conv.userAId === user.id ? { aAudioOk: on } : { bAudioOk: on } });
   return { ok: true };
 }
 

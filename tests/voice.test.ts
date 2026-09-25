@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { VOICE, clampSecs, sniffAudio, voiceClock } from "@/lib/voice";
+import { VOICE, audioBlockReason, clampSecs, looksOffPlatform, sniffAudio, voiceClock } from "@/lib/voice";
 
 const pad = (head: number[]) => new Uint8Array([...head, ...new Array(16).fill(0)]);
 
@@ -26,5 +26,23 @@ describe("clampSecs / voiceClock", () => {
   it("formata m:ss", () => {
     expect(voiceClock(7)).toBe("0:07");
     expect(voiceClock(60)).toBe("1:00");
+  });
+});
+
+describe("audioBlockReason (os dois precisam aceitar)", () => {
+  it("só libera com os dois lados", () => {
+    expect(audioBlockReason({ mine: true, theirs: true }, "x")).toBeNull();
+    expect(audioBlockReason({ mine: false, theirs: true }, "x")).toMatch(/Aceito áudio/);
+    expect(audioBlockReason({ mine: true, theirs: false }, "Ana")).toMatch(/@Ana/);
+    expect(audioBlockReason({ mine: false, theirs: false }, "x")).not.toBeNull();
+  });
+});
+
+describe("looksOffPlatform (só dica, não bloqueia)", () => {
+  it("reconhece contato de fora", () => {
+    for (const t of ["me chama no whats", "meu zap 51 99999-1234", "(11) 9 8888-7777", "tem telegram?", "t.me/fulano", "wa.me/55119"]) expect(looksOffPlatform(t), t).toBe(true);
+  });
+  it("não dispara em conversa comum", () => {
+    for (const t of ["oi, tudo bem?", "sábado às 22h no centro", "temos 35 e 33 anos"]) expect(looksOffPlatform(t), t).toBe(false);
   });
 });

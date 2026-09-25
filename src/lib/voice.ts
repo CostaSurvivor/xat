@@ -8,8 +8,20 @@ export const VOICE = {
   perHour: 30,
 } as const;
 
-/** Motivo quando a outra pessoa ainda não respondeu (a tela libera sozinha quando a resposta chega). */
-export const AUDIO_NEEDS_REPLY = "O áudio libera depois que a pessoa responder você.";
+/** Consentimento de áudio de cada lado da conversa. */
+export type AudioConsent = { mine: boolean; theirs: boolean };
+
+/** Por que ainda não dá para mandar áudio (null = liberado: os dois aceitaram). */
+export function audioBlockReason(c: AudioConsent, otherNick: string) {
+  if (!c.mine) return "Ative “Aceito áudio” no topo da conversa. O áudio só libera quando os dois aceitam.";
+  if (!c.theirs) return `Aguardando @${otherNick} aceitar áudio também.`;
+  return null;
+}
+
+/** Mensagem parece levar a conversa para fora (telefone, WhatsApp, Telegram…)? Só para mostrar uma dica, nunca bloqueia. */
+export function looksOffPlatform(text: string) {
+  return /(\d[\s().-]*){8,}|whats|zap\b|wpp|telegram|\btg\b|wa\.me|t\.me\//i.test(text);
+}
 
 export type AudioFormat = { mime: "audio/webm" | "audio/ogg" | "audio/mp4"; ext: "webm" | "ogg" | "m4a" };
 

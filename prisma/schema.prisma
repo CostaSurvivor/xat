@@ -686,6 +686,9 @@ model Conversation {
   lastSenderId  String?
   aReadAt       DateTime?
   bReadAt       DateTime?
+  /// áudio só quando OS DOIS aceitam (cada um liga/desliga o seu lado)
+  aAudioOk      Boolean          @default(false)
+  bAudioOk      Boolean          @default(false)
   messages      PrivateMessage[]
 
   @@unique([userAId, userBId])
