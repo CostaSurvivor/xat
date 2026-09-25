@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createHash, randomBytes } from "node:crypto";
 import { hash, verify } from "@node-rs/argon2";
 import { db } from "@/lib/db";
+import { PIN_LOCK, isLocked } from "@/lib/pinlock";
 
 const COOKIE = "sid";
 const SESSION_DAYS = 30;
@@ -69,19 +70,39 @@ export async function destroySession() {
   c.delete(COOKIE);
 }
 
-export const getCurrentUser = cache(async () => {
+/** Sessão do cookie + se está travada pelo PIN (uma leitura por requisição). */
+export const loadSession = cache(async () => {
   const token = (await cookies()).get(COOKIE)?.value;
   if (!token) return null;
   const s = await db.session.findUnique({ where: { tokenHash: sha256(token) }, include: { user: true } });
   if (!s || s.expiresAt < new Date()) return null;
   const u = s.user;
   if (u.status === "BANNED" || u.status === "DELETED") return null;
+  const locked = isLocked(u, s);
+  // passou do tempo parado: grava o travamento (voltar a mexer não destrava sozinho)
+  if (locked && !s.lockedAt) await db.session.update({ where: { id: s.id }, data: { lockedAt: new Date() } });
+  return { session: s, user: u, locked };
+});
+
+/** Usuário logado, ou null (também quando a sessão está travada pelo PIN: nada vaza sem o PIN). */
+export const getCurrentUser = cache(async () => {
+  const st = await loadSession();
+  if (!st || st.locked) return null;
+  const u = st.user;
   // lastSeen a cada ~60s no máximo
   if (!u.lastSeenAt || Date.now() - u.lastSeenAt.getTime() > 60_000) {
     await db.user.update({ where: { id: u.id }, data: { lastSeenAt: new Date() } });
   }
   return u;
 });
+
+/** Registra atividade da pessoa (páginas, ações e toques na tela; atualizações automáticas não contam). */
+export async function touchActivity() {
+  const st = await loadSession();
+  if (!st || st.locked || !st.user.pinHash) return;
+  const last = st.session.lastActiveAt?.getTime() ?? 0;
+  if (Date.now() - last > PIN_LOCK.touchEverySec * 1000) await db.session.update({ where: { id: st.session.id }, data: { lastActiveAt: new Date() } });
+}
 
 /** Id da sessão atual (para prender a inscrição de push ao login deste aparelho). */
 export async function currentSessionId() {
@@ -94,8 +115,11 @@ export async function currentSessionId() {
 export type CurrentUser = NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;
 
 export async function requireUser() {
+  const st = await loadSession();
+  if (st?.locked) redirect("/desbloquear");
   const u = await getCurrentUser();
   if (!u) redirect("/login");
+  await touchActivity();
   return u;
 }
 

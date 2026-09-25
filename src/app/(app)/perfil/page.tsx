@@ -15,6 +15,7 @@ import { Avatar } from "@/components/Avatar";
 import { ProtectedImage } from "@/components/ProtectedImage";
 import { ThemedAlbumsOwner } from "@/components/ThemedAlbums";
 import { PushSettings } from "@/components/PushSettings";
+import { PinSettings } from "@/components/PinLock";
 import { readPrefs } from "@/lib/push";
 
 export const metadata = { title: "Meu perfil" };
@@ -233,6 +234,8 @@ export default async function MeuPerfil() {
       <ThemedAlbumsOwner ownerId={user.id} verified={verified} />
 
       <PushSettings prefs={readPrefs(user.pushPrefs)} devices={await db.pushSubscription.count({ where: { userId: user.id } })} />
+
+      <PinSettings active={!!user.pinHash} minutes={user.pinLockMinutes} hasPassword={hasPassword(user)} />
 
       <section className="card p-5">
         <h2 className="mb-3 font-semibold text-gold">🔑 {hasPassword(user) ? "Trocar senha" : "Definir senha"}</h2>
