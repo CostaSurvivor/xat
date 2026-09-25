@@ -27,7 +27,7 @@ Comunidade liberal 18+ (casais, solteiras e solteiros), com **visual claro (fund
 | Trocas (estilo xat) | Troca segura de Pimentas, **itens permanentes** e dias de assinatura: oferta dos dois lados, mudança zera aceites + trava de 5 s, aceite duplo e **confirmação com senha**, execução atômica |
 | Pagamento | **Pix manual** com QR Code gerado da chave cadastrada no admin; o usuário clica "Já paguei" e o admin aprova. Recibo por e-mail |
 | Suporte | Tickets (troca de nick, tipo de perfil, pagamento…) com conversa e aprovação no admin |
-| Admin | Painel, Pix, verificações, denúncias (possível menor no topo + procedimento SaferNet/PF), tickets, usuários (banir por e-mail/IP/dispositivo, cargo, moedas, VIP, resetar senha, histórico), salas, loja, planos, cupons, anúncios, configurações (Pix e foto de fundo); **⚡ Fila rápida** (`/admin/fila`): verificações, eventos e denúncias numa fila só, por prioridade (possível menor primeiro), com atalhos de teclado (A/R, I/D/S/B, J/K; escalar crime só pelo botão); **tirar o verificado** de um perfil com motivo (a pessoa é avisada e pode enviar nova selfie) |
+| Admin | Painel, Pix, verificações, denúncias (possível menor no topo + procedimento SaferNet/PF), tickets, usuários (banir por e-mail/IP/dispositivo, cargo, moedas, VIP, resetar senha, histórico), salas, loja, planos, cupons, anúncios, configurações (Pix e foto de fundo); **⚡ Fila rápida** (`/admin/fila`): verificações, eventos e denúncias numa fila só, por prioridade (possível menor primeiro), com atalhos de teclado (A/R, I/D/S/B, J/K; escalar crime só pelo botão); **tirar o verificado** de um perfil com motivo (a pessoa é avisada e pode enviar nova selfie); **📈 Relatório** (`/admin/relatorio`, 7/30/90 dias): receita em destaque, cadastros, verificados, mensagens, denúncias e pessoas ativas com variação contra o período anterior, colunas diárias com tooltip, salas mais movimentadas, denúncias por motivo, itens mais vendidos e tabela dia a dia |
 | App no celular | **PWA instalável**: botão "📲 Instalar app" (Android/PC) e instruções para iPhone; abre em tela cheia com ícone próprio. Por privacidade, nada de fotos, mensagens ou páginas fica salvo no aparelho; só a tela "sem conexão"; **notificações push** (PV, amizades, comentários, depoimentos, presentes, eventos…), escolhidas por tipo em Meu perfil, com **modo discreto** ligado por padrão (a tela bloqueada não mostra nick nem conteúdo); presas ao login do aparelho (sair da conta para os avisos); no iPhone funciona com o app adicionado à Tela de Início |
 | LGPD | Consentimentos versionados, exportar dados, excluir conta, registros de acesso por 6 meses com expurgo automático |
 
@@ -48,7 +48,7 @@ Cadastre-se com um e-mail listado em `ADMIN_EMAILS`: essa conta vira admin já v
 ## Testes
 
 ```bash
-npm test      # 106 testes (+2 de S3 com S3_TEST_ENDPOINT): login com Google, age gate, ao vivo (gorjetas, sinalização), permissões de sala, salas inativas, rate-limit/flood, ledger (concorrência e idempotência), trocas, webhook de pagamento, CSAM, Pix, itens (anti-XSS), vídeo
+npm test      # 112 testes (+2 de S3 com S3_TEST_ENDPOINT): login com Google, age gate, ao vivo (gorjetas, sinalização), permissões de sala, salas inativas, rate-limit/flood, ledger (concorrência e idempotência), trocas, webhook de pagamento, CSAM, Pix, itens (anti-XSS), vídeo
 npm run lint  # checagem de tipos
 ```
 

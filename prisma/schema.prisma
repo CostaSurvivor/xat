@@ -617,6 +617,7 @@ model Message {
 
   @@index([roomId, id])
   @@index([authorId, createdAt])
+  @@index([createdAt])
 }
 
 model MessageReaction {
