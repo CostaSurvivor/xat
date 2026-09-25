@@ -37,6 +37,13 @@ export function isLocked(
 
 /** Só caminhos internos depois de desbloquear. */
 export function safeNext(raw: unknown) {
-  const p = String(raw ?? "");
-  return p.startsWith("/") && !p.startsWith("//") && !p.includes("\\") && !p.startsWith("/desbloquear") ? p.slice(0, 300) : "/feed";
+  const p = String(raw ?? "").slice(0, 300);
+  // tab/quebra de linha somem no navegador ("/\t/x.com" vira "//x.com"): recusa qualquer caractere de controle
+  if (!p.startsWith("/") || /[\u0000-\u0020\u007f\\]/.test(p) || p.startsWith("/desbloquear")) return "/feed";
+  try {
+    const u = new URL(p, "http://base.invalid");
+    return u.origin === "http://base.invalid" ? u.pathname + u.search : "/feed";
+  } catch {
+    return "/feed";
+  }
 }

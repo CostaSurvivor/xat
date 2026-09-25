@@ -38,5 +38,10 @@ describe("travamento", () => {
     expect(safeNext("https://evil.com")).toBe("/feed");
     expect(safeNext("/\\evil.com")).toBe("/feed");
     expect(safeNext("/desbloquear")).toBe("/feed");
+    // tab/quebra de linha: o navegador remove e "/\t/evil.com" viraria "//evil.com"
+    expect(safeNext("/\t/evil.com")).toBe("/feed");
+    expect(safeNext("/\n/evil.com")).toBe("/feed");
+    expect(safeNext("/ /evil.com")).toBe("/feed");
+    expect(safeNext("/contos?cat=swing")).toBe("/contos?cat=swing");
   });
 });

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { blockedIds } from "@/server/access";
 import { CONTO_CATEGORIES, isCategory } from "@/lib/contos";
 import { isVerified, requireUser } from "@/server/auth";
 import { listContos } from "@/server/contos";
@@ -14,7 +15,7 @@ export default async function Contos({ searchParams }: { searchParams: Promise<{
   const category = isCategory(sp.cat) ? sp.cat : undefined;
   const order = sp.ordem === "populares" ? "populares" : "recentes";
   const mine = sp.meus === "1";
-  const autor = !mine && sp.autor ? await db.user.findUnique({ where: { nick: String(sp.autor).slice(0, 24) }, select: { id: true, nick: true } }) : null;
+  const autor = !mine && sp.autor ? await db.user.findFirst({ where: { nick: String(sp.autor).slice(0, 24), status: "ACTIVE", id: { notIn: await blockedIds(user.id) } }, select: { id: true, nick: true } }) : null;
   const page = Math.max(1, Math.min(500, Number(sp.p) || 1));
   const { items, total, pages } = await listContos(user, { category, order, page, authorId: mine ? user.id : autor?.id });
   const q = (o: Record<string, string | undefined>) => {

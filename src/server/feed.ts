@@ -41,7 +41,8 @@ export async function getFeed(viewer: CurrentUser, opts: { tab?: FeedTab; before
     else if (opts.tab === "regiao" && viewer.state) where.AND.push({ author: { state: viewer.state } });
   }
   if (opts.videosOnly) where.AND.push({ media: { some: { media: { kind: "POST_VIDEO", status: "APPROVED" } } } });
-  if (opts.before) where.createdAt = { lt: new Date(opts.before) };
+  const before = opts.before ? new Date(opts.before) : null;
+  if (before && !Number.isNaN(before.getTime())) where.createdAt = { lt: before };
 
   const include = {
       author: { select: { id: true, nick: true, avatarId: true, profileType: true, city: true, state: true, hideCity: true, ageVerification: true, vipUntil: true } },
