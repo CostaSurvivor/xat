@@ -51,6 +51,7 @@ export async function reviewVerification(id: string, approve: boolean, formData?
   if (approve) {
     await (await import("@/server/welcome")).claimWelcome(v.userId);
     await (await import("@/server/referral")).rewardReferral(v.userId);
+    await (await import("@/server/searchAlerts")).runSearchAlerts(v.userId);
   }
   revalidatePath("/admin/verificacoes");
 }
@@ -179,6 +180,7 @@ export async function adminUserAction(userId: string, formData: FormData) {
     await audit(admin.id, "user.verify", "User", userId);
     await (await import("@/server/welcome")).claimWelcome(userId);
     await (await import("@/server/referral")).rewardReferral(userId);
+    await (await import("@/server/searchAlerts")).runSearchAlerts(userId);
   } else if (op === "unverify") {
     // tira o selo: volta a "não verificado" e pode enviar nova selfie (fotos já publicadas continuam; novas exigem verificar de novo)
     const reason = String(formData.get("reason") || "").trim().slice(0, 200) || null;

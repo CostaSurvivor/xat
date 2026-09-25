@@ -205,6 +205,7 @@ enum NotificationKind {
   GIFT
   COINS_CREDITED
   VERIFICATION
+  SEARCH_ALERT
   SYSTEM
 }
 
@@ -296,6 +297,7 @@ model User {
   contoComments        ContoComment[]        @relation("ContoComments")
   favorites            Favorite[]            @relation("FavoritesOwned")
   favoritedBy          Favorite[]            @relation("FavoritesTarget")
+  searchAlerts         SearchAlert[]
   /// convite: quem trouxe esta pessoa e quando o prêmio foi pago (na verificação)
   referredById         String?
   referralRewardedAt   DateTime?
@@ -1479,4 +1481,25 @@ model WelcomeBonus {
 
   @@index([ip])
   @@index([deviceId])
+}
+
+/// Alerta de busca em Pessoas: avisa quando entra um NOVO perfil verificado que combina com os filtros.
+model SearchAlert {
+  id          String    @id @default(cuid())
+  userId      String
+  /// tipo de perfil ("CASAIS" = qualquer casal) ou null
+  tipo        String?   @db.VarChar(20)
+  uf          String?   @db.VarChar(2)
+  /// raio em km a partir de onde a pessoa estiver (null = Brasil todo)
+  raio        Int?
+  curte       String?   @db.VarChar(60)
+  foto        Boolean   @default(false)
+  /// avisos de hoje ("AAAA-MM-DD" de Brasília) — no máximo ALERTS.perDay por alerta
+  sentDay     String?   @db.VarChar(10)
+  sentCount   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([uf])
 }

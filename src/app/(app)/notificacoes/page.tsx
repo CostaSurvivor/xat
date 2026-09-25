@@ -23,7 +23,7 @@ const ICON: Record<string, string> = {
   TICKET: "🎫",
   TRADE: "🔄",
   FOLLOW: "👀", FRIEND_REQUEST: "🤝", FRIEND_ACCEPTED: "🤝", POST_REACTION: "🔥", POST_COMMENT: "💬", COMMENT_REPLY: "↩️",
-  COMMENT_REACTION: "❤️", MENTION: "@", ALBUM_REQUEST: "🔒", ALBUM_GRANTED: "🔓", GIFT: "🎁", COINS_CREDITED: "🌶️", VERIFICATION: "✅", SYSTEM: "📢",
+  COMMENT_REACTION: "❤️", MENTION: "@", ALBUM_REQUEST: "🔒", ALBUM_GRANTED: "🔓", GIFT: "🎁", COINS_CREDITED: "🌶️", VERIFICATION: "✅", SEARCH_ALERT: "🔔", SYSTEM: "📢",
 };
 
 export default async function Notificacoes({ searchParams }: { searchParams: Promise<{ aba?: string }> }) {
