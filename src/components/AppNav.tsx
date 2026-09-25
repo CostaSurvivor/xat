@@ -10,7 +10,6 @@ import { QuickExitButton } from "./QuickExit";
 /** Ícones do topo do computador (traço fino, cor do texto). */
 const I = {
   feed: <path d="M4 5h16M4 12h16M4 19h10" />,
-  search: <><circle cx="11" cy="11" r="6.5" /><path d="m20 20-4.2-4.2" /></>,
   video: <><rect x="3" y="6" width="13" height="12" rx="2.5" /><path d="m16 10.5 5-3v9l-5-3" /></>,
   people: <><circle cx="9" cy="8.5" r="3.2" /><path d="M3.5 19c.6-3.3 2.8-5 5.5-5s4.9 1.7 5.5 5" /><circle cx="17" cy="9.5" r="2.5" /><path d="M16 14.2c2.4-.2 4.2 1.3 4.7 4.3" /></>,
   rooms: <><path d="M4 5.5h12a2 2 0 0 1 2 2V14a2 2 0 0 1-2 2H9l-4 3.5V16H4a2 2 0 0 1-2-2V7.5a2 2 0 0 1 2-2" /><path d="M20 9v6.5a2 2 0 0 1-2 2" /></>,
@@ -23,13 +22,13 @@ const Svg = ({ children, size = 22 }: { children: React.ReactNode; size?: number
 /** Computador: ícones com rótulo; ❤ Paquera no centro. */
 const LEFT = [
   { href: "/feed", label: "Feed", icon: I.feed },
-  { href: "/busca", label: "Buscar", icon: I.search },
   { href: "/videos", label: "Vídeos", icon: I.video },
+  { href: "/ao-vivo", label: "Ao vivo", icon: I.live },
 ];
+/** Pessoas é também a busca (perfis, grupos, eventos, contos e salas). */
 const RIGHT = [
   { href: "/pessoas", label: "Pessoas", icon: I.people },
   { href: "/salas", label: "Salas", icon: I.rooms },
-  { href: "/ao-vivo", label: "Ao vivo", icon: I.live },
 ];
 /** "Mais": só o que não tem ícone no topo (Destaques está no feed; Suporte, saldo e Assine no topo). Admin, discreto, só para a equipe. */
 const MORE = [
@@ -52,7 +51,6 @@ const BOTTOM_RIGHT = [{ href: "/pessoas", label: "Pessoas", icon: "👥" }];
 const MENU = [
   { href: "/eu", label: "Meu perfil", icon: "👤" },
   { href: "/ao-vivo", label: "Ao vivo", icon: "🔴" },
-  { href: "/busca", label: "Buscar", icon: "🔍" },
   { href: "/videos", label: "Vídeos", icon: "🎬" },
   { href: "/grupos", label: "Grupos", icon: "🫂" },
   { href: "/eventos", label: "Eventos", icon: "🎉" },

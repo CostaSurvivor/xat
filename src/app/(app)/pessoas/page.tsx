@@ -12,6 +12,8 @@ import { LocationButton } from "@/components/LocationButton";
 import { visitors } from "@/server/trips";
 import { TRIPS, todayBR } from "@/lib/trips";
 import { affinity } from "@/lib/affinity";
+import { searchOthers } from "@/server/search";
+import { SearchOthers } from "@/components/SearchOthers";
 
 export const metadata = { title: "Pessoas" };
 export const dynamic = "force-dynamic";
@@ -23,7 +25,8 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
   const sp = await searchParams;
   const me = viewer.lat != null && viewer.lng != null ? { lat: viewer.lat, lng: viewer.lng } : null;
   // padrão: 100 km quando sabemos onde a pessoa está; "br" = Brasil todo
-  const raio = sp.raio === "br" || !me ? null : RADII.includes(Number(sp.raio) as (typeof RADII)[number]) ? Number(sp.raio) : 100;
+  // buscando por nick/cidade/tema sem raio escolhido: Brasil todo
+  const raio = sp.raio === "br" || !me || (sp.q && !sp.raio) ? null : RADII.includes(Number(sp.raio) as (typeof RADII)[number]) ? Number(sp.raio) : 100;
 
   const blocked = await blockedIds(viewer.id);
   const where: Prisma.UserWhereInput = { status: "ACTIVE", id: { notIn: [...blocked, viewer.id] } };
@@ -57,6 +60,8 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
   const styles = await stylesFor(users.map((u) => u.id));
   const confirmed = await import("@/server/testimonials").then((m) => m.confirmedIds(users.map((u) => u.id)));
   const coming = await visitors(viewer, todayBR());
+  const q = String(sp.q ?? "").trim().slice(0, 60);
+  const others = q.length >= 2 ? await searchOthers(viewer, q) : null;
 
   return (
     <div className="space-y-4">
@@ -78,7 +83,7 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
           {RADII.map((r) => <option key={r} value={r}>até {r} km</option>)}
           <option value="br">Brasil todo</option>
         </select>
-        <input name="q" defaultValue={sp.q} placeholder="Nick ou cidade" className="input min-w-40 flex-1" />
+        <input name="q" defaultValue={sp.q} placeholder="Buscar nick, cidade, grupo, evento, conto…" aria-label="Buscar" className="input min-w-40 flex-1" />
         <select name="tipo" defaultValue={sp.tipo ?? ""} className="input w-auto">
           <option value="">Todos</option>
           <option value="CASAIS">Casais</option>
@@ -121,6 +126,7 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
           );
         })}
       </div>
+      {others && <SearchOthers q={q} r={others} />}
       {users.length === 0 && (
         <p className="card p-6 text-center text-mute">
           Ninguém encontrado com esses filtros{raio ? ` em até ${raio} km` : ""}.{raio && raio < 300 && <> <Link href={`/pessoas?raio=${raio === 100 ? 300 : 100}`} className="text-wine underline">Aumentar o raio</Link></>}
