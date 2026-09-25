@@ -36,10 +36,11 @@ export function InstallApp() {
           if (evt) { await evt.prompt(); const r = await evt.userChoice; if (r.outcome === "accepted") setHidden(true); setEvt(null); }
           else if (ios) setOpen(true);
         }}
-        className="rounded-full border border-line px-3 py-1 text-xs text-mute hover:border-gold hover:text-fg"
-        title="Instalar o app no celular"
+        className="flex h-9 w-9 items-center justify-center rounded-full border border-line text-sm text-mute hover:border-gold hover:text-fg xl:w-auto xl:px-3"
+        title="Instalar o app"
+        aria-label="Instalar o app"
       >
-        📲 <span className="hidden sm:inline">Instalar app</span>
+        📲<span className="ml-1 hidden text-xs xl:inline">Instalar app</span>
       </button>
       {open && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-4 sm:items-center" onClick={() => setOpen(false)}>

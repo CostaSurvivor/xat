@@ -19,11 +19,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <header className="sticky top-0 z-30 border-b border-line bg-ink/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-2 px-3 py-2 sm:gap-3 sm:px-4">
           <Link href="/feed" aria-label="Feed"><Logo size={28} /></Link>
-          <div className="flex-1"><AppNav variant="top" /></div>
+          <div className="min-w-0 flex-1"><AppNav variant="top" admin={user.role === "ADMIN" || user.role === "MODERATOR"} /></div>
           <InstallApp />
-          {!isSubscriber(user) && <Link href="/assinar" className="hidden rounded-full bg-gradient-to-r from-gold to-gold2 px-3 py-1 text-xs font-bold text-white sm:inline">⭐ Assine</Link>}
-          <Link href="/loja" className="hidden rounded-full border border-gold/40 px-3 py-1 text-sm text-gold hover:bg-gold/10 sm:inline">{CURRENCY_ICON} {balance.toLocaleString("pt-BR")}</Link>
-          {(user.role === "ADMIN" || user.role === "MODERATOR") && <Link href="/admin" className="hidden rounded-full bg-wine px-3 py-1 text-xs font-bold text-white sm:inline">ADMIN</Link>}
+          {!isSubscriber(user) && <Link href="/assinar" className="hidden whitespace-nowrap rounded-full bg-gradient-to-r from-gold to-gold2 px-3 py-1 text-xs font-bold text-white xl:inline">⭐ Assine</Link>}
+          <Link href="/loja" className="hidden whitespace-nowrap rounded-full border border-gold/40 px-3 py-1 text-sm text-gold hover:bg-gold/10 lg:inline">{CURRENCY_ICON} {balance.toLocaleString("pt-BR")}</Link>
+          {(user.role === "ADMIN" || user.role === "MODERATOR") && <Link href="/admin" className="hidden whitespace-nowrap rounded-full bg-wine px-3 py-1 text-xs font-bold text-white lg:inline">ADMIN</Link>}
           <HeaderIcons />
           <Link href="/perfil" aria-label="Meu perfil"><Avatar mediaId={user.avatarId} nick={user.nick} size={34} /></Link>
           <MobileMenu admin={user.role === "ADMIN" || user.role === "MODERATOR"} balance={`${CURRENCY_ICON} ${balance.toLocaleString("pt-BR")}`} />
