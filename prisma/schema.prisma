@@ -295,8 +295,12 @@ model User {
   contoComments        ContoComment[]        @relation("ContoComments")
   favorites            Favorite[]            @relation("FavoritesOwned")
   favoritedBy          Favorite[]            @relation("FavoritesTarget")
+  /// convite: quem trouxe esta pessoa e quando o prêmio foi pago (na verificação)
+  referredById         String?
+  referralRewardedAt   DateTime?
 
   @@index([state, city])
+  @@index([referredById])
   @@index([createdAt])
   @@index([googleSub])
   @@index([lat, lng])

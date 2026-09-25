@@ -48,6 +48,7 @@ export async function reviewVerification(id: string, approve: boolean, formData?
   await db.user.update({ where: { id: v.userId }, data: approve ? { ageVerification: "APPROVED", ageVerifiedAt: new Date() } : { ageVerification: "REJECTED" } });
   await notify(v.userId, "VERIFICATION", approve ? "✅ Perfil verificado! Fotos, PV com fotos, loja e criação de salas liberados." : `Verificação recusada${reason ? `: ${reason}` : ""}. Tente de novo.`);
   await audit(staff.id, approve ? "verification.approve" : "verification.reject", "User", v.userId, { reason });
+  if (approve) await (await import("@/server/referral")).rewardReferral(v.userId);
   revalidatePath("/admin/verificacoes");
 }
 
@@ -173,6 +174,7 @@ export async function adminUserAction(userId: string, formData: FormData) {
   } else if (op === "verify") {
     await db.user.update({ where: { id: userId }, data: { ageVerification: "APPROVED", ageVerifiedAt: new Date() } });
     await audit(admin.id, "user.verify", "User", userId);
+    await (await import("@/server/referral")).rewardReferral(userId);
   } else if (op === "unverify") {
     // tira o selo: volta a "não verificado" e pode enviar nova selfie (fotos já publicadas continuam; novas exigem verificar de novo)
     const reason = String(formData.get("reason") || "").trim().slice(0, 200) || null;

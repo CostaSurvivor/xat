@@ -6,6 +6,7 @@ import { SITE_NAME, CURRENCY_NAME } from "@/lib/config";
 import { fmtEventDate } from "@/lib/events";
 import { welcomeOffer } from "@/server/welcome";
 import { WelcomePromo } from "@/components/WelcomePromo";
+import { InvitedBy } from "@/components/InvitedBy";
 
 export const dynamic = "force-dynamic";
 
@@ -73,6 +74,7 @@ export default async function Landing() {
         </div>
       </section>
 
+      <InvitedBy />
       <WelcomePromo offer={offer} />
 
       <section aria-label="Números" className="grid grid-cols-2 gap-3 sm:grid-cols-4">

@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/server/auth";
 import { googleEnabled } from "@/server/google";
 import { welcomeOffer } from "@/server/welcome";
 import { WelcomePromo } from "@/components/WelcomePromo";
+import { InvitedBy } from "@/components/InvitedBy";
 
 export const metadata = { title: "Criar conta" };
 
@@ -15,6 +16,7 @@ export default async function Cadastro() {
   const offer = await welcomeOffer();
   return (
     <div className="mx-auto mt-4 max-w-2xl space-y-4">
+      <InvitedBy />
       <WelcomePromo offer={offer} cta={false} />
     <div className="card p-6 sm:p-8">
       <h1 className="font-[family-name:var(--font-display)] text-3xl font-bold">Criar conta</h1>
