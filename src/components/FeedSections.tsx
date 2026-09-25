@@ -4,6 +4,8 @@ import { isVerified, type CurrentUser } from "@/server/auth";
 import { blockedIds } from "@/server/access";
 import { getFeed } from "@/server/feed";
 import { stylesFor } from "@/server/styles";
+import { hotContos } from "@/server/contos";
+import { CONTO_CATEGORIES, isCategory } from "@/lib/contos";
 import { Avatar } from "./Avatar";
 
 /** Faixa "🟢 Online agora": quem entrou nos últimos 5 min (sem bloqueados e sem quem usa o poder Invisível). */
@@ -99,6 +101,32 @@ export async function FeaturedProfiles({ user }: { user: CurrentUser }) {
             <span className="w-full truncate text-center text-[10px] text-mute">{u.group}</span>
           </Link>
         ))}
+      </div>
+    </section>
+  );
+}
+
+/** Faixa "📖 Contos em alta": os mais curtidos do mês. */
+export async function HotContos({ user }: { user: CurrentUser }) {
+  const contos = await hotContos(user, 6);
+  if (!contos.length) return null;
+  return (
+    <section className="card p-3" aria-label="Contos em alta">
+      <div className="mb-2 flex items-center justify-between px-1">
+        <h2 className="text-sm font-semibold">📖 Contos em alta</h2>
+        <Link href="/contos" className="text-xs text-mute underline">ver todos</Link>
+      </div>
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {contos.map((c) => {
+          const cat = isCategory(c.category) ? CONTO_CATEGORIES[c.category] : null;
+          return (
+            <Link key={c.id} href={`/contos/${c.id}`} className="flex w-48 shrink-0 flex-col rounded-xl border border-line p-3 hover:border-wine">
+              <span className="text-xs text-mute">{cat ? `${cat.emoji} ${cat.label}` : "Conto"}</span>
+              <span className="mt-1 line-clamp-2 text-sm font-semibold leading-snug">{c.title}</span>
+              <span className="mt-auto pt-2 text-xs text-mute">@{c.author.nick} · ❤ {c.likeCount}</span>
+            </Link>
+          );
+        })}
       </div>
     </section>
   );

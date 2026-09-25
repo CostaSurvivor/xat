@@ -8,7 +8,7 @@ import { HotPhotos } from "@/components/HotPhotos";
 import { liveList } from "@/server/live";
 import { StoryTray } from "@/components/StoryTray";
 import { OnboardingCard } from "@/components/OnboardingCard";
-import { FeaturedProfiles, OnlineNow, VideoStrip } from "@/components/FeedSections";
+import { FeaturedProfiles, HotContos, OnlineNow, VideoStrip } from "@/components/FeedSections";
 
 export const metadata = { title: "Feed" };
 
@@ -35,6 +35,7 @@ export default async function Feed({ searchParams }: { searchParams: Promise<{ t
         <FeaturedProfiles user={user} />
         <div className="lg:hidden"><HotPhotos user={user} /></div>
         <VideoStrip user={user} />
+        <HotContos user={user} />
         <Composer verified={isVerified(user)} />
         <div className="flex flex-wrap gap-2">
           {tabs.map(([k, l]) => (

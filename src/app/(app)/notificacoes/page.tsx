@@ -56,6 +56,7 @@ export default async function Notificacoes({ searchParams }: { searchParams: Pro
     if (n.kind === "LIVE" && n.refId) return `/ao-vivo/${n.refId}`;
     if (n.kind === "MATCH") return "/paquera/matches";
     if (n.kind === "PROFILE_LIKE") return "/paquera/curtidas";
+    if (n.kind === "CONTO" && n.refId) return `/contos/${n.refId}`;
     if (n.kind === "TESTIMONIAL") return n.refId ? `/u/${n.refId}` : "/depoimentos";
     if (n.kind === "EVENT" && n.refId) return `/eventos/${n.refId}`;
     return nick ? `/u/${nick}` : "#";
