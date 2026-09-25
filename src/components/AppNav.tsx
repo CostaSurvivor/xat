@@ -39,18 +39,19 @@ const MORE = [
   { href: "/trocas", label: "Trocas", icon: "🔄" },
 ];
 
-/** Celular: 5 atalhos fixos embaixo (PV e Avisos ficam no topo, perfil no avatar). */
-const BOTTOM = [
+/** Celular: barra de baixo, ao alcance do polegar (❤ Paquera no centro e "Mais" no fim). Logo, Suporte, PV, Avisos e perfil ficam no topo. */
+const BOTTOM_LEFT = [
   { href: "/feed", label: "Feed", icon: "🔥" },
   { href: "/salas", label: "Salas", icon: "💬" },
-  { href: "/paquera", label: "Paquera", icon: "💘" },
-  { href: "/pessoas", label: "Pessoas", icon: "👥" },
-  { href: "/ao-vivo", label: "Ao vivo", icon: "🔴" },
 ];
+const BOTTOM_RIGHT = [{ href: "/pessoas", label: "Pessoas", icon: "👥" }];
 
 /** Menu "☰" do celular: grade de atalhos com ícone, grandes para o dedo. */
 const MENU = [
   { href: "/perfil", label: "Meu perfil", icon: "👤" },
+  { href: "/ao-vivo", label: "Ao vivo", icon: "🔴" },
+  { href: "/busca", label: "Buscar", icon: "🔍" },
+  { href: "/videos", label: "Vídeos", icon: "🎬" },
   { href: "/destaques", label: "Destaques", icon: "🏆" },
   { href: "/grupos", label: "Grupos", icon: "🫂" },
   { href: "/eventos", label: "Eventos", icon: "🎉" },
@@ -59,7 +60,6 @@ const MENU = [
   { href: "/trocas", label: "Trocas", icon: "🔄" },
   { href: "/carteira", label: "Carteira", icon: "🌶️" },
   { href: "/assinar", label: "Assinar", icon: "⭐" },
-  { href: "/suporte", label: "Suporte", icon: "🎫" },
 ];
 
 const active = (path: string, href: string) => path === href || path.startsWith(href + "/");
@@ -103,7 +103,7 @@ export function HeaderIcons() {
   );
   return (
     <div className="flex items-center gap-0.5">
-      <span className="hidden md:contents">{icon("/suporte", <SupportIcon />, "Suporte", 0)}</span>
+      {icon("/suporte", <SupportIcon />, "Suporte", 0)}
       {icon("/mensagens", <MailIcon />, "Mensagens (PV)", b.pm)}
       {icon("/notificacoes", <BellIcon />, "Avisos", b.notif)}
     </div>
@@ -115,9 +115,13 @@ export function MobileMenu({ admin, balance }: { admin?: boolean; balance?: stri
   const [open, setOpen] = useState(false);
   useEffect(() => setOpen(false), [path]);
   const links = [...MENU, ...(admin ? [{ href: "/admin", label: "Admin", icon: "🛡️" }] : [])];
+  const on = open || links.some((l) => active(path, l.href));
   return (
-    <div className="md:hidden">
-      <button onClick={() => setOpen((o) => !o)} aria-label="Menu" aria-expanded={open} className="flex h-9 w-9 items-center justify-center rounded-full border border-line bg-panel text-lg leading-none">☰</button>
+    <>
+      <button onClick={() => setOpen((o) => !o)} aria-label="Menu" aria-expanded={open} className={`flex w-full flex-col items-center py-2 text-[11px] ${on ? "font-semibold text-wine" : "text-mute"}`}>
+        <span className="text-xl leading-6">☰</span>
+        Mais
+      </button>
       {/* portal: o header tem backdrop-blur, que prende elementos "fixed" dentro dele */}
       {open && createPortal(
         <div className="fixed inset-0 z-50 flex items-end bg-black/40" onClick={() => setOpen(false)}>
@@ -141,21 +145,32 @@ export function MobileMenu({ admin, balance }: { admin?: boolean; balance?: stri
         </div>,
         document.body,
       )}
-    </div>
+    </>
   );
 }
 
-export function AppNav({ variant, admin }: { variant: "top" | "bottom"; admin?: boolean }) {
+export function AppNav({ variant, admin, balance }: { variant: "top" | "bottom"; admin?: boolean; balance?: string }) {
   const path = usePathname();
   if (variant === "top") return <DesktopNav path={path} admin={admin} />;
+  const item = (l: { href: string; label: string; icon: string }) => (
+    <Link key={l.href} href={l.href} aria-current={active(path, l.href) ? "page" : undefined} className={`flex flex-col items-center py-2 text-[11px] ${active(path, l.href) ? "font-semibold text-wine" : "text-mute"}`}>
+      <span className="text-xl leading-6">{l.icon}</span>
+      {l.label}
+    </Link>
+  );
+  const paquera = active(path, "/paquera");
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-line bg-ink/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden" aria-label="Navegação principal">
-      {BOTTOM.map((l) => (
-        <Link key={l.href} href={l.href} className={`flex flex-col items-center py-2 text-[11px] ${active(path, l.href) ? "font-semibold text-wine" : "text-mute"}`}>
-          <span className="text-xl leading-6">{l.icon}</span>
-          {l.label}
-        </Link>
-      ))}
+      {BOTTOM_LEFT.map(item)}
+      {/* ❤ Paquera em destaque no centro, como no computador */}
+      <Link href="/paquera" aria-label="Paquera" aria-current={paquera ? "page" : undefined} className={`flex flex-col items-center pb-2 text-[11px] ${paquera ? "font-semibold text-wine" : "text-mute"}`}>
+        <span className={`-mt-4 mb-0.5 flex h-12 w-12 items-center justify-center rounded-full text-white shadow-lg ring-4 ring-ink ${paquera ? "bg-wine" : "bg-wine2"}`}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.4C.9 8 3 4 6.9 4c2.1 0 3.5 1.1 5.1 3 1.6-1.9 3-3 5.1-3C21 4 23.1 8 21.6 11.6 19.5 16.4 12 21 12 21z" /></svg>
+        </span>
+        Paquera
+      </Link>
+      {BOTTOM_RIGHT.map(item)}
+      <MobileMenu admin={admin} balance={balance} />
     </nav>
   );
 }
