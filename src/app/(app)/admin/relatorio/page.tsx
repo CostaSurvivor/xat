@@ -3,6 +3,7 @@ import { brl, compact, parsePeriod, PERIODS, shortDay } from "@/lib/report";
 import { requireAdmin } from "@/server/auth";
 import { adminReport } from "@/server/report";
 import { ColumnChart, HBars } from "@/components/ReportCharts";
+import { WELCOME } from "@/lib/welcome";
 
 export const metadata = { title: "Relatório" };
 export const dynamic = "force-dynamic";
@@ -92,20 +93,44 @@ export default async function Relatorio({ searchParams }: { searchParams: Promis
         </section>
       </div>
 
+      <h2 className="pt-2 text-lg font-bold">🌱 Crescimento</h2>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4" data-testid="crescimento">
+        <Stat label="Convites verificados" k={r.growth.invites} days={days} />
+        <Stat label="Presenças diárias pegas" k={r.growth.dailyClaims} days={days} />
+        <Stat label="Pimentas de bônus emitidas" k={r.growth.bonusCoins} days={days} upIsGood={false} />
+        <div className="card p-4">
+          <p className="text-xs text-mute">Promoção de lançamento</p>
+          <p className="text-2xl font-semibold text-fg">{r.growth.promoUsed}/{WELCOME.slots}</p>
+          <p className="text-xs text-mute">vagas usadas (desde o início)</p>
+        </div>
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section className="card p-4">
+          <h2 className="font-semibold">Presença diária por dia</h2>
+          <p className="mb-2 text-xs text-mute">Quantas pessoas pegaram as Pimentas do dia</p>
+          <ColumnChart data={r.growth.dailySeries} kind="count" label="Presença diária por dia" />
+        </section>
+        <section className="card p-4">
+          <h2 className="mb-2 font-semibold">Quem mais convidou</h2>
+          <HBars rows={r.growth.topInviters} empty="Nenhum convite verificado no período." />
+        </section>
+      </div>
+
       <details className="card p-4 text-sm">
         <summary className="cursor-pointer font-semibold">Ver os números dia a dia (tabela)</summary>
         <div className="mt-3 max-h-80 overflow-auto">
           <table className="w-full text-right tabular-nums">
             <thead className="sticky top-0 bg-panel text-xs text-mute">
-              <tr><th className="text-left">Dia</th><th>Cadastros</th><th>Receita</th><th>Mensagens</th></tr>
+              <tr><th className="text-left">Dia</th><th>Cadastros</th><th>Receita</th><th>Mensagens</th><th>Presença</th></tr>
             </thead>
             <tbody>
               {[...r.series.signups].reverse().map((d) => {
                 const rev = r.series.revenueCents.find((x) => x.day === d.day)?.value ?? 0;
                 const msg = r.series.messages.find((x) => x.day === d.day)?.value ?? 0;
+                const pres = r.growth.dailySeries.find((x) => x.day === d.day)?.value ?? 0;
                 return (
                   <tr key={d.day} className="border-t border-line">
-                    <td className="py-1 text-left">{shortDay(d.day)}</td><td>{d.value}</td><td>{brl(rev)}</td><td>{msg}</td>
+                    <td className="py-1 text-left">{shortDay(d.day)}</td><td>{d.value}</td><td>{brl(rev)}</td><td>{msg}</td><td>{pres}</td>
                   </tr>
                 );
               })}
