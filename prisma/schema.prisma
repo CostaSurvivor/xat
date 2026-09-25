@@ -303,9 +303,13 @@ model User {
   /// presença diária: dias seguidos e último dia pego ("AAAA-MM-DD", Brasília)
   streakDays           Int                   @default(0)
   streakLastDay        String?               @db.VarChar(10)
+  /// "Afim hoje": status temporário (expira sozinho) com um recado curto
+  afimUntil            DateTime?
+  afimNote             String?               @db.VarChar(120)
 
   @@index([state, city])
   @@index([referredById])
+  @@index([afimUntil])
   @@index([createdAt])
   @@index([googleSub])
   @@index([lat, lng])

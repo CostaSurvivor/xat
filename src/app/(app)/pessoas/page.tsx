@@ -14,11 +14,13 @@ import { TRIPS, todayBR } from "@/lib/trips";
 import { affinity } from "@/lib/affinity";
 import { searchOthers } from "@/server/search";
 import { SearchOthers } from "@/components/SearchOthers";
+import { AfimToggle } from "@/components/AfimToggle";
+import { afimUntilLabel, isAfim } from "@/lib/afim";
 
 export const metadata = { title: "Pessoas" };
 export const dynamic = "force-dynamic";
 
-type SP = { ordem?: string; tipo?: string; uf?: string; q?: string; on?: string; ver?: string; curte?: string; foto?: string; raio?: string };
+type SP = { ordem?: string; tipo?: string; uf?: string; q?: string; on?: string; ver?: string; curte?: string; foto?: string; raio?: string; afim?: string };
 
 export default async function Pessoas({ searchParams }: { searchParams: Promise<SP> }) {
   const viewer = await requireUser();
@@ -38,6 +40,7 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
   if (sp.on) where.lastSeenAt = { gt: new Date(Date.now() - 5 * 60_000) };
   if (sp.ver) where.ageVerification = "APPROVED";
   if (sp.foto) where.avatarId = { not: null };
+  if (sp.afim) where.afimUntil = { gt: new Date() };
   if (sp.curte && LIKE_TAGS.includes(sp.curte)) where.likes = { array_contains: [sp.curte] };
   if (!isVerified(viewer)) where.hideFromUnverified = false;
   if (raio && me) {
@@ -46,7 +49,7 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
     Object.assign(where, { showDistance: true, hideCity: false, lat: { gte: b.minLat, lte: b.maxLat }, lng: { gte: b.minLng, lte: b.maxLng } });
   }
 
-  const select = { id: true, nick: true, avatarId: true, profileType: true, city: true, state: true, hideCity: true, ageVerification: true, lastSeenAt: true, lat: true, lng: true, showDistance: true, likes: true } as const;
+  const select = { id: true, nick: true, avatarId: true, profileType: true, city: true, state: true, hideCity: true, ageVerification: true, lastSeenAt: true, lat: true, lng: true, showDistance: true, likes: true, afimUntil: true, afimNote: true } as const;
   const rows = await db.user.findMany({ where, orderBy: { lastSeenAt: "desc" }, take: raio || sp.ordem === "afinidade" ? 600 : 60, select });
   const withDist = rows.map((u) => ({ ...u, km: me && distanceVisible(u) ? haversineKm(me, { lat: u.lat!, lng: u.lng! }) : null }));
   const byAffinity = sp.ordem === "afinidade";
@@ -61,6 +64,7 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
   const styles = await stylesFor(users.map((u) => u.id));
   const confirmed = await import("@/server/testimonials").then((m) => m.confirmedIds(users.map((u) => u.id)));
   const coming = await visitors(viewer, todayBR());
+  const afimCount = sp.afim ? null : await db.user.count({ where: { ...where, afimUntil: { gt: new Date() } } });
   const q = String(sp.q ?? "").trim().slice(0, 60);
   const others = q.length >= 2 ? await searchOthers(viewer, q) : null;
 
@@ -79,6 +83,12 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
         )}
         <span className="ml-auto text-wine">ver →</span>
       </Link>
+      <AfimToggle active={isAfim(viewer)} untilLabel={viewer.afimUntil ? afimUntilLabel(viewer.afimUntil) : undefined} note={viewer.afimNote} />
+      {afimCount != null && afimCount > 0 && (
+        <Link href={`/pessoas?${new URLSearchParams({ ...(raio ? { raio: String(raio) } : { raio: "br" }), afim: "1" })}`} className="block rounded-lg bg-wine px-4 py-2 text-sm font-semibold text-white hover:bg-wine2" data-testid="afim-faixa">
+          🔥 {afimCount} {afimCount === 1 ? "pessoa afim hoje" : "pessoas afim hoje"}{raio ? " perto de você" : ""} — ver →
+        </Link>
+      )}
       <form className="flex flex-wrap gap-2">
         <select name="raio" defaultValue={raio ? String(raio) : "br"} className="input w-auto" disabled={!me} title={me ? "" : "Informe sua cidade no perfil"}>
           {RADII.map((r) => <option key={r} value={r}>até {r} km</option>)}
@@ -101,6 +111,7 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
             <optgroup key={g.title} label={g.title}>{g.tags.map((t) => <option key={t}>{t}</option>)}</optgroup>
           ))}
         </select>
+        <label className="flex items-center gap-1 text-sm text-mute"><input type="checkbox" name="afim" defaultChecked={!!sp.afim} /> 🔥 afim hoje</label>
         <label className="flex items-center gap-1 text-sm text-mute"><input type="checkbox" name="on" defaultChecked={!!sp.on} /> online</label>
         <label className="flex items-center gap-1 text-sm text-mute"><input type="checkbox" name="ver" defaultChecked={!!sp.ver} /> verificados</label>
         <label className="flex items-center gap-1 text-sm text-mute"><input type="checkbox" name="foto" defaultChecked={!!sp.foto} /> com foto</label>
@@ -119,6 +130,7 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
               {confirmed.has(u.id) && <div title="Confirmado por quem conheceu pessoalmente" className="mt-0.5 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">🤝 Confirmado</div>}
               <div className="text-xs text-mute">{PROFILE_TYPES[u.profileType].label}</div>
               <div className="max-w-full truncate text-xs text-mute">{!u.hideCity && u.city ? `${u.city}/` : ""}{u.state}</div>
+              {isAfim(u) && <div title={u.afimNote ?? "Afim de sair hoje"} className="mt-1 max-w-full truncate rounded-full bg-wine px-2 py-0.5 text-[11px] font-semibold text-white" data-testid="afim-selo">🔥 Afim hoje{u.afimNote ? ` · ${u.afimNote}` : ""}</div>}
               <div className="mt-1 flex flex-wrap justify-center gap-1">
                 {u.km != null && <span className="rounded-full bg-pink-50 px-2 py-0.5 text-[11px] font-semibold text-wine">📍 {distanceLabel(u.km)}</span>}
                 {u.aff != null && u.aff >= 40 && <span className="rounded-full bg-wine px-2 py-0.5 text-[11px] font-semibold text-white" title="Afinidade pelo que vocês curtem">🔥 {u.aff}%</span>}
