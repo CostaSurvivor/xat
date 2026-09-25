@@ -1446,3 +1446,18 @@ model Favorite {
   @@index([ownerId, createdAt])
   @@index([targetId])
 }
+
+// -----------------------------------------------------------------------------
+// Promoção de lançamento: uma linha por vaga (a chave da vaga impede passar do limite)
+// -----------------------------------------------------------------------------
+
+model WelcomeBonus {
+  slot      Int      @id
+  userId    String   @unique
+  ip        String   @db.VarChar(64)
+  deviceId  String?  @db.VarChar(64)
+  createdAt DateTime @default(now())
+
+  @@index([ip])
+  @@index([deviceId])
+}

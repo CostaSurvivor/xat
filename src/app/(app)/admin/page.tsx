@@ -2,6 +2,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { requireStaff } from "@/server/auth";
 import { roomOnlineCounts } from "@/server/rooms";
+import { WELCOME } from "@/lib/welcome";
 
 export const metadata = { title: "Admin" };
 export const dynamic = "force-dynamic";
@@ -29,6 +30,8 @@ export default async function Dashboard() {
     db.event.count({ where: { status: "PENDING" } }),
   ]);
   const topItems = await db.item.findMany({ where: { id: { in: top.map((t) => t.itemId) } } });
+  const bonus = await db.welcomeBonus.findMany({ orderBy: { slot: "asc" } });
+  const bonusNicks = new Map((await db.user.findMany({ where: { id: { in: bonus.map((b) => b.userId) } }, select: { id: true, nick: true } })).map((u) => [u.id, u.nick]));
   const Stat = ({ label, value, href, alert }: { label: string; value: string | number; href?: string; alert?: boolean }) => {
     const inner = (
       <div className={`card p-4 ${alert ? "border-red-500/60 bg-red-100" : ""}`}>
@@ -58,6 +61,13 @@ export default async function Dashboard() {
         <Stat label="Denúncias abertas" value={openReports} href="/admin/denuncias" alert={openReports > 0} />
         <Stat label="Tickets abertos" value={openTickets} href="/admin/tickets" alert={openTickets > 0} />
       </div>
+      <section className="card p-4" data-testid="admin-promo">
+        <h2 className="mb-2 font-semibold text-gold">🎁 Promoção de lançamento: {bonus.length}/{WELCOME.slots} vagas usadas</h2>
+        <p className="mb-2 text-xs text-mute">{WELCOME.coins} Pimentas + {WELCOME.vipDays} dias de VIP no cadastro (um por aparelho/IP).</p>
+        {bonus.length === 0 ? <p className="text-sm text-mute">Ninguém ganhou ainda.</p> : (
+          <ol className="flex flex-wrap gap-2 text-sm">{bonus.map((b) => <li key={b.slot}><Link href={`/u/${bonusNicks.get(b.userId) ?? ""}`} className="rounded-full border border-line px-2 py-0.5 hover:border-wine">{b.slot}º @{bonusNicks.get(b.userId) ?? "?"}</Link></li>)}</ol>
+        )}
+      </section>
       <section className="card p-4">
         <h2 className="mb-2 font-semibold text-gold">Itens mais vendidos (mês)</h2>
         {top.length === 0 ? <p className="text-sm text-mute">Sem vendas ainda.</p> : (
