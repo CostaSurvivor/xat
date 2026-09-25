@@ -57,6 +57,7 @@ export const stateRoom = (uf: string) => ({
 export const UFS = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
 
 export const RESERVED_SLUGS = new Set([
+  "busca", "videos", "paquera", "stories", "depoimentos", "grupos", "eventos", "destaques", "visitas", "ao-vivo",
   "admin", "api", "login", "sair", "cadastro", "entrada", "feed", "u", "salas", "mensagens",
   "loja", "carteira", "perfil", "conta", "verificacao", "notificacoes", "termos", "privacidade",
   "regras", "_next", "static", "favicon.ico", "robots.txt", "denunciar", "busca", "pessoas",

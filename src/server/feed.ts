@@ -7,7 +7,7 @@ import { stylesFor } from "./styles";
 
 export type FeedTab = "todos" | "seguindo" | "regiao";
 
-export async function getFeed(viewer: CurrentUser, opts: { tab?: FeedTab; before?: string; authorId?: string; take?: number; ids?: string[]; groupId?: string }) {
+export async function getFeed(viewer: CurrentUser, opts: { tab?: FeedTab; before?: string; authorId?: string; take?: number; ids?: string[]; groupId?: string; videosOnly?: boolean }) {
   const take = opts.take ?? 15;
   const blocked = await blockedIds(viewer.id);
   const following = (await db.follow.findMany({ where: { followerId: viewer.id }, select: { followeeId: true } })).map((f) => f.followeeId);
@@ -40,6 +40,7 @@ export async function getFeed(viewer: CurrentUser, opts: { tab?: FeedTab; before
     else if (opts.tab === "seguindo") where.AND.push({ authorId: { in: [...following, viewer.id] } });
     else if (opts.tab === "regiao" && viewer.state) where.AND.push({ author: { state: viewer.state } });
   }
+  if (opts.videosOnly) where.AND.push({ media: { some: { media: { kind: "POST_VIDEO", status: "APPROVED" } } } });
   if (opts.before) where.createdAt = { lt: new Date(opts.before) };
 
   const include = {
