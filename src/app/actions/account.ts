@@ -41,6 +41,8 @@ export async function deleteAccount(_: { error?: string } | undefined, formData:
     db.eventRsvp.deleteMany({ where: { userId: user.id } }),
     db.groupMember.deleteMany({ where: { userId: user.id } }),
     db.storyView.deleteMany({ where: { viewerId: user.id } }),
+    db.profileLike.deleteMany({ where: { OR: [{ likerId: user.id }, { likedId: user.id }] } }),
+    db.profileSkip.deleteMany({ where: { OR: [{ userId: user.id }, { skippedId: user.id }] } }),
     db.pushSubscription.deleteMany({ where: { userId: user.id } }),
     db.album.deleteMany({ where: { ownerId: user.id } }),
     db.story.deleteMany({ where: { authorId: user.id } }),

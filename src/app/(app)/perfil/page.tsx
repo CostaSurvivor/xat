@@ -5,7 +5,7 @@ import { hasPassword } from "@/lib/oauth";
 import { db } from "@/lib/db";
 import { LIKE_GROUPS, PERSON_FIELDS } from "@/lib/config";
 import { ageOn } from "@/lib/age";
-import { isVerified, requireUser } from "@/server/auth";
+import { isSubscriber, isVerified, requireUser } from "@/server/auth";
 import { deleteMedia, setAlbumAccess, updatePersons, updateProfile, uploadPhoto } from "@/app/actions/profile";
 import { logout } from "@/app/actions/auth";
 import { ProfileTypeForm } from "@/components/ProfileTypeForm";
@@ -23,7 +23,9 @@ export default async function MeuPerfil() {
   const user = await requireUser();
   const verified = isVerified(user);
   const persons = await db.profilePerson.findMany({ where: { userId: user.id }, orderBy: { label: "asc" } });
-  const { visitCountSince } = await import("@/server/visits");
+  const { visitCountSince, visitsFor } = await import("@/server/visits");
+  const recentVisits = (await visitsFor(user.id)).slice(0, 8);
+  const vip = isSubscriber(user);
   const [album, requests, visitsWeek, pendingTestimonials] = await Promise.all([
     db.media.findMany({ where: { ownerId: user.id, kind: "PRIVATE_ALBUM", status: "APPROVED", albumId: null }, orderBy: { createdAt: "desc" } }),
     db.albumAccess.findMany({ where: { ownerId: user.id }, include: { viewer: { select: { id: true, nick: true } } }, orderBy: { createdAt: "desc" } }),
@@ -37,10 +39,37 @@ export default async function MeuPerfil() {
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="mr-auto font-[family-name:var(--font-display)] text-2xl font-bold">Meu perfil e configurações</h1>
         <Link href="/depoimentos" className="btn-ghost">📝 Depoimentos{pendingTestimonials ? ` (${pendingTestimonials})` : ""}</Link>
-        <Link href="/visitas" className="btn-ghost">👀 {visitsWeek} {visitsWeek === 1 ? "visita" : "visitas"} na semana</Link>
         <Link href={`/u/${user.nick}`} className="btn-ghost">Ver como os outros veem</Link>
         <form action={logout}><button className="btn-ghost">Sair</button></form>
       </div>
+
+      <section className="card p-4" id="visitas">
+        <div className="mb-3 flex items-center gap-2">
+          <h2 className="mr-auto font-semibold text-gold">👀 Últimas visitas</h2>
+          <span className="text-xs text-mute">{visitsWeek} {visitsWeek === 1 ? "visita" : "visitas"} na semana</span>
+          <Link href="/visitas" className="text-xs text-wine underline">ver todas</Link>
+        </div>
+        {recentVisits.length === 0 ? (
+          <p className="text-sm text-mute">Ninguém visitou seu perfil nos últimos 30 dias. Poste uma foto ou entre numa sala para aparecer mais!</p>
+        ) : (
+          <div className="flex gap-3 overflow-x-auto pb-1">
+            {recentVisits.map((v, i) =>
+              vip ? (
+                <Link key={v.id} href={`/u/${encodeURIComponent(v.nick)}`} className="flex w-16 shrink-0 flex-col items-center gap-1">
+                  <Avatar mediaId={v.avatarId} nick={v.nick} size={52} style={v.style} />
+                  <span className="w-full truncate text-center text-[11px]">{v.nick}</span>
+                </Link>
+              ) : (
+                <span key={i} className="flex w-16 shrink-0 flex-col items-center gap-1" aria-hidden>
+                  <span className="h-[52px] w-[52px] rounded-full bg-gradient-to-br from-pink-200 to-wine/40 blur-[2px]" />
+                  <span className="h-2.5 w-10 rounded bg-panel2" />
+                </span>
+              ),
+            )}
+          </div>
+        )}
+        {!vip && recentVisits.length > 0 && <p className="mt-2 text-xs text-mute">Ver <b>quem</b> visitou é exclusivo para assinantes. <Link href="/assinar" className="text-gold underline">Assinar</Link></p>}
+      </section>
 
       <section className="card flex flex-wrap items-center gap-4 p-5">
         <Avatar mediaId={user.avatarId} nick={user.nick} size={72} />

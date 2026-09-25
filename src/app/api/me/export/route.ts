@@ -32,6 +32,10 @@ export async function GET() {
     db.testimonial.findMany({ where: { profileId: u.id }, select: { authorId: true, body: true, metInPerson: true, status: true, createdAt: true } }),
     db.testimonial.findMany({ where: { authorId: u.id }, select: { profileId: true, body: true, metInPerson: true, status: true, createdAt: true } }),
   ]);
+  const [likesGiven, likesReceived] = await Promise.all([
+    db.profileLike.findMany({ where: { likerId: u.id }, select: { likedId: true, createdAt: true } }),
+    db.profileLike.findMany({ where: { likedId: u.id }, select: { likerId: true, createdAt: true } }),
+  ]);
   const pushDevices = await db.pushSubscription.findMany({ where: { userId: u.id }, select: { userAgent: true, createdAt: true, lastOkAt: true } });
   const albums = await db.album.findMany({ where: { ownerId: u.id }, select: { id: true, name: true, emoji: true, visibility: true, createdAt: true } });
   const stories = await db.story.findMany({ where: { authorId: u.id }, select: { mediaId: true, caption: true, audience: true, createdAt: true, expiresAt: true, deletedAt: true, _count: { select: { views: true } } } });
@@ -44,7 +48,7 @@ export async function GET() {
     db.profileVisit.findMany({ where: { visitedId: u.id }, select: { visitorId: true, count: true, firstAt: true, lastAt: true } }),
     db.profileVisit.findMany({ where: { visitorId: u.id }, select: { visitedId: true, count: true, firstAt: true, lastAt: true } }),
   ]);
-  const data = { exportedAt: new Date(), pushDevices, albums, stories, groups, testimonialsReceived, testimonialsWritten, events, eventRsvps, visitsReceived, visitsMade, liveStreams, liveMessages: liveMessages.map((m) => ({ ...m, amount: m.amount ?? undefined })), profile, persons, consents, posts, comments, roomMessages: messages, privateMessagesSent: pms, follows, blocks, payments, inventory, media, accessLogs: access };
+  const data = { exportedAt: new Date(), likesGiven, likesReceived, pushDevices, albums, stories, groups, testimonialsReceived, testimonialsWritten, events, eventRsvps, visitsReceived, visitsMade, liveStreams, liveMessages: liveMessages.map((m) => ({ ...m, amount: m.amount ?? undefined })), profile, persons, consents, posts, comments, roomMessages: messages, privateMessagesSent: pms, follows, blocks, payments, inventory, media, accessLogs: access };
   const json = JSON.stringify(data, (_, v) => (typeof v === "bigint" ? v.toString() : v), 2);
   return new NextResponse(json, {
     headers: { "Content-Type": "application/json; charset=utf-8", "Content-Disposition": `attachment; filename="meus-dados-${u.nick}.json"` },
