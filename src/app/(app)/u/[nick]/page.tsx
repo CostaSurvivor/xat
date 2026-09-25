@@ -26,6 +26,8 @@ import { listContos } from "@/server/contos";
 import { ContoCard } from "@/components/ContoCard";
 import { FavoriteBox } from "@/components/Favorite";
 import { InviteCard } from "@/components/InviteCard";
+import { Achievements } from "@/components/Achievements";
+import { achievementsOf } from "@/server/achievements";
 import { referralStats } from "@/server/referral";
 import { NETWORK_TABS, networkOf, type NetworkTab } from "@/server/network";
 import { AFFINITY_MIN_TAGS, affinity, affinityTier, tagsOf } from "@/lib/affinity";
@@ -56,6 +58,7 @@ export default async function UserPage({ params, searchParams }: { params: Promi
   const abaRaw = (await searchParams).aba;
   const aba: NetworkTab = NETWORK_TABS.includes(abaRaw as NetworkTab) ? (abaRaw as NetworkTab) : "amigos";
   const net = iBlocked ? { total: 0, users: [] } : await networkOf(viewer, u.id, aba, 24);
+  const achievements = iBlocked ? [] : await achievementsOf(u.id);
   const mine = me
     ? await Promise.all([
         import("@/server/visits").then((m) => m.visitsFor(u.id)).then((v) => v.slice(0, 10)),
@@ -209,6 +212,8 @@ export default async function UserPage({ params, searchParams }: { params: Promi
           {!isSubscriber(viewer) && mine[0].length > 0 && <p className="mt-2 text-xs text-mute">Ver <b>quem</b> visitou é exclusivo para assinantes. <Link href="/assinar" className="text-gold underline">Assinar</Link></p>}
         </section>
       )}
+
+      {!iBlocked && !hidden && <Achievements list={achievements} mine={me} />}
 
       {me && mine && <InviteCard nick={u.nick} stats={mine[4]} />}
 
