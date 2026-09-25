@@ -3,7 +3,7 @@ import { isSubscriber, requireUser } from "@/server/auth";
 import { balanceOf } from "@/server/ledger";
 import { CURRENCY_ICON } from "@/lib/config";
 import { Logo } from "@/components/Logo";
-import { AppNav, HeaderIcons, MobileMenu } from "@/components/AppNav";
+import { AppNav, HeaderIcons } from "@/components/AppNav";
 import { Avatar } from "@/components/Avatar";
 import { db } from "@/lib/db";
 import { InstallApp } from "@/components/InstallApp";
@@ -25,7 +25,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <Link href="/loja" className="hidden whitespace-nowrap rounded-full border border-gold/40 px-3 py-1 text-sm text-gold hover:bg-gold/10 md:inline">{CURRENCY_ICON} {balance.toLocaleString("pt-BR")}</Link>
           <HeaderIcons />
           <Link href="/perfil" aria-label="Meu perfil"><Avatar mediaId={user.avatarId} nick={user.nick} size={34} /></Link>
-          <MobileMenu admin={user.role === "ADMIN" || user.role === "MODERATOR"} balance={`${CURRENCY_ICON} ${balance.toLocaleString("pt-BR")}`} />
         </div>
         {user.ageVerification !== "APPROVED" && (
           <Link href="/verificacao" className="block bg-wine px-4 py-1.5 text-center text-xs text-white">
@@ -35,7 +34,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         {ann && <div className="bg-gold/15 px-4 py-1.5 text-center text-xs text-gold2">📢 {ann.body}</div>}
       </header>
       <main className="mx-auto max-w-6xl px-3 py-4 sm:px-4">{children}</main>
-      <AppNav variant="bottom" />
+      <AppNav variant="bottom" admin={user.role === "ADMIN" || user.role === "MODERATOR"} balance={`${CURRENCY_ICON} ${balance.toLocaleString("pt-BR")}`} />
     </div>
   );
 }
