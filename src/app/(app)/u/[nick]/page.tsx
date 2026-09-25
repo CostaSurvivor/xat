@@ -25,6 +25,8 @@ import { profileTrip } from "@/server/trips";
 import { listContos } from "@/server/contos";
 import { ContoCard } from "@/components/ContoCard";
 import { FavoriteBox } from "@/components/Favorite";
+import { InviteCard } from "@/components/InviteCard";
+import { referralStats } from "@/server/referral";
 import { NETWORK_TABS, networkOf, type NetworkTab } from "@/server/network";
 import { AFFINITY_MIN_TAGS, affinity, affinityTier, tagsOf } from "@/lib/affinity";
 
@@ -60,6 +62,7 @@ export default async function UserPage({ params, searchParams }: { params: Promi
         db.favorite.findMany({ where: { ownerId: u.id, target: { status: "ACTIVE" } }, orderBy: { createdAt: "desc" }, take: 8, include: { target: { select: { nick: true, avatarId: true } } } }),
         db.favorite.count({ where: { ownerId: u.id } }),
         db.testimonial.count({ where: { profileId: u.id, status: "PENDING", withdrawnAt: null } }),
+        referralStats(u.id),
       ])
     : null;
   const [followers, following, isFollowing, album, access, posts, styles] = await Promise.all([
@@ -206,6 +209,8 @@ export default async function UserPage({ params, searchParams }: { params: Promi
           {!isSubscriber(viewer) && mine[0].length > 0 && <p className="mt-2 text-xs text-mute">Ver <b>quem</b> visitou é exclusivo para assinantes. <Link href="/assinar" className="text-gold underline">Assinar</Link></p>}
         </section>
       )}
+
+      {me && mine && <InviteCard nick={u.nick} stats={mine[4]} />}
 
       {me && mine && (
         <section className="card p-4" aria-label="Meus favoritos">
