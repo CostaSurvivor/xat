@@ -4,6 +4,7 @@ import { isCouple } from "@/lib/config";
 import { isStaff, isVerified, type CurrentUser } from "./auth";
 import { isBlockedBetween } from "./access";
 import { stylesFor } from "./styles";
+import { AUDIO_NEEDS_REPLY, voiceClock } from "@/lib/voice";
 
 export const pairOf = (a: string, b: string) => (a < b ? { userAId: a, userBId: b } : { userAId: b, userBId: a });
 
@@ -46,6 +47,18 @@ export function canSendPhoto(sender: CurrentUser, recipient: { acceptPmPhotos: b
   return null;
 }
 
+/**
+ * Áudio no PV: além das regras do PV, só depois que a outra pessoa já respondeu
+ * (ninguém recebe áudio de quem nunca conversou com ela).
+ */
+export async function canSendAudio(sender: CurrentUser, recipientId: string) {
+  if (isStaff(sender)) return null;
+  if (!isVerified(sender)) return "Verifique seu perfil para enviar áudios.";
+  const conv = await findConversation(sender.id, recipientId);
+  const replied = conv ? await db.privateMessage.count({ where: { conversationId: conv.id, senderId: recipientId } }) : 0;
+  return replied > 0 ? null : AUDIO_NEEDS_REPLY;
+}
+
 export async function pmMessages(convId: string, viewerId: string, after?: bigint) {
   const rows = await db.privateMessage.findMany({
     where: { conversationId: convId, ...(after ? { id: { gt: after } } : {}) },
@@ -58,6 +71,7 @@ export async function pmMessages(convId: string, viewerId: string, after?: bigin
     mine: m.senderId === viewerId,
     body: m.body,
     mediaId: m.mediaId,
+    audioSecs: m.audioSecs,
     revealed: !!m.revealedAt,
     createdAt: m.createdAt.toISOString(),
   }));
@@ -95,7 +109,7 @@ export async function inbox(user: CurrentUser) {
         ? {
             id: c.id,
             other: { id: other.id, nick: other.nick, avatarId: other.avatarId, style: styles[otherId], online: !!other.lastSeenAt && Date.now() - other.lastSeenAt.getTime() < 5 * 60_000 },
-            last: last ? (last.mediaId ? "📷 Foto" : last.body ?? "") : "",
+            last: last ? (last.audioSecs != null ? `🎤 Áudio (${voiceClock(last.audioSecs)})` : last.mediaId ? "📷 Foto" : last.body ?? "") : "",
             lastMine: last?.senderId === user.id,
             lastAt: c.lastMessageAt.toISOString(),
             unread: !!c.lastSenderId && c.lastSenderId !== user.id && (!read || read < c.lastMessageAt),

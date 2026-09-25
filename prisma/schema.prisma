@@ -59,6 +59,7 @@ enum MediaKind {
   POST_VIDEO
   PRIVATE_ALBUM
   PM_PHOTO
+  PM_AUDIO
   VERIFICATION_SELFIE
   ROOM_COVER
   ROOM_PHOTO
@@ -697,6 +698,8 @@ model PrivateMessage {
   senderId       String
   body           String?      @db.VarChar(2000)
   mediaId        String?
+  /// mensagem de voz: duração em segundos (mediaId aponta para um PM_AUDIO)
+  audioSecs      Int?
   revealedAt     DateTime?
   createdAt      DateTime     @default(now())
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)

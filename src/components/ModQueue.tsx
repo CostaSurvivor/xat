@@ -13,6 +13,8 @@ export type QueueItem = {
   title: string;
   lines: string[];
   images: { id: string; blur: boolean }[];
+  /** áudio do PV denunciado (ouvir antes de decidir) */
+  audios?: string[];
   link: string | null;
   urgent?: boolean;
 };
@@ -93,6 +95,7 @@ export function ModQueue({ items: initial }: { items: QueueItem[] }) {
                 ))}
               </div>
             )}
+            {cur.audios?.map((id) => <audio key={id} controls preload="none" src={`/api/media/${id}`} className="w-full" data-testid="fila-audio" />)}
             {cur.lines.map((l, i) => <p key={i} className="whitespace-pre-wrap break-words text-sm">{l}</p>)}
             {cur.link && <Link href={cur.link} target="_blank" className="text-xs text-gold underline">Abrir em nova aba ↗</Link>}
 

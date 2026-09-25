@@ -31,6 +31,14 @@ export async function resolveMediaAccess(viewer: CurrentUser, mediaId: string, w
   if (m.status !== "APPROVED" && !staff) return null;
   if (want === "o") return own || staff ? { media: m, variant: "o" as const } : null;
   if (want === "v" && m.kind !== "POST_VIDEO") return null;
+  if (m.kind === "PM_AUDIO") {
+    // áudio do PV: só quem está na conversa (dono e equipe já passaram acima); sem versão borrada
+    if (own || staff) return { media: m, variant: "d" as const };
+    if (m.owner.status !== "ACTIVE" || (await isBlockedBetween(viewer.id, m.ownerId))) return null;
+    const pm = await db.privateMessage.findFirst({ where: { mediaId: m.id }, include: { conversation: true } });
+    if (!pm || (pm.conversation.userAId !== viewer.id && pm.conversation.userBId !== viewer.id)) return null;
+    return { media: m, variant: "d" as const };
+  }
   if (own || staff) return { media: m, variant: want };
   if (m.owner.status !== "ACTIVE") return null;
   if (await isBlockedBetween(viewer.id, m.ownerId)) return null;

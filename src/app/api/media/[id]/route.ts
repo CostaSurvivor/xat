@@ -15,8 +15,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   if (!r) return new NextResponse(v === "v" ? "assinantes" : "not found", { status: v === "v" ? 403 : 404 });
 
   try {
-    // Vídeo (e original de vídeo): streaming com suporte a Range
-    if (r.media.kind === "POST_VIDEO" && (r.variant === "v" || r.variant === "o")) {
+    // Vídeo (e original de vídeo) e áudio do PV: streaming com suporte a Range
+    if ((r.media.kind === "POST_VIDEO" && (r.variant === "v" || r.variant === "o")) || r.media.kind === "PM_AUDIO") {
       const key = r.media.originalKey;
       const size = await storage.size(key);
       const range = /bytes=(\d*)-(\d*)/.exec(req.headers.get("range") || "");

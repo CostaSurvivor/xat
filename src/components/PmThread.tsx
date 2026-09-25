@@ -5,14 +5,18 @@ import { revealPmPhoto, sendPmPhoto } from "@/app/actions/pm";
 import type { PmMessage } from "@/server/pm";
 import { ProtectedImage } from "./ProtectedImage";
 import { ReportButton } from "./ReportButton";
+import { VoiceNote, VoiceRecorder } from "./Voice";
+import { AUDIO_NEEDS_REPLY } from "@/lib/voice";
 
-export function PmThread({ nick, initial, canPhoto, blockedReason }: { nick: string; initial: PmMessage[]; canPhoto: string | null; blockedReason: string | null }) {
+export function PmThread({ nick, initial, canPhoto, canAudio, blockedReason }: { nick: string; initial: PmMessage[]; canPhoto: string | null; canAudio: string | null; blockedReason: string | null }) {
   const [msgs, setMsgs] = useState(initial);
   const [text, setText] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const last = useRef(initial.at(-1)?.id ?? "0");
   const box = useRef<HTMLDivElement>(null);
+  // áudio libera sozinho quando a resposta da outra pessoa chega
+  const audioReason = canAudio === AUDIO_NEEDS_REPLY && msgs.some((m) => !m.mine) ? null : canAudio;
 
   async function poll() {
     const r = await fetch(`/api/pm/${encodeURIComponent(nick)}?after=${last.current}`, { cache: "no-store" });
@@ -57,7 +61,8 @@ export function PmThread({ nick, initial, canPhoto, blockedReason }: { nick: str
         {msgs.map((m) => (
           <div key={m.id} className={`group flex ${m.mine ? "justify-end" : "justify-start"}`}>
             <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-[15px] ${m.mine ? "rounded-br-sm bg-pink-100" : "rounded-bl-sm border border-line bg-panel"}`}>
-              {m.mediaId && (
+              {m.mediaId && m.audioSecs != null && <VoiceNote id={m.mediaId} secs={m.audioSecs} />}
+              {m.mediaId && m.audioSecs == null && (
                 <ProtectedImage
                   id={m.mediaId}
                   reveal={!m.mine && !m.revealed}
@@ -101,8 +106,12 @@ export function PmThread({ nick, initial, canPhoto, blockedReason }: { nick: str
               }}
             />
           </label>
-          <input value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} placeholder={pending ? "Enviando foto…" : "Mensagem…"} className="input flex-1" />
-          <button className="btn-gold">Enviar</button>
+          <input value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} placeholder={pending ? "Enviando foto…" : "Mensagem…"} className="input min-w-0 flex-1" />
+          {text.trim() ? (
+            <button className="btn-gold">Enviar</button>
+          ) : (
+            <VoiceRecorder nick={nick} disabledReason={audioReason} onSent={() => { setErr(null); poll(); }} onError={setErr} />
+          )}
         </form>
       )}
       {canPhoto && !blockedReason && <p className="px-3 pb-2 text-[11px] text-mute">📷 {canPhoto}</p>}
