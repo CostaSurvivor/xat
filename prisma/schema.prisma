@@ -179,6 +179,8 @@ enum ReportStatus {
 }
 
 enum NotificationKind {
+  MATCH
+  PROFILE_LIKE
   TESTIMONIAL
   EVENT
   LIVE
@@ -1280,4 +1282,27 @@ model RoomPollVote {
 
   @@id([pollId, userId])
   @@index([userId])
+}
+
+// -----------------------------------------------------------------------------
+// Paquera: curtir/passar perfis; curtida recíproca = match
+// -----------------------------------------------------------------------------
+
+model ProfileLike {
+  likerId   String
+  likedId   String
+  createdAt DateTime @default(now())
+
+  @@id([likerId, likedId])
+  @@index([likedId, createdAt])
+}
+
+/// "Passar": o perfil some da Paquera por um tempo
+model ProfileSkip {
+  userId    String
+  skippedId String
+  createdAt DateTime @default(now())
+
+  @@id([userId, skippedId])
+  @@index([createdAt])
 }

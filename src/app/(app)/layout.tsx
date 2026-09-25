@@ -3,7 +3,7 @@ import { isSubscriber, requireUser } from "@/server/auth";
 import { balanceOf } from "@/server/ledger";
 import { CURRENCY_ICON } from "@/lib/config";
 import { Logo } from "@/components/Logo";
-import { AppNav, MobileMenu } from "@/components/AppNav";
+import { AppNav, HeaderIcons, MobileMenu } from "@/components/AppNav";
 import { Avatar } from "@/components/Avatar";
 import { db } from "@/lib/db";
 import { InstallApp } from "@/components/InstallApp";
@@ -17,15 +17,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-dvh pb-20 md:pb-0">
       <header className="sticky top-0 z-30 border-b border-line bg-ink/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5">
+        <div className="mx-auto flex max-w-6xl items-center gap-2 px-3 py-2 sm:gap-3 sm:px-4">
           <Link href="/feed" aria-label="Feed"><Logo size={28} /></Link>
           <div className="flex-1"><AppNav variant="top" /></div>
           <InstallApp />
           {!isSubscriber(user) && <Link href="/assinar" className="hidden rounded-full bg-gradient-to-r from-gold to-gold2 px-3 py-1 text-xs font-bold text-white sm:inline">⭐ Assine</Link>}
-          <Link href="/loja" className="rounded-full border border-gold/40 px-3 py-1 text-sm text-gold hover:bg-gold/10">{CURRENCY_ICON} {balance.toLocaleString("pt-BR")}</Link>
+          <Link href="/loja" className="hidden rounded-full border border-gold/40 px-3 py-1 text-sm text-gold hover:bg-gold/10 sm:inline">{CURRENCY_ICON} {balance.toLocaleString("pt-BR")}</Link>
           {(user.role === "ADMIN" || user.role === "MODERATOR") && <Link href="/admin" className="hidden rounded-full bg-wine px-3 py-1 text-xs font-bold text-white sm:inline">ADMIN</Link>}
+          <HeaderIcons />
           <Link href="/perfil" aria-label="Meu perfil"><Avatar mediaId={user.avatarId} nick={user.nick} size={34} /></Link>
-          <MobileMenu admin={user.role === "ADMIN" || user.role === "MODERATOR"} />
+          <MobileMenu admin={user.role === "ADMIN" || user.role === "MODERATOR"} balance={`${CURRENCY_ICON} ${balance.toLocaleString("pt-BR")}`} />
         </div>
         {user.ageVerification !== "APPROVED" && (
           <Link href="/verificacao" className="block bg-wine px-4 py-1.5 text-center text-xs text-white">
