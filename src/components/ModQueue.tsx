@@ -19,7 +19,7 @@ export type QueueItem = {
   urgent?: boolean;
 };
 
-const KIND_LABEL: Record<QueueKind, string> = { verification: "✅ Verificação", event: "🎉 Evento", report: "🚩 Denúncia" };
+const KIND_LABEL: Record<QueueKind, string> = { verification: "✅ Verificação", event: "🎉 Evento", place: "📍 Lugar", report: "🚩 Denúncia" };
 
 /** Fila única com atalhos: um item por vez, ação sem recarregar a página. */
 export function ModQueue({ items: initial }: { items: QueueItem[] }) {

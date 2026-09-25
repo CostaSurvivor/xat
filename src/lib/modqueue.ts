@@ -1,9 +1,9 @@
 /** Fila única de moderação: regras puras (testadas em tests/modqueue.test.ts). */
 
-export type QueueKind = "report" | "verification" | "event";
+export type QueueKind = "report" | "verification" | "event" | "place";
 
 /** Prioridade base de cada tipo; denúncia usa a própria prioridade (possível menor = 100). */
-export const KIND_PRIORITY: Record<QueueKind, number> = { report: 0, verification: 40, event: 30 };
+export const KIND_PRIORITY: Record<QueueKind, number> = { report: 0, verification: 40, event: 30, place: 20 };
 
 export function queueOrder<T extends { kind: QueueKind; priority: number; createdAt: string }>(items: T[]) {
   const p = (i: T) => (i.kind === "report" ? i.priority : KIND_PRIORITY[i.kind]);
@@ -14,6 +14,7 @@ export function queueOrder<T extends { kind: QueueKind; priority: number; create
 export const SHORTCUTS: Record<QueueKind, Record<string, { op: string; label: string; danger?: boolean }>> = {
   verification: { a: { op: "approve", label: "Aprovar" }, r: { op: "reject", label: "Recusar" } },
   event: { a: { op: "approve", label: "Aprovar" }, r: { op: "reject", label: "Recusar" } },
+  place: { a: { op: "approve", label: "Aprovar" }, r: { op: "reject", label: "Recusar" } },
   report: {
     i: { op: "dismiss", label: "Improcedente" },
     d: { op: "remove", label: "Remover conteúdo" },

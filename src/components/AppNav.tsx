@@ -1,5 +1,6 @@
 "use client";
 
+import { FEATURES } from "@/lib/features";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -36,6 +37,7 @@ const MORE = [
   { href: "/eventos", label: "Eventos", icon: "🎉" },
   { href: "/contos", label: "Contos", icon: "📖" },
   { href: "/viagens", label: "Viagens", icon: "✈️" },
+  ...(FEATURES.lugares ? [{ href: "/lugares", label: "Lugares", icon: "📍" }] : []),
   { href: "/loja", label: "Loja", icon: "🛍️" },
   { href: "/trocas", label: "Trocas", icon: "🔄" },
 ];
@@ -56,6 +58,7 @@ const MENU = [
   { href: "/eventos", label: "Eventos", icon: "🎉" },
   { href: "/contos", label: "Contos", icon: "📖" },
   { href: "/viagens", label: "Viagens", icon: "✈️" },
+  ...(FEATURES.lugares ? [{ href: "/lugares", label: "Lugares", icon: "📍" }] : []),
   { href: "/loja", label: "Loja", icon: "🛍️" },
   { href: "/trocas", label: "Trocas", icon: "🔄" },
   { href: "/carteira", label: "Carteira", icon: "🌶️" },
