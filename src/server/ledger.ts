@@ -214,3 +214,13 @@ export async function extendVip(tx: Tx, userId: string, days: number, source: "P
 export async function grantVip(userId: string, days: number) {
   return db.$transaction((tx) => extendVip(tx, userId, days, "ADMIN"));
 }
+
+/** Bônus da plataforma (ex.: primeiros passos): sai da carteira de emissão; idempotente pela chave. */
+export async function grantReward(userId: string, amount: number, key: string, note: string) {
+  if (!Number.isInteger(amount) || amount <= 0) throw new Error("Valor inválido");
+  return runLedger(async (tx) => {
+    const mint = await systemWallet(tx, "SYSTEM_MINT");
+    const w = await userWallet(tx, userId);
+    return postTransaction(tx, { type: "REWARD", key, moves: [{ walletId: mint.id, amount: -amount }, { walletId: w.id, amount }], note });
+  });
+}

@@ -129,6 +129,7 @@ enum WalletKind {
 }
 
 enum LedgerTxType {
+  REWARD
   TIP
   TRADE
   PURCHASE_CREDIT
@@ -278,6 +279,8 @@ model User {
   pushSubscriptions    PushSubscription[]    @relation("PushSubscriptions")
   /// preferências de push: { discreet: bool, groups: { pm: bool, ... } }
   pushPrefs            Json?
+  /// cartão "Primeiros passos" escondido pela pessoa
+  onboardingHiddenAt   DateTime?
 
   @@index([state, city])
   @@index([createdAt])

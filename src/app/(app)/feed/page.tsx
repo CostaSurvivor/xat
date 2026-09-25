@@ -7,6 +7,7 @@ import { OnlineRooms } from "@/components/OnlineRooms";
 import { HotPhotos } from "@/components/HotPhotos";
 import { liveList } from "@/server/live";
 import { StoryTray } from "@/components/StoryTray";
+import { OnboardingCard } from "@/components/OnboardingCard";
 
 export const metadata = { title: "Feed" };
 
@@ -27,6 +28,7 @@ export default async function Feed({ searchParams }: { searchParams: Promise<{ t
             ))}
           </div>
         )}
+        <OnboardingCard user={user} />
         <StoryTray viewer={user} />
         <Composer verified={isVerified(user)} />
         <div className="flex flex-wrap gap-2">
