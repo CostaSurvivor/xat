@@ -5,6 +5,7 @@ import { CURRENCY_ICON } from "@/lib/config";
 import { Logo } from "@/components/Logo";
 import { AppNav, HeaderIcons } from "@/components/AppNav";
 import { QuickExitKeys } from "@/components/QuickExit";
+import { AppLock } from "@/components/PinLock";
 import { Avatar } from "@/components/Avatar";
 import { db } from "@/lib/db";
 import { InstallApp } from "@/components/InstallApp";
@@ -36,6 +37,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </header>
       <main className="mx-auto max-w-6xl px-3 py-4 sm:px-4">{children}</main>
       <QuickExitKeys />
+      {user.pinHash && <AppLock minutes={user.pinLockMinutes} />}
       <AppNav variant="bottom" admin={user.role === "ADMIN" || user.role === "MODERATOR"} balance={`${CURRENCY_ICON} ${balance.toLocaleString("pt-BR")}`} />
     </div>
   );

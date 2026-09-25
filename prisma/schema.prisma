@@ -287,6 +287,9 @@ model User {
   onboardingHiddenAt   DateTime?
   /// não aparecer para outros na Paquera
   paqueraHidden        Boolean               @default(false)
+  /// bloqueio por PIN (argon2) e minutos parado até travar
+  pinHash              String?               @db.VarChar(255)
+  pinLockMinutes       Int                   @default(5)
   contos               Conto[]               @relation("ContosWritten")
   trips                Trip[]                @relation("TripsPlanned")
   contoComments        ContoComment[]        @relation("ContoComments")
@@ -326,6 +329,10 @@ model Session {
   userAgent         String?            @db.VarChar(255)
   createdAt         DateTime           @default(now())
   expiresAt         DateTime
+  /// bloqueio por PIN: última atividade da pessoa (não conta atualização automática) e travamento
+  lastActiveAt      DateTime?
+  lockedAt          DateTime?
+  pinFails          Int                @default(0)
   user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   pushSubscriptions PushSubscription[]
 

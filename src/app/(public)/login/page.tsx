@@ -15,6 +15,7 @@ const ERROS: Record<string, string> = {
   banido: "Conta banida.",
   excluida: "Conta excluída.",
   bloqueado: "Acesso bloqueado.",
+  pin: "Por segurança você saiu da conta (PIN). Entre com sua senha; o PIN continua valendo.",
 };
 
 export default async function Login({ searchParams }: { searchParams: Promise<{ next?: string; erro?: string }> }) {
