@@ -20,6 +20,8 @@ import { startTrade } from "@/app/actions/trade";
 import { recordVisit } from "@/server/visits";
 import { TestimonialsSection } from "@/components/Testimonials";
 import { ThemedAlbumsViewer } from "@/components/ThemedAlbums";
+import { todayBR, tripLabel } from "@/lib/trips";
+import { profileTrip } from "@/server/trips";
 
 export async function generateMetadata({ params }: { params: Promise<{ nick: string }> }) {
   return { title: `@${decodeURIComponent((await params).nick)}` };
@@ -35,7 +37,8 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
   if (!me && !iBlocked && (await isBlockedBetween(viewer.id, u.id))) notFound();
   if (!me && !iBlocked) await recordVisit(viewer, u.id);
 
-  const [fStatus, friends] = await Promise.all([friendStatus(viewer.id, u.id), friendIds(u.id)]);
+  const today = todayBR();
+  const [fStatus, friends, trip] = await Promise.all([friendStatus(viewer.id, u.id), friendIds(u.id), profileTrip(u.id, today)]);
   const [followers, following, isFollowing, album, access, posts, styles] = await Promise.all([
     db.follow.count({ where: { followeeId: u.id } }),
     db.follow.count({ where: { followerId: u.id } }),
@@ -77,6 +80,7 @@ export default async function UserPage({ params }: { params: Promise<{ nick: str
               {top && <Link href="/destaques?aba=perfis" className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">🏆 Top {top.rank <= 3 ? top.rank : 10} da semana · {top.group}</Link>}
               {!me && km != null && <span className="ml-1 rounded-full bg-pink-50 px-2 py-0.5 text-xs font-semibold text-wine">📍 {distanceLabel(km)}</span>}
             </p>
+            {trip && !hidden && <Link href={me ? "/viagens" : `/viagens?uf=${trip.state}`} className="mt-1 inline-block rounded-full bg-sky-50 px-2 py-0.5 text-xs font-semibold text-sky-800" title={trip.note ?? undefined}>{tripLabel(trip, today)}</Link>}
             <p className="mt-1 text-xs text-mute"><b className="text-fg">{friends.length}</b> amigos · <b className="text-fg">{followers}</b> seguidores · <b className="text-fg">{following}</b> seguindo</p>
             {!me && (
               <div className="mt-3 flex flex-wrap gap-2">

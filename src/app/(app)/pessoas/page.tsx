@@ -9,6 +9,8 @@ import { stylesFor } from "@/server/styles";
 import { Avatar } from "@/components/Avatar";
 import { Nick } from "@/components/Nick";
 import { LocationButton } from "@/components/LocationButton";
+import { visitors } from "@/server/trips";
+import { TRIPS, todayBR } from "@/lib/trips";
 
 export const metadata = { title: "Pessoas" };
 export const dynamic = "force-dynamic";
@@ -47,6 +49,7 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
     : withDist;
   const styles = await stylesFor(users.map((u) => u.id));
   const confirmed = await import("@/server/testimonials").then((m) => m.confirmedIds(users.map((u) => u.id)));
+  const coming = await visitors(viewer, todayBR());
 
   return (
     <div className="space-y-4">
@@ -54,6 +57,15 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
         <h1 className="mr-auto font-[family-name:var(--font-display)] text-2xl font-bold">{raio ? "📍 Perto de você" : "Pessoas"}</h1>
         <LocationButton source={viewer.geoSource} city={viewer.city} />
       </div>
+      <Link href="/viagens" className="card flex items-center gap-2 px-4 py-2.5 text-sm hover:border-wine/50" data-testid="faixa-viagens">
+        <span className="text-lg">✈️</span>
+        {coming.items.length > 0 ? (
+          <span><b>{coming.items.length}</b> {coming.items.length === 1 ? "visitante chegando" : "visitantes chegando"} {coming.mode === "near" ? "perto de você" : "no seu estado"} nos próximos {TRIPS.soonDays} dias</span>
+        ) : (
+          <span className="text-mute">Vai viajar? Anuncie e apareça para quem mora no destino</span>
+        )}
+        <span className="ml-auto text-wine">ver →</span>
+      </Link>
       <form className="flex flex-wrap gap-2">
         <select name="raio" defaultValue={raio ? String(raio) : "br"} className="input w-auto" disabled={!me} title={me ? "" : "Informe sua cidade no perfil"}>
           {RADII.map((r) => <option key={r} value={r}>até {r} km</option>)}
