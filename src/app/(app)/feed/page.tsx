@@ -8,6 +8,7 @@ import { HotPhotos } from "@/components/HotPhotos";
 import { liveList } from "@/server/live";
 import { StoryTray } from "@/components/StoryTray";
 import { OnboardingCard } from "@/components/OnboardingCard";
+import { DailyCard } from "@/components/DailyCard";
 import { FeaturedProfiles, HotContos, OnlineNow, VideoStrip } from "@/components/FeedSections";
 
 export const metadata = { title: "Feed" };
@@ -30,6 +31,7 @@ export default async function Feed({ searchParams }: { searchParams: Promise<{ t
           </div>
         )}
         <OnboardingCard user={user} />
+        <DailyCard user={user} />
         <StoryTray viewer={user} />
         <OnlineNow user={user} />
         <FeaturedProfiles user={user} />
