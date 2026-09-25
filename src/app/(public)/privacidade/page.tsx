@@ -1,6 +1,6 @@
 import { SITE_NAME, TERMS_VERSION } from "@/lib/config";
 
-export const metadata = { title: "Política de Privacidade" };
+export const metadata = { title: "Política de Privacidade", robots: { index: true, follow: true } };
 
 // Modelo inicial. Revisar com advogado / encarregado (DPO) antes do lançamento.
 export default function Privacidade() {

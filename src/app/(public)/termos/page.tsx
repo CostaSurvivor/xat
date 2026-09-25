@@ -1,6 +1,6 @@
 import { SITE_NAME, TERMS_VERSION } from "@/lib/config";
 
-export const metadata = { title: "Termos de Uso" };
+export const metadata = { title: "Termos de Uso", robots: { index: true, follow: true } };
 
 // Modelo inicial. Revisar com advogado antes do lançamento.
 export default function Termos() {
