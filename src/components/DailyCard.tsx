@@ -24,7 +24,7 @@ export function DailyCard({ user }: { user: CurrentUser }) {
           const done = day < current || (!n.canClaim && day === current);
           const now = n.canClaim && day === current;
           return (
-            <li key={day} className={`rounded-lg border py-1.5 ${now ? "border-wine bg-pink-50 font-semibold text-wine" : done ? "border-transparent bg-wine/10 text-wine" : "border-line text-mute"} ${day === 7 ? "font-bold" : ""}`}>
+            <li key={day} className={`rounded-lg border py-1.5 ${now ? "border-wine bg-violet-50 font-semibold text-wine" : done ? "border-transparent bg-wine/10 text-wine" : "border-line text-mute"} ${day === 7 ? "font-bold" : ""}`}>
               <div>{done ? "✓" : `Dia ${day}`}</div>
               <div>{r}{CURRENCY_ICON}</div>
             </li>

@@ -1,13 +1,14 @@
 @import "tailwindcss";
 
 @theme {
-  /* Tema claro (estilo Sexlog): fundo branco, texto escuro, vinho/rosa como cor principal */
+  /* Tema claro: fundo branco, texto escuro; roxo como cor principal e rosa no "Assine" (contrastes conferidos: ≥ 4,5:1) */
   --color-ink: #f7f5f6;     /* fundo da página */
   --color-panel: #ffffff;   /* cartões */
   --color-panel2: #f3eef0;  /* campos e áreas secundárias */
   --color-line: #e6dde1;
-  --color-wine: #b5134b;
-  --color-wine2: #d81b60;   /* cor principal (botões) */
+  --color-wine: #5b21b6;    /* roxo escuro (destaques, links) */
+  --color-wine2: #6d28d9;   /* cor principal (botões) */
+  --color-hot: #db2777;     /* rosa do "Assine" e chamadas de compra */
   --color-gold: #9a6a00;    /* dourado escuro: legível no branco (Pimentas, VIP) */
   --color-gold2: #b8860b;
   --color-mute: #6b5f64;
@@ -18,7 +19,7 @@
 html, body { background: var(--color-ink); color: var(--color-fg); }
 :root { color-scheme: light; }
 body { min-height: 100dvh; -webkit-tap-highlight-color: transparent; }
-::selection { background: #f8c9da; color: var(--color-fg); }
+::selection { background: #ddd6fe; color: var(--color-fg); }
 
 @utility btn { @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition disabled:opacity-50; }
 @utility btn-gold { @apply btn bg-wine2 text-white shadow-sm hover:bg-wine; } /* botão principal */
@@ -27,7 +28,7 @@ body { min-height: 100dvh; -webkit-tap-highlight-color: transparent; }
 @utility card { @apply rounded-2xl border border-line bg-panel shadow-[0_1px_2px_rgba(30,21,25,.04)]; }
 @utility input { @apply w-full rounded-xl border border-line bg-panel px-3 py-2 text-sm text-fg outline-none focus:border-wine2/60 focus:ring-2 focus:ring-wine2/10 placeholder:text-mute/70; }
 @utility label { @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-mute; }
-.gold-text { background: linear-gradient(90deg, #b5134b, #d81b60, #b5134b); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.gold-text { background: linear-gradient(90deg, #5b21b6, #a21caf, #5b21b6); -webkit-background-clip: text; background-clip: text; color: transparent; }
 
 /* Animações de itens (lista fixa, referenciada por nome) */
 /* tema claro: o pulso escurece/satura (clarear apagaria a letra no branco) */
@@ -73,3 +74,6 @@ body { min-height: 100dvh; -webkit-tap-highlight-color: transparent; }
 /* marca d'água que passeia pelo vídeo */
 @keyframes live-wm { 0% { left: 6%; top: 12%; } 25% { left: 55%; top: 30%; } 50% { left: 20%; top: 70%; } 75% { left: 60%; top: 80%; } 100% { left: 6%; top: 12%; } }
 .live-wm { animation: live-wm 40s linear infinite; transform: rotate(-12deg); text-shadow: 0 0 3px rgba(0,0,0,.6); }
+
+/* topo do app: degradê roxo → magenta (texto branco por cima) */
+.app-top { background: linear-gradient(90deg, #4c1d95 0%, #6d28d9 55%, #a21caf 100%); }

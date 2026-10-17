@@ -108,7 +108,7 @@ async function Profiles({ user, days, group }: { user: Awaited<ReturnType<typeof
             {u.ageVerification === "APPROVED" && <span className="ml-1 text-xs text-gold">✔</span>}
             <p className="truncate text-xs text-mute">{PROFILE_TYPES[u.profileType as keyof typeof PROFILE_TYPES]?.label}{!u.hideCity && u.city ? ` · ${u.city}/${u.state}` : u.state ? ` · ${u.state}` : ""}</p>
           </div>
-          <span className="shrink-0 rounded-full bg-pink-50 px-2.5 py-1 text-sm font-semibold text-wine">🔥 {u.score}</span>
+          <span className="shrink-0 rounded-full bg-violet-50 px-2.5 py-1 text-sm font-semibold text-wine">🔥 {u.score}</span>
         </Link>
       ))}
     </div>

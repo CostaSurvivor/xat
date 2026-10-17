@@ -37,7 +37,7 @@ export default async function Salas() {
           </Link>
         )}
         {couples && (
-          <Link href={`/${couples.slug}`} className="card flex min-w-0 items-center gap-4 border-pink-300 p-5 transition hover:border-pink-500">
+          <Link href={`/${couples.slug}`} className="card flex min-w-0 items-center gap-4 border-violet-300 p-5 transition hover:border-pink-500">
             <span className="text-4xl">💑</span>
             <div className="min-w-0 flex-1">
               <h2 className="font-[family-name:var(--font-display)] text-xl font-bold">Só Casais</h2>

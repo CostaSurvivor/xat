@@ -9,7 +9,7 @@ export function WelcomePromo({ offer, cta = true }: { offer: Offer; cta?: boolea
   if (offer.left <= 0) return null;
   const used = WELCOME.slots - offer.left;
   return (
-    <section aria-label="Promoção de lançamento" data-testid="promo" className="rounded-2xl border border-gold/40 bg-gradient-to-br from-amber-50 to-pink-50 p-5 text-left shadow-sm">
+    <section aria-label="Promoção de lançamento" data-testid="promo" className="rounded-2xl border border-gold/40 bg-gradient-to-br from-amber-50 to-violet-50 p-5 text-left shadow-sm">
       <p className="text-xs font-bold uppercase tracking-wide text-wine">🎁 Promoção de lançamento</p>
       <h2 className="mt-1 text-xl font-bold leading-snug text-fg sm:text-2xl">
         Os {WELCOME.slots} primeiros perfis verificados ganham {offer.coins} {CURRENCY_ICON} {CURRENCY_NAME}

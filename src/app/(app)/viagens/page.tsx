@@ -11,7 +11,7 @@ import { TripDeleteButton, TripForm } from "@/components/TripForm";
 export const metadata = { title: "Viagens" };
 export const dynamic = "force-dynamic";
 
-const PHASE = { now: { t: "Já está lá", c: "bg-emerald-50 text-emerald-800" }, soon: { t: "Chegando", c: "bg-pink-50 text-wine" }, later: { t: "Marcada", c: "bg-black/5 text-mute" }, past: { t: "", c: "" } };
+const PHASE = { now: { t: "Já está lá", c: "bg-emerald-50 text-emerald-800" }, soon: { t: "Chegando", c: "bg-violet-50 text-wine" }, later: { t: "Marcada", c: "bg-black/5 text-mute" }, past: { t: "", c: "" } };
 
 export default async function Viagens({ searchParams }: { searchParams: Promise<{ uf?: string }> }) {
   const user = await requireUser();

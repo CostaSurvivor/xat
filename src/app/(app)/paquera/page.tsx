@@ -30,7 +30,7 @@ export default async function Paquera({ searchParams }: { searchParams: Promise<
       <PaqueraTabs active="paquera" likes={likes} />
       <div className="flex flex-wrap gap-1.5">
         {FILTERS.map(([k, l]) => (
-          <Link key={k} href={k ? `/paquera?tipo=${k}` : "/paquera"} className={`rounded-full px-2.5 py-1 text-xs ${tipo === k ? "bg-pink-100 font-semibold text-wine" : "text-mute"}`}>{l}</Link>
+          <Link key={k} href={k ? `/paquera?tipo=${k}` : "/paquera"} className={`rounded-full px-2.5 py-1 text-xs ${tipo === k ? "bg-violet-100 font-semibold text-wine" : "text-mute"}`}>{l}</Link>
         ))}
       </div>
       {!c ? (

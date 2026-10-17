@@ -52,7 +52,7 @@ export function RoomPollBar({ slug, poll, isMod, onChange }: { slug: string; pol
   return (
     <>
       {poll && (
-        <div className="border-b border-line bg-pink-50/70 px-3 py-2 text-sm" data-testid="room-poll">
+        <div className="border-b border-line bg-violet-50/70 px-3 py-2 text-sm" data-testid="room-poll">
           <div className="mb-1.5 flex flex-wrap items-center gap-2">
             <b className="min-w-0 flex-1">📊 {poll.question}</b>
             <span className="text-xs text-mute">{poll.open ? `termina em ${left(poll.endsAt)}` : "encerrada"} · {poll.total} {poll.total === 1 ? "voto" : "votos"}</span>
@@ -68,7 +68,7 @@ export function RoomPollBar({ slug, poll, isMod, onChange }: { slug: string; pol
                   onClick={() => call("PUT", { pollId: poll.id, option: i })}
                   className={`relative overflow-hidden rounded-lg border px-2 py-1 text-left text-sm ${poll.mine === i ? "border-wine2" : "border-line"} ${poll.open ? "hover:border-wine2" : ""} bg-white`}
                 >
-                  {showResults && <span className={`absolute inset-y-0 left-0 ${win ? "bg-amber-200" : "bg-pink-100"}`} style={{ width: `${poll.pct[i]}%` }} />}
+                  {showResults && <span className={`absolute inset-y-0 left-0 ${win ? "bg-amber-200" : "bg-violet-100"}`} style={{ width: `${poll.pct[i]}%` }} />}
                   <span className="relative flex gap-2">
                     <span className="min-w-0 flex-1 truncate">{poll.mine === i && "✓ "}{win && "🏆 "}{o}</span>
                     {showResults && <span className="text-xs text-mute">{poll.pct[i]}%</span>}

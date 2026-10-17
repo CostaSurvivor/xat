@@ -12,7 +12,7 @@ export function AfimToggle({ active, untilLabel, note }: { active: boolean; unti
 
   if (active)
     return (
-      <div className="card flex flex-wrap items-center gap-2 border-wine/40 bg-pink-50/60 px-4 py-2.5 text-sm" data-testid="afim-ligado">
+      <div className="card flex flex-wrap items-center gap-2 border-wine/40 bg-violet-50/60 px-4 py-2.5 text-sm" data-testid="afim-ligado">
         <span className="font-semibold text-wine">🔥 Você está afim hoje</span>
         <span className="text-mute">{untilLabel}</span>
         {note && <span className="min-w-0 truncate italic text-mute">“{note}”</span>}

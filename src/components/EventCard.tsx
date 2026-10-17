@@ -11,7 +11,7 @@ const STATUS: Record<string, string> = { PENDING: "⏳ em análise", REJECTED: "
 export function EventCard({ e }: { e: EventCardData }) {
   return (
     <Link href={`/eventos/${e.id}`} className="card group flex min-w-0 flex-col overflow-hidden transition hover:border-wine/50">
-      <div className="relative aspect-[16/9] bg-gradient-to-br from-pink-100 via-panel2 to-wine/20">
+      <div className="relative aspect-[16/9] bg-gradient-to-br from-violet-100 via-panel2 to-wine/20">
         {e.coverMediaId ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={`/api/media/${e.coverMediaId}?v=d`} alt="" className="protected-img h-full w-full object-cover" draggable={false} />

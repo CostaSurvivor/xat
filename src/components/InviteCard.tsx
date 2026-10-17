@@ -28,7 +28,7 @@ export function InviteCard({ nick, stats }: { nick: string; stats: { invited: nu
           const from = i === 0 ? 1 : INVITER_TIERS[i - 1].upTo + 1;
           const on = next >= from && next <= t.upTo;
           return (
-            <li key={t.upTo} className={`rounded-lg border px-2 py-1.5 text-center ${on ? "border-wine bg-pink-50 font-semibold text-wine" : "border-line text-mute"}`}>
+            <li key={t.upTo} className={`rounded-lg border px-2 py-1.5 text-center ${on ? "border-wine bg-violet-50 font-semibold text-wine" : "border-line text-mute"}`}>
               {from}º–{t.upTo}º<br /><b>{t.coins} {CURRENCY_ICON}</b> cada
             </li>
           );

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { brl, compact, niceScale, shortDay } from "@/lib/report";
 
-const HUE = "#d81b60"; // wine2 (validado contra o fundo branco)
+const HUE = "#6d28d9"; // wine2 roxo (7,1:1 contra o fundo branco)
 const GRID = "#eee6ea";
 
 /** Colunas diárias (uma série): barra ≤ 24px, topo arredondado 4px, base reta; tooltip ao passar o dedo/mouse. */

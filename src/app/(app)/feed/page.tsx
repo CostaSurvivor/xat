@@ -50,7 +50,7 @@ export default async function Feed({ searchParams }: { searchParams: Promise<{ t
           ))}
         </div>
         {tag && (
-          <div className="flex items-center gap-2 rounded-xl bg-pink-50 px-3 py-2 text-sm" data-testid="filtro-tag">
+          <div className="flex items-center gap-2 rounded-xl bg-violet-50 px-3 py-2 text-sm" data-testid="filtro-tag">
             <span>Posts com <b className="text-wine">#{tag}</b></span>
             <Link href={`/feed?tab=${tab}`} className="ml-auto text-xs text-mute underline">limpar ✕</Link>
           </div>
