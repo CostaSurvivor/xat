@@ -18,6 +18,8 @@ export async function recordVisit(viewer: { id: string; role: string }, targetId
       create: { visitedId: targetId, visitorId: viewer.id },
       update: { lastAt: new Date(), count: { increment: inc } },
     });
+    // estatística: conta a visita quando ela também conta no "quem visitou" (sem repetir em minutos)
+    if (inc) await import("./stats").then((s) => s.bumpStat(targetId, "visits"));
   } catch {}
 }
 

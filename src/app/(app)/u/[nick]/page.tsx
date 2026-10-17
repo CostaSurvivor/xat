@@ -147,7 +147,7 @@ export default async function UserPage({ params, searchParams }: { params: Promi
               {[
                 { n: friends.length, label: "amigos", href: "?aba=amigos#rede" },
                 { n: followers, label: "seguidores", href: "?aba=seguidores#rede" },
-                { n: visitsTotal, label: "visitas", href: me ? "/visitas" : null },
+                { n: visitsTotal, label: "visitas", href: me ? "/estatisticas" : null },
                 { n: testimonialsOk, label: "depoimentos", href: "#depoimentos" },
               ].map((c) => {
                 const inner = <><b className="block text-base leading-tight text-fg">{c.n.toLocaleString("pt-BR")}</b><span className="text-[11px] text-mute">{c.label}</span></>;
@@ -178,6 +178,7 @@ export default async function UserPage({ params, searchParams }: { params: Promi
             {me && (
               <div className="mt-3 flex flex-wrap gap-2">
                 <Link href="/perfil" className="btn-ghost">✏️ Editar perfil e configurações</Link>
+                <Link href="/estatisticas" className="btn-ghost" data-testid="link-estatisticas">📊 Estatísticas</Link>
                 <Link href="/depoimentos" className="btn-ghost">📝 Depoimentos{mine?.[3] ? ` (${mine[3]} novos)` : ""}</Link>
               </div>
             )}

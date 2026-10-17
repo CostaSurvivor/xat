@@ -304,6 +304,7 @@ model User {
   placeReviews         PlaceReview[]         @relation("PlaceReviews")
   placeCheckins        PlaceCheckin[]        @relation("PlaceCheckins")
   suggestionsDismissed SuggestionDismiss[]   @relation("SuggestionsDismissed")
+  profileStats         ProfileStat[]         @relation("ProfileStats")
   /// convite: quem trouxe esta pessoa e quando o prêmio foi pago (na verificação)
   referredById         String?
   referralRewardedAt   DateTime?
@@ -1573,4 +1574,16 @@ model SuggestionDismiss {
   user      User     @relation("SuggestionsDismissed", fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, targetId])
+}
+
+/// Estatísticas do perfil por dia (horário de Brasília): visitas, reações e comentários recebidos.
+model ProfileStat {
+  userId    String
+  day       String @db.VarChar(10)
+  visits    Int    @default(0)
+  reactions Int    @default(0)
+  comments  Int    @default(0)
+  user      User   @relation("ProfileStats", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, day])
 }
