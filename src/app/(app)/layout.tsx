@@ -9,6 +9,7 @@ import { AppLock } from "@/components/PinLock";
 import { Avatar } from "@/components/Avatar";
 import { db } from "@/lib/db";
 import { InstallApp } from "@/components/InstallApp";
+import { ViewerProvider } from "@/components/Watermark";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser();
@@ -35,7 +36,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         )}
         {ann && <div className="bg-amber-50 px-4 py-1.5 text-center text-xs text-gold2">📢 {ann.body}</div>}
       </header>
-      <main className="mx-auto max-w-6xl px-3 py-4 sm:px-4">{children}</main>
+      <main className="mx-auto max-w-[1360px] px-2 py-2 sm:px-4 sm:py-3"><ViewerProvider nick={user.nick}>{children}</ViewerProvider></main>
       <QuickExitKeys />
       {user.pinHash && <AppLock minutes={user.pinLockMinutes} />}
       <AppNav variant="bottom" admin={user.role === "ADMIN" || user.role === "MODERATOR"} balance={`${CURRENCY_ICON} ${balance.toLocaleString("pt-BR")}`} />

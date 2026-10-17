@@ -2,7 +2,7 @@
 
 @theme {
   /* Tema claro: fundo branco, texto escuro; roxo como cor principal e rosa no "Assine" (contrastes conferidos: ≥ 4,5:1) */
-  --color-ink: #f7f5f6;     /* fundo da página */
+  --color-ink: #e8e8e8;     /* fundo da página: cinza neutro, cards brancos por cima */
   --color-panel: #ffffff;   /* cartões */
   --color-panel2: #f3eef0;  /* campos e áreas secundárias */
   --color-line: #e6dde1;
@@ -25,7 +25,7 @@ body { min-height: 100dvh; -webkit-tap-highlight-color: transparent; }
 @utility btn-gold { @apply btn bg-wine2 text-white shadow-sm hover:bg-wine; } /* botão principal */
 @utility btn-wine { @apply btn bg-wine text-white hover:bg-wine2; }
 @utility btn-ghost { @apply btn border border-line bg-panel text-mute hover:text-fg hover:border-wine2/50; }
-@utility card { @apply rounded-2xl border border-line bg-panel shadow-[0_1px_2px_rgba(30,21,25,.04)]; }
+@utility card { @apply rounded-lg bg-panel; } /* card chapado: cantos de 8px, sem borda nem sombra */
 @utility input { @apply w-full rounded-xl border border-line bg-panel px-3 py-2 text-sm text-fg outline-none focus:border-wine2/60 focus:ring-2 focus:ring-wine2/10 placeholder:text-mute/70; }
 @utility label { @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-mute; }
 .gold-text { background: linear-gradient(90deg, #5b21b6, #a21caf, #5b21b6); -webkit-background-clip: text; background-clip: text; color: transparent; }

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/server/auth";
 import { EXPLORE_TYPES, ExploreLatestPhotos, ExploreLive, ExploreOnline, ExploreTop, type ExploreType } from "@/components/Explore";
-import { SuggestedProfiles, VideoStrip } from "@/components/FeedSections";
+import { FeaturedProfiles, HotContos, SuggestedProfiles, VideoStrip } from "@/components/FeedSections";
 
 export const metadata = { title: "Explorar" };
 export const dynamic = "force-dynamic";
@@ -12,7 +12,8 @@ export default async function Explorar({ searchParams }: { searchParams: Promise
   const raw = (await searchParams).tipo ?? "";
   const tipo: ExploreType = raw in EXPLORE_TYPES ? (raw as ExploreType) : "";
   return (
-    <div className="mx-auto w-full min-w-0 max-w-2xl space-y-4">
+    // vitrine larga (até 1360px), com grades de 6 colunas no computador
+    <div className="mx-auto w-full min-w-0 max-w-[1360px] space-y-2">
       <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold">🧭 Explorar</h1>
       <nav className="-mx-1 flex gap-2 overflow-x-auto px-1 [scrollbar-width:none]" aria-label="Filtrar por tipo de perfil" data-testid="explorar-filtro">
         {(Object.keys(EXPLORE_TYPES) as ExploreType[]).map((k) => (
@@ -28,6 +29,8 @@ export default async function Explorar({ searchParams }: { searchParams: Promise
       <ExploreLive />
       <ExploreLatestPhotos user={user} tipo={tipo} />
       <VideoStrip user={user} />
+      <FeaturedProfiles user={user} />
+      <HotContos user={user} />
     </div>
   );
 }

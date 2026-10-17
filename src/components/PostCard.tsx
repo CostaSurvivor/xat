@@ -86,7 +86,7 @@ export function PostCard({ post, viewer }: { post: FeedPost; viewer: { nick: str
   return (
     <article className="card overflow-hidden">
       <header className="flex items-center gap-3 p-3">
-        <Avatar mediaId={a.avatarId} nick={a.nick} style={a.style} />
+        <Avatar mediaId={a.avatarId} nick={a.nick} style={a.style} ring={a.vip ? "vip" : null} />
         <div className="min-w-0 flex-1 leading-tight">
           <div className="truncate">
             <Nick nick={a.nick} style={a.style} />

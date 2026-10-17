@@ -57,7 +57,7 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
     Object.assign(where, { showDistance: true, hideCity: false, lat: { gte: b.minLat, lte: b.maxLat }, lng: { gte: b.minLng, lte: b.maxLng } });
   }
 
-  const select = { id: true, nick: true, avatarId: true, profileType: true, city: true, state: true, hideCity: true, ageVerification: true, lastSeenAt: true, lat: true, lng: true, showDistance: true, likes: true, afimUntil: true, afimNote: true, createdAt: true, persons: { select: { label: true, birthDate: true, orientation: true }, orderBy: { id: "asc" as const } } } as const;
+  const select = { id: true, nick: true, avatarId: true, profileType: true, city: true, state: true, hideCity: true, ageVerification: true, lastSeenAt: true, lat: true, lng: true, showDistance: true, likes: true, afimUntil: true, afimNote: true, createdAt: true, vipUntil: true, persons: { select: { label: true, birthDate: true, orientation: true }, orderBy: { id: "asc" as const } } } as const;
   // ordem: "" (perto, se houver raio; senão online recente) · online · novos · afinidade
   const ordem = ["online", "novos", "afinidade"].includes(String(sp.ordem)) ? String(sp.ordem) : "";
   const rows = await db.user.findMany({ where, orderBy: ordem === "novos" ? { createdAt: "desc" } : { lastSeenAt: "desc" }, take: raio || ordem === "afinidade" ? 600 : 60, select });
@@ -99,11 +99,59 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
   const others = q.length >= 2 ? await searchOthers(viewer, q) : null;
 
   return (
-    <div className="space-y-4">
+    // busca: resultados (680px) + filtros fixos à direita (312px) no computador
+    <div className="mx-auto max-w-[1000px] space-y-2">
       <div className="flex flex-wrap items-baseline gap-2">
         <h1 className="mr-auto font-[family-name:var(--font-display)] text-2xl font-bold">{raio ? "📍 Perto de você" : "Pessoas"}</h1>
         <LocationButton source={viewer.geoSource} city={viewer.city} />
       </div>
+      <div className="grid gap-2 lg:grid-cols-[minmax(0,680px)_312px]">
+        <aside className="min-w-0 space-y-2 lg:sticky lg:top-16 lg:order-2 lg:max-h-[calc(100dvh-5rem)] lg:self-start lg:overflow-y-auto" data-testid="filtros-lateral">
+        <form className="card space-y-2 p-3" data-testid="busca-form">
+          <div className="flex flex-wrap gap-2">
+            <select name="raio" defaultValue={raio ? String(raio) : "br"} className="input w-auto" disabled={!me} title={me ? "" : "Informe sua cidade no perfil"} aria-label="Distância">
+              {RADII.map((r) => <option key={r} value={r}>até {r} km</option>)}
+              <option value="br">Brasil todo</option>
+            </select>
+            <input name="q" defaultValue={sp.q} placeholder="Buscar nick, cidade, grupo, evento, conto…" aria-label="Buscar" className="input min-w-40 flex-1" />
+            <select name="ordem" defaultValue={ordem} className="input w-auto" aria-label="Ordenar">
+              <option value="">{raio ? "📍 Mais perto" : "🟢 Online recente"}</option>
+              {raio && <option value="online">🟢 Online recente</option>}
+              <option value="novos">✨ Novos usuários</option>
+              <option value="afinidade">🔥 Mais afinidade</option>
+            </select>
+          </div>
+          <FiltersToggle count={activeFilters}>
+            <select name="tipo" defaultValue={sp.tipo ?? ""} className="input w-auto" aria-label="Tipo de perfil">
+              <option value="">Todos os perfis</option>
+              <option value="CASAIS">Casais</option>
+              {Object.entries(PROFILE_TYPES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+            </select>
+            <select name="uf" defaultValue={sp.uf ?? ""} className="input w-auto" aria-label="Estado"><option value="">UF</option>{UFS.map((u) => <option key={u}>{u}</option>)}</select>
+            <span className="flex items-center gap-1 text-sm text-mute">
+              Idade
+              <input name="idmin" type="number" inputMode="numeric" min={AGE_MIN} max={AGE_MAX} defaultValue={ages.min ?? ""} placeholder={String(AGE_MIN)} className="input w-16 px-2" aria-label="Idade mínima" />
+              a
+              <input name="idmax" type="number" inputMode="numeric" min={AGE_MIN} max={AGE_MAX} defaultValue={ages.max ?? ""} placeholder={String(AGE_MAX)} className="input w-16 px-2" aria-label="Idade máxima" />
+            </span>
+            <select name="curte" defaultValue={sp.curte ?? ""} className="input w-auto max-w-56" aria-label="Curte">
+              <option value="">Curte…</option>
+              {LIKE_GROUPS.map((g) => (
+                <optgroup key={g.title} label={g.title}>{g.tags.map((t) => <option key={t}>{t}</option>)}</optgroup>
+              ))}
+            </select>
+            <label className="flex items-center gap-1 text-sm text-mute"><input type="checkbox" name="afim" defaultChecked={!!sp.afim} /> 🔥 afim hoje</label>
+            <label className="flex items-center gap-1 text-sm text-mute"><input type="checkbox" name="on" defaultChecked={!!sp.on} /> online</label>
+            <label className="flex items-center gap-1 text-sm text-mute"><input type="checkbox" name="ver" defaultChecked={!!sp.ver} /> verificados</label>
+            <label className="flex items-center gap-1 text-sm text-mute"><input type="checkbox" name="foto" defaultChecked={!!sp.foto} /> com foto</label>
+            {activeFilters > 0 && <Link href={`/pessoas?raio=${raio ?? "br"}`} className="self-center text-xs text-wine underline">limpar filtros</Link>}
+          </FiltersToggle>
+          {lista && <input type="hidden" name="vista" value="lista" />}
+          <button className="btn-wine w-full">Aplicar filtros</button>
+        </form>
+          <div className="hidden lg:block"><SearchAlerts current={alertInput} alerts={alerts} canSave={canSaveAlert} /></div>
+        </aside>
+        <div className="min-w-0 space-y-2 lg:order-1">
       <Link href="/viagens" className="card flex items-center gap-2 px-4 py-2.5 text-sm hover:border-wine/50" data-testid="faixa-viagens">
         <span className="text-lg">✈️</span>
         {coming.items.length > 0 ? (
@@ -119,48 +167,6 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
           🔥 {afimCount} {afimCount === 1 ? "pessoa afim hoje" : "pessoas afim hoje"}{raio ? " perto de você" : ""} — ver →
         </Link>
       )}
-      <form className="space-y-2" data-testid="busca-form">
-        <div className="flex flex-wrap gap-2">
-          <select name="raio" defaultValue={raio ? String(raio) : "br"} className="input w-auto" disabled={!me} title={me ? "" : "Informe sua cidade no perfil"} aria-label="Distância">
-            {RADII.map((r) => <option key={r} value={r}>até {r} km</option>)}
-            <option value="br">Brasil todo</option>
-          </select>
-          <input name="q" defaultValue={sp.q} placeholder="Buscar nick, cidade, grupo, evento, conto…" aria-label="Buscar" className="input min-w-40 flex-1" />
-          <select name="ordem" defaultValue={ordem} className="input w-auto" aria-label="Ordenar">
-            <option value="">{raio ? "📍 Mais perto" : "🟢 Online recente"}</option>
-            {raio && <option value="online">🟢 Online recente</option>}
-            <option value="novos">✨ Novos usuários</option>
-            <option value="afinidade">🔥 Mais afinidade</option>
-          </select>
-        </div>
-        <FiltersToggle count={activeFilters}>
-          <select name="tipo" defaultValue={sp.tipo ?? ""} className="input w-auto" aria-label="Tipo de perfil">
-            <option value="">Todos os perfis</option>
-            <option value="CASAIS">Casais</option>
-            {Object.entries(PROFILE_TYPES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-          </select>
-          <select name="uf" defaultValue={sp.uf ?? ""} className="input w-auto" aria-label="Estado"><option value="">UF</option>{UFS.map((u) => <option key={u}>{u}</option>)}</select>
-          <span className="flex items-center gap-1 text-sm text-mute">
-            Idade
-            <input name="idmin" type="number" inputMode="numeric" min={AGE_MIN} max={AGE_MAX} defaultValue={ages.min ?? ""} placeholder={String(AGE_MIN)} className="input w-16 px-2" aria-label="Idade mínima" />
-            a
-            <input name="idmax" type="number" inputMode="numeric" min={AGE_MIN} max={AGE_MAX} defaultValue={ages.max ?? ""} placeholder={String(AGE_MAX)} className="input w-16 px-2" aria-label="Idade máxima" />
-          </span>
-          <select name="curte" defaultValue={sp.curte ?? ""} className="input w-auto max-w-56" aria-label="Curte">
-            <option value="">Curte…</option>
-            {LIKE_GROUPS.map((g) => (
-              <optgroup key={g.title} label={g.title}>{g.tags.map((t) => <option key={t}>{t}</option>)}</optgroup>
-            ))}
-          </select>
-          <label className="flex items-center gap-1 text-sm text-mute"><input type="checkbox" name="afim" defaultChecked={!!sp.afim} /> 🔥 afim hoje</label>
-          <label className="flex items-center gap-1 text-sm text-mute"><input type="checkbox" name="on" defaultChecked={!!sp.on} /> online</label>
-          <label className="flex items-center gap-1 text-sm text-mute"><input type="checkbox" name="ver" defaultChecked={!!sp.ver} /> verificados</label>
-          <label className="flex items-center gap-1 text-sm text-mute"><input type="checkbox" name="foto" defaultChecked={!!sp.foto} /> com foto</label>
-          {activeFilters > 0 && <Link href={`/pessoas?raio=${raio ?? "br"}`} className="self-center text-xs text-wine underline">limpar filtros</Link>}
-        </FiltersToggle>
-        {lista && <input type="hidden" name="vista" value="lista" />}
-        <button className="btn-wine w-full sm:w-auto">Buscar</button>
-      </form>
       <div className="flex items-center justify-end gap-1 text-sm" data-testid="vista">
         <span className="mr-1 text-xs text-mute">Ver em</span>
         <Link href={vistaHref("grade")} aria-current={!lista ? "page" : undefined} className={`rounded-full px-3 py-1 ${!lista ? "bg-wine2 text-white" : "text-mute hover:bg-panel2"}`}>▦ Grade</Link>
@@ -176,7 +182,7 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
               <li key={u.id} className="card p-3">
                 <Link href={`/u/${u.nick}`} className="flex gap-3">
                   <div className="relative shrink-0">
-                    <Avatar mediaId={u.avatarId} nick={u.nick} size={64} style={styles[u.id]} />
+                    <Avatar mediaId={u.avatarId} nick={u.nick} size={64} style={styles[u.id]} ring={u.vipUntil && u.vipUntil > new Date() ? "vip" : null} />
                     {online && !invisible && <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-panel bg-green-500" />}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -202,13 +208,13 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
           })}
         </ul>
       )}
-      <div className={`${lista ? "hidden" : "grid"} grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5`}>
+      <div className={`${lista ? "hidden" : "grid"} grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4`}>
         {users.map((u) => {
           const online = u.lastSeenAt && Date.now() - u.lastSeenAt.getTime() < 5 * 60_000;
           return (
             <Link key={u.id} href={`/u/${u.nick}`} className="card flex min-w-0 flex-col items-center p-4 text-center transition hover:border-wine/50">
               <div className="relative">
-                <Avatar mediaId={u.avatarId} nick={u.nick} size={72} style={styles[u.id]} />
+                <Avatar mediaId={u.avatarId} nick={u.nick} size={72} style={styles[u.id]} ring={u.vipUntil && u.vipUntil > new Date() ? "vip" : null} />
                 {online && !styles[u.id]?.powers.includes("INVISIBLE") && <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-panel bg-green-500" />}
               </div>
               <div className="mt-2 max-w-full truncate text-sm"><Nick nick={u.nick} style={styles[u.id]} link={false} />{u.ageVerification === "APPROVED" && <span className="ml-1 text-xs text-gold">✔</span>}</div>
@@ -226,13 +232,15 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
           );
         })}
       </div>
-      <SearchAlerts current={alertInput} alerts={alerts} canSave={canSaveAlert} />
+      <div className="lg:hidden"><SearchAlerts current={alertInput} alerts={alerts} canSave={canSaveAlert} /></div>
       {others && <SearchOthers q={q} r={others} />}
       {users.length === 0 && (
         <p className="card p-6 text-center text-mute">
           Ninguém encontrado com esses filtros{raio ? ` em até ${raio} km` : ""}.{raio && raio < 300 && <> <Link href={`/pessoas?raio=${raio === 100 ? 300 : 100}`} className="text-wine underline">Aumentar o raio</Link></>}
         </p>
       )}
+        </div>
+      </div>
     </div>
   );
 }
