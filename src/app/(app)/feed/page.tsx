@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { normalizeTag } from "@/lib/richtext";
 import { requireUser, isVerified, isSubscriber } from "@/server/auth";
 import { getFeed, type FeedTab } from "@/server/feed";
 import { Composer } from "@/components/Composer";
@@ -13,11 +14,14 @@ import { FeaturedProfiles, HotContos, OnlineNow, SuggestedProfiles, VideoStrip }
 
 export const metadata = { title: "Feed" };
 
-export default async function Feed({ searchParams }: { searchParams: Promise<{ tab?: FeedTab; antes?: string }> }) {
+export default async function Feed({ searchParams }: { searchParams: Promise<{ tab?: FeedTab; antes?: string; tag?: string }> }) {
   const user = await requireUser();
-  const { tab = "todos", antes } = await searchParams;
-  const [posts, lives] = await Promise.all([getFeed(user, { tab, before: antes }), liveList()]);
-  const tabs: [FeedTab, string][] = [["todos", "Todos"], ["seguindo", "Seguindo"], ["regiao", `Minha região${user.state ? ` (${user.state})` : ""}`]];
+  const sp = await searchParams;
+  const tab: FeedTab = (["todos", "seguindo", "amigos", "regiao"] as const).includes(sp.tab as FeedTab) ? (sp.tab as FeedTab) : "todos";
+  const antes = sp.antes;
+  const tag = typeof sp.tag === "string" ? normalizeTag(sp.tag) : null;
+  const [posts, lives] = await Promise.all([getFeed(user, { tab, before: antes, tag }), liveList()]);
+  const tabs: [FeedTab, string][] = [["todos", "Todos"], ["seguindo", "Seguindo"], ["amigos", "Amigos e favoritos"], ["regiao", `Minha região${user.state ? ` (${user.state})` : ""}`]];
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
       <div className="mx-auto w-full min-w-0 max-w-xl space-y-4">
@@ -42,13 +46,19 @@ export default async function Feed({ searchParams }: { searchParams: Promise<{ t
         <Composer verified={isVerified(user)} />
         <div className="flex flex-wrap gap-2">
           {tabs.map(([k, l]) => (
-            <Link key={k} href={`/feed?tab=${k}`} className={`rounded-full px-3 py-1 text-sm ${tab === k ? "bg-wine text-white" : "text-mute hover:text-fg"}`}>{l}</Link>
+            <Link key={k} href={`/feed?tab=${k}${tag ? `&tag=${encodeURIComponent(tag)}` : ""}`} className={`rounded-full px-3 py-1 text-sm ${tab === k ? "bg-wine text-white" : "text-mute hover:text-fg"}`}>{l}</Link>
           ))}
         </div>
+        {tag && (
+          <div className="flex items-center gap-2 rounded-xl bg-pink-50 px-3 py-2 text-sm" data-testid="filtro-tag">
+            <span>Posts com <b className="text-wine">#{tag}</b></span>
+            <Link href={`/feed?tab=${tab}`} className="ml-auto text-xs text-mute underline">limpar ✕</Link>
+          </div>
+        )}
         {posts.length === 0 && <p className="card p-8 text-center text-mute">Nada por aqui ainda. Que tal postar algo? 🔥</p>}
         {posts.map((p) => <PostCard key={p.id} post={p} viewer={{ nick: user.nick, subscriber: isSubscriber(user) }} />)}
         {posts.length === 15 && (
-          <Link href={`/feed?tab=${tab}&antes=${encodeURIComponent(posts[posts.length - 1].createdAt)}`} className="btn-ghost w-full">Carregar mais</Link>
+          <Link href={`/feed?tab=${tab}${tag ? `&tag=${encodeURIComponent(tag)}` : ""}&antes=${encodeURIComponent(posts[posts.length - 1].createdAt)}`} className="btn-ghost w-full">Carregar mais</Link>
         )}
       </div>
       <aside className="hidden space-y-4 lg:block"><HotPhotos user={user} /><OnlineRooms /></aside>

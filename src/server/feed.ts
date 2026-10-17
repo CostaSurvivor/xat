@@ -5,9 +5,16 @@ import type { CurrentUser } from "./auth";
 import { blockedIds } from "./access";
 import { stylesFor } from "./styles";
 
-export type FeedTab = "todos" | "seguindo" | "regiao";
+/** Contagem por emoji feita no código (o banco não diferencia emojis ao agrupar). */
+export function countEmojis(rows: { emoji: string }[]) {
+  const out: Record<string, number> = {};
+  for (const r of rows) out[r.emoji] = (out[r.emoji] ?? 0) + 1;
+  return out;
+}
 
-export async function getFeed(viewer: CurrentUser, opts: { tab?: FeedTab; before?: string; authorId?: string; take?: number; ids?: string[]; groupId?: string; videosOnly?: boolean }) {
+export type FeedTab = "todos" | "seguindo" | "amigos" | "regiao";
+
+export async function getFeed(viewer: CurrentUser, opts: { tab?: FeedTab; tag?: string | null; before?: string; authorId?: string; take?: number; ids?: string[]; groupId?: string; videosOnly?: boolean }) {
   const take = opts.take ?? 15;
   const blocked = await blockedIds(viewer.id);
   const following = (await db.follow.findMany({ where: { followerId: viewer.id }, select: { followeeId: true } })).map((f) => f.followeeId);
@@ -39,6 +46,13 @@ export async function getFeed(viewer: CurrentUser, opts: { tab?: FeedTab; before
     if (opts.authorId) where.AND.push({ authorId: opts.authorId });
     else if (opts.tab === "seguindo") where.AND.push({ authorId: { in: [...following, viewer.id] } });
     else if (opts.tab === "regiao" && viewer.state) where.AND.push({ author: { state: viewer.state } });
+    else if (opts.tab === "amigos") {
+      // amigos e favoritos (lista privada de quem eu marquei com ⭐)
+      const favs = (await db.favorite.findMany({ where: { ownerId: viewer.id }, select: { targetId: true } })).map((f) => f.targetId);
+      where.AND.push({ authorId: { in: [...friends, ...favs, viewer.id] } });
+    }
+    // #hashtag: filtro grosso no banco; a palavra inteira é conferida depois (hasTag)
+    if (opts.tag) where.AND.push({ body: { contains: `#${opts.tag}` } });
   }
   if (opts.videosOnly) where.AND.push({ media: { some: { media: { kind: "POST_VIDEO", status: "APPROVED" } } } });
   const before = opts.before ? new Date(opts.before) : null;
@@ -65,11 +79,13 @@ export async function getFeed(viewer: CurrentUser, opts: { tab?: FeedTab; before
     take,
     include,
   });
-  const posts = [...prioritized, ...rest];
+  const { hasTag } = await import("@/lib/richtext");
+  const posts = [...prioritized, ...rest].filter((p) => !opts.tag || hasTag(p.body, opts.tag));
   const followedSet = new Set(prioritized.map((p) => p.id));
   const ids = posts.map((p) => p.id);
   const [reactions, mine] = await Promise.all([
-    db.postReaction.groupBy({ by: ["postId", "emoji"], where: { postId: { in: ids } }, _count: true }),
+    // conta no código: o agrupamento do MySQL (utf8mb4 *_ci) trata emojis diferentes como iguais
+    db.postReaction.findMany({ where: { postId: { in: ids } }, select: { postId: true, emoji: true } }),
     db.postReaction.findMany({ where: { postId: { in: ids }, userId: viewer.id } }),
   ]);
   const styles = await stylesFor(posts.map((p) => p.authorId));
@@ -82,7 +98,7 @@ export async function getFeed(viewer: CurrentUser, opts: { tab?: FeedTab; before
     author: { ...p.author, vipUntil: undefined, vip: !!p.author.vipUntil && p.author.vipUntil > new Date(), city: p.author.hideCity ? null : p.author.city, style: styles[p.authorId] },
     media: p.media.filter((m) => m.media.status === "APPROVED").map((m) => ({ id: m.media.id, w: m.media.width, h: m.media.height, video: m.media.kind === "POST_VIDEO" })),
     comments: p._count.comments,
-    reactions: Object.fromEntries(reactions.filter((r) => r.postId === p.id).map((r) => [r.emoji, r._count])),
+    reactions: countEmojis(reactions.filter((r) => r.postId === p.id)),
     myReaction: mine.find((m) => m.postId === p.id)?.emoji ?? null,
     canDelete: p.authorId === viewer.id || viewer.role !== "USER",
     fromFollowed: followedSet.has(p.id),
@@ -101,7 +117,7 @@ export async function getComments(viewerId: string, postId: string) {
   const ids = rows.map((r) => r.id);
   const [styles, reactions, mine] = await Promise.all([
     stylesFor(rows.map((r) => r.authorId)),
-    db.commentReaction.groupBy({ by: ["commentId", "emoji"], where: { commentId: { in: ids } }, _count: true }),
+    db.commentReaction.findMany({ where: { commentId: { in: ids } }, select: { commentId: true, emoji: true } }),
     db.commentReaction.findMany({ where: { commentId: { in: ids }, userId: viewerId } }),
   ]);
   const view = (c: (typeof rows)[number]) => ({
@@ -110,7 +126,7 @@ export async function getComments(viewerId: string, postId: string) {
     createdAt: c.createdAt.toISOString(),
     author: { ...c.author, style: styles[c.authorId] },
     canDelete: c.authorId === viewerId || c.post.authorId === viewerId,
-    reactions: Object.fromEntries(reactions.filter((r) => r.commentId === c.id).map((r) => [r.emoji, r._count])) as Record<string, number>,
+    reactions: countEmojis(reactions.filter((r) => r.commentId === c.id)),
     myReaction: mine.find((m) => m.commentId === c.id)?.emoji ?? null,
   });
   const roots = rows.filter((r) => !r.parentId || !rows.some((x) => x.id === r.parentId));

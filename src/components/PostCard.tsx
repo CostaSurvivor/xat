@@ -12,6 +12,8 @@ import { Nick } from "./Nick";
 import { ProtectedImage } from "./ProtectedImage";
 import { ReportButton } from "./ReportButton";
 import { VideoPlayer } from "./VideoPlayer";
+import { RichText } from "./RichText";
+import { reactionSummary } from "@/lib/richtext";
 
 type Comment = Awaited<ReturnType<typeof loadComments>>[number];
 type CommentView = Omit<Comment, "replies">;
@@ -103,7 +105,7 @@ export function PostCard({ post, viewer }: { post: FeedPost; viewer: { nick: str
           <ReportButton targetType="POST" targetId={post.id} label="" />
         )}
       </header>
-      {post.body && <p className="whitespace-pre-wrap break-words px-4 pb-3 text-[15px]">{post.body}</p>}
+      {post.body && <p className="whitespace-pre-wrap break-words px-4 pb-3 text-[15px]"><RichText text={post.body} /></p>}
       {post.media.length > 0 && (
         <div className="relative">
           {post.media[idx].video ? (
@@ -121,6 +123,16 @@ export function PostCard({ post, viewer }: { post: FeedPost; viewer: { nick: str
         </div>
       )}
       <footer className="space-y-2 p-3">
+        {(() => {
+          const s = reactionSummary(reactions);
+          return s.total > 0 ? (
+            <div className="flex items-center gap-1.5 px-1 text-xs text-mute" data-testid="reacoes-resumo">
+              <span className="flex -space-x-1">{s.top.map((e) => <span key={e} className="flex h-5 w-5 items-center justify-center rounded-full border border-panel bg-panel2 text-[11px]">{e}</span>)}</span>
+              <span>{s.total}</span>
+              {count > 0 && <button onClick={openComments} className="ml-auto hover:text-fg">{count === 1 ? "1 comentário" : `${count} comentários`}</button>}
+            </div>
+          ) : null;
+        })()}
         <div className="flex flex-wrap items-center gap-1.5">
           {REACTIONS.map((e) => (
             <button key={e} onClick={() => react(e)} className={`rounded-full border px-2.5 py-1 text-sm transition ${mine === e ? "border-gold bg-gold/15" : "border-line hover:border-gold/50"}`}>
