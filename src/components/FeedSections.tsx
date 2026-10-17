@@ -131,3 +131,11 @@ export async function HotContos({ user }: { user: CurrentUser }) {
     </section>
   );
 }
+
+/** "✨ Sugestões para você": perfis compatíveis (estado, afinidade, foto, verificados). */
+export async function SuggestedProfiles({ user }: { user: CurrentUser }) {
+  const { suggestionsFor } = await import("@/server/suggestions");
+  const { Suggestions } = await import("@/components/Suggestions");
+  const items = await suggestionsFor(user);
+  return <Suggestions items={items.map(({ style: _s, likes: _l, lastSeenAt: _ls, createdAt: _c, ...u }) => u)} />;
+}

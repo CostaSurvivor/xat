@@ -303,6 +303,7 @@ model User {
   placesSuggested      Place[]               @relation("PlacesSuggested")
   placeReviews         PlaceReview[]         @relation("PlaceReviews")
   placeCheckins        PlaceCheckin[]        @relation("PlaceCheckins")
+  suggestionsDismissed SuggestionDismiss[]   @relation("SuggestionsDismissed")
   /// convite: quem trouxe esta pessoa e quando o prêmio foi pago (na verificação)
   referredById         String?
   referralRewardedAt   DateTime?
@@ -1562,4 +1563,14 @@ model PlaceCheckin {
   @@id([placeId, userId, day])
   @@index([placeId, day])
   @@index([userId])
+}
+
+/// "Sugestões para você": perfis que a pessoa dispensou (não aparecem de novo).
+model SuggestionDismiss {
+  userId    String
+  targetId  String
+  createdAt DateTime @default(now())
+  user      User     @relation("SuggestionsDismissed", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, targetId])
 }
