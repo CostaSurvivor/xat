@@ -4,15 +4,16 @@ import { getCurrentUser } from "@/server/auth";
 
 export async function GET() {
   const u = await getCurrentUser();
-  if (!u) return NextResponse.json({ notif: 0, pm: 0 });
-  const [notif, convs] = await Promise.all([
+  if (!u) return NextResponse.json({ notif: 0, pm: 0, friends: 0 });
+  const [notif, convs, friends] = await Promise.all([
     db.notification.count({ where: { userId: u.id, readAt: null } }),
     db.conversation.findMany({ where: { OR: [{ userAId: u.id }, { userBId: u.id }] }, select: { userAId: true, lastMessageAt: true, lastSenderId: true, aReadAt: true, bReadAt: true } }),
+    db.friendship.count({ where: { addresseeId: u.id, status: "PENDING" } }),
   ]);
   const pm = convs.filter((c) => {
     if (!c.lastSenderId || c.lastSenderId === u.id) return false;
     const read = c.userAId === u.id ? c.aReadAt : c.bReadAt;
     return !read || read < c.lastMessageAt;
   }).length;
-  return NextResponse.json({ notif, pm });
+  return NextResponse.json({ notif, pm, friends });
 }

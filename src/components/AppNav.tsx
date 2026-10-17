@@ -8,33 +8,14 @@ import { createPortal } from "react-dom";
 import { Dot, useBadges } from "./Badges";
 import { QuickExitButton } from "./QuickExit";
 
-/** Ícones do topo do computador (traço fino, cor do texto). */
-const I = {
-  feed: <path d="M4 5h16M4 12h16M4 19h10" />,
-  video: <><rect x="3" y="6" width="13" height="12" rx="2.5" /><path d="m16 10.5 5-3v9l-5-3" /></>,
-  people: <><circle cx="9" cy="8.5" r="3.2" /><path d="M3.5 19c.6-3.3 2.8-5 5.5-5s4.9 1.7 5.5 5" /><circle cx="17" cy="9.5" r="2.5" /><path d="M16 14.2c2.4-.2 4.2 1.3 4.7 4.3" /></>,
-  rooms: <><path d="M4 5.5h12a2 2 0 0 1 2 2V14a2 2 0 0 1-2 2H9l-4 3.5V16H4a2 2 0 0 1-2-2V7.5a2 2 0 0 1 2-2" /><path d="M20 9v6.5a2 2 0 0 1-2 2" /></>,
-  explore: <><circle cx="12" cy="12" r="9" /><path d="m15.5 8.5-2 5-5 2 2-5z" /></>,
-  live: <><circle cx="12" cy="12" r="2.5" /><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14" /></>,
-};
 const Svg = ({ children, size = 22 }: { children: React.ReactNode; size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{children}</svg>
 );
 
-/** Computador: ícones com rótulo; ❤ Paquera no centro. */
-const LEFT = [
-  { href: "/feed", label: "Feed", icon: I.feed },
-  { href: "/explorar", label: "Explorar", icon: I.explore },
-  { href: "/videos", label: "Vídeos", icon: I.video },
-  { href: "/ao-vivo", label: "Ao vivo", icon: I.live },
-];
-/** Pessoas é também a busca (perfis, grupos, eventos, contos e salas). */
-const RIGHT = [
-  { href: "/pessoas", label: "Pessoas", icon: I.people },
-  { href: "/salas", label: "Salas", icon: I.rooms },
-];
 /** "Mais": só o que não tem ícone no topo (Destaques está no feed; Suporte, saldo e Assine no topo). Admin, discreto, só para a equipe. */
 const MORE = [
+  { href: "/pessoas", label: "Pessoas", icon: "👥" },
+  { href: "/destaques", label: "Destaques", icon: "🏆" },
   { href: "/grupos", label: "Grupos", icon: "🫂" },
   { href: "/eventos", label: "Eventos", icon: "🎉" },
   { href: "/contos", label: "Contos", icon: "📖" },
@@ -74,6 +55,16 @@ const MailIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <rect x="3" y="5" width="18" height="14" rx="2.5" />
     <path d="m4 7 8 6 8-6" />
+  </svg>
+);
+const FriendsIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="9" cy="8.5" r="3.2" /><path d="M3.5 19c.6-3.3 2.8-5 5.5-5s4.9 1.7 5.5 5" /><path d="M18 8v6M15 11h6" />
+  </svg>
+);
+const PlusIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="3.5" y="3.5" width="17" height="17" rx="4" /><path d="M12 8v8M8 12h8" />
   </svg>
 );
 const SearchIcon = () => (
@@ -116,9 +107,11 @@ export function HeaderIcons() {
   return (
     <div className="flex items-center gap-0.5">
       <span className="md:hidden">{icon("/pessoas", <SearchIcon />, "Buscar pessoas", 0)}</span>
-      {icon("/suporte", <SupportIcon />, "Suporte", 0)}
+      <span className="hidden lg:block">{icon("/notificacoes?aba=pedidos", <FriendsIcon />, "Pedidos de amizade", b.friends)}</span>
+      <span className="md:hidden lg:block">{icon("/suporte", <SupportIcon />, "Suporte", 0)}</span>
       {icon("/mensagens", <MailIcon />, "Mensagens (PV)", b.pm)}
       {icon("/notificacoes", <BellIcon />, "Avisos", b.notif)}
+      <span className="hidden lg:block">{icon("/feed#publicar", <PlusIcon />, "Publicar", 0)}</span>
     </div>
   );
 }
@@ -212,35 +205,60 @@ function DesktopNav({ path, admin }: { path: string; admin?: boolean }) {
       </Link>
     );
   };
-  const paquera = active(path, "/paquera");
   const moreActive = more.some((l) => active(path, l.href));
+  // em telas menores alguns links saem da barra e vão para o "Mais"
+  const links = [
+    { href: "/feed", label: "Início", cls: "" },
+    { href: "/explorar", label: "Explorar", cls: "" },
+    { href: "/salas", label: "Salas", cls: "hidden lg:inline-flex" },
+    { href: "/paquera", label: "❤ Paquera", cls: "hidden xl:inline-flex" },
+    { href: "/ao-vivo", label: "Ao vivo", cls: "hidden 2xl:inline-flex" },
+    { href: "/videos", label: "Vídeos", cls: "hidden 2xl:inline-flex" },
+  ];
+  const overflow = [
+    { href: "/salas", label: "Salas", icon: "💬", cls: "lg:hidden" },
+    { href: "/suporte", label: "Suporte", icon: "🎧", cls: "lg:hidden" },
+    { href: "/paquera", label: "Paquera", icon: "❤️", cls: "xl:hidden" },
+    { href: "/ao-vivo", label: "Ao vivo", icon: "🔴", cls: "2xl:hidden" },
+    { href: "/videos", label: "Vídeos", icon: "🎬", cls: "2xl:hidden" },
+  ];
   return (
-    <nav className="hidden items-center justify-center gap-0.5 md:flex" aria-label="Navegação principal (computador)">
-      {LEFT.map(item)}
-      <Link href="/paquera" title="Paquera" aria-label="Paquera" aria-current={paquera ? "page" : undefined}
-        className={`mx-1 flex h-11 w-11 items-center justify-center rounded-full bg-hot text-white shadow transition hover:scale-105 ${paquera ? "ring-4 ring-white/50" : ""}`}>
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.2-9.3C1.6 7.8 3.8 4.5 7.2 4.5c2 0 3.6 1.1 4.8 2.8 1.2-1.7 2.8-2.8 4.8-2.8 3.4 0 5.6 3.3 4.4 6.7-1.7 4.7-9.2 9.3-9.2 9.3z" /></svg>
-      </Link>
-      {RIGHT.map(item)}
-      <div className="relative">
-        <button onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-haspopup="menu" title="Mais"
-          className={`flex w-14 flex-col items-center gap-0.5 rounded-xl py-1 text-[11px] leading-none outline-none focus-visible:ring-2 focus-visible:ring-white/60 lg:w-16 ${moreActive ? "bg-white/20 text-white" : "text-white/80 hover:bg-white/10 hover:text-white"}`}>
-          <Svg><circle cx="5" cy="12" r="1.3" /><circle cx="12" cy="12" r="1.3" /><circle cx="19" cy="12" r="1.3" /></Svg>
-          <span className={moreActive ? "font-semibold" : ""}>Mais</span>
-        </button>
-        {open && (
-          <>
-            <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-            <div role="menu" className="card absolute right-0 top-12 z-50 grid w-64 grid-cols-2 gap-1 p-2 shadow-lg">
-              {more.map((l) => (
-                <Link key={l.href} role="menuitem" href={l.href} className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${active(path, l.href) ? "bg-violet-50 font-semibold text-wine" : "hover:bg-black/5"}`}>
-                  <span>{l.icon}</span>{l.label}
-                </Link>
-              ))}
-              <QuickExitButton className="col-span-2 mt-1 rounded-lg border-t border-line px-3 pt-2 text-left text-xs text-mute hover:text-fg" />
-            </div>
-          </>
-        )}
+    <nav className="hidden min-w-0 items-center gap-3 md:flex xl:gap-5" aria-label="Navegação principal (computador)">
+      {/* busca em pílula: abre Pessoas já com o termo */}
+      <form action="/pessoas" className="relative w-40 shrink-0 lg:w-48 xl:w-60" role="search">
+        <input type="hidden" name="raio" value="br" />
+        <input name="q" placeholder="Encontrar pessoas" aria-label="Encontrar pessoas" className="h-9 w-full rounded-full border-0 bg-white/15 pl-9 pr-3 text-sm text-white placeholder:text-white/70 outline-none focus:bg-white/25 focus:ring-2 focus:ring-white/40" />
+        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/80"><Svg size={16}><circle cx="11" cy="11" r="6.5" /><path d="m20 20-4.2-4.2" /></Svg></span>
+      </form>
+      <div className="flex shrink-0 items-center gap-0.5 xl:gap-1.5">
+        {links.map((l) => {
+          const on = active(path, l.href);
+          return (
+            <Link key={l.href} href={l.href} aria-current={on ? "page" : undefined}
+              className={`${l.cls || "inline-flex"} relative whitespace-nowrap rounded-full px-2.5 py-1.5 text-sm font-semibold transition ${on ? "bg-white/20 text-white" : "text-white/80 hover:bg-white/10 hover:text-white"}`}>
+              {l.label}
+            </Link>
+          );
+        })}
+        <div className="relative">
+          <button onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-haspopup="menu"
+            className={`whitespace-nowrap rounded-full px-2.5 py-1.5 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${moreActive ? "bg-white/20 text-white" : "text-white/80 hover:bg-white/10 hover:text-white"}`}>
+            Mais ▾
+          </button>
+          {open && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+              <div role="menu" className="card absolute left-0 top-11 z-50 grid w-64 grid-cols-2 gap-1 p-2 text-fg shadow-lg">
+                {[...overflow, ...more.map((l) => ({ ...l, cls: "" }))].map((l) => (
+                  <Link key={l.href} role="menuitem" href={l.href} className={`${l.cls} flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${active(path, l.href) ? "bg-violet-50 font-semibold text-wine" : "hover:bg-black/5"}`}>
+                    <span>{l.icon}</span>{l.label}
+                  </Link>
+                ))}
+                <QuickExitButton className="col-span-2 mt-1 rounded-lg border-t border-line px-3 pt-2 text-left text-xs text-mute hover:text-fg" />
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </nav>
   );

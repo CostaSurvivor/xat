@@ -19,12 +19,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-dvh pb-20 md:pb-0">
       <header className="app-top sticky top-0 z-30 text-white shadow-md">
-        <div className="mx-auto flex max-w-6xl items-center gap-2 px-3 py-2 sm:gap-3 sm:px-4">
+        <div className="mx-auto flex max-w-7xl items-center gap-2 px-3 py-2 sm:gap-3 sm:px-4 2xl:max-w-[1440px]">
           <Link href="/feed" aria-label="Feed"><Logo size={28} light /></Link>
           <div className="min-w-0 flex-1"><AppNav variant="top" admin={user.role === "ADMIN" || user.role === "MODERATOR"} /></div>
-          <InstallApp />
+          <span className="md:hidden 2xl:block"><InstallApp /></span>
           {!isSubscriber(user) && <Link href="/assinar" className="hidden whitespace-nowrap rounded-full bg-hot px-3 py-1 text-xs font-bold uppercase tracking-wide text-white shadow hover:brightness-110 sm:inline" data-testid="assine-topo">Assine</Link>}
-          <Link href="/loja" className="hidden whitespace-nowrap rounded-full border border-white/30 px-3 py-1 text-sm text-white hover:bg-white/10 md:inline">{CURRENCY_ICON} {balance.toLocaleString("pt-BR")}</Link>
+          <Link href="/loja" className="hidden whitespace-nowrap rounded-full border border-white/30 px-3 py-1 text-sm text-white hover:bg-white/10 2xl:inline">{CURRENCY_ICON} {balance.toLocaleString("pt-BR")}</Link>
           <HeaderIcons />
           <Link href={`/u/${encodeURIComponent(user.nick)}`} aria-label="Meu perfil"><Avatar mediaId={user.avatarId} nick={user.nick} size={34} /></Link>
         </div>
