@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { bumpStat } from "@/server/stats";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { canAccessPost } from "@/server/feed";
@@ -78,7 +79,10 @@ export async function reactToPost(postId: string, emoji: string) {
     await db.postReaction.delete({ where: { postId_userId: { postId, userId: user.id } } });
   } else {
     await db.postReaction.upsert({ where: { postId_userId: { postId, userId: user.id } }, create: { postId, userId: user.id, emoji }, update: { emoji } });
-    if (!existing) await notify(post.authorId, "POST_REACTION", `@${user.nick} reagiu ${emoji} ao seu post`, user.id, postId);
+    if (!existing) {
+      await notify(post.authorId, "POST_REACTION", `@${user.nick} reagiu ${emoji} ao seu post`, user.id, postId);
+      if (post.authorId !== user.id) await bumpStat(post.authorId, "reactions");
+    }
   }
 }
 
@@ -103,6 +107,7 @@ export async function commentOnPost(postId: string, raw: string, parentId?: stri
   if (parent) await notify(parent.authorId, "COMMENT_REPLY", `@${user.nick} respondeu seu comentário: ${body.data.slice(0, 80)}`, user.id, postId);
   if (!parent || parent.authorId !== post.authorId)
     await notify(post.authorId, "POST_COMMENT", `@${user.nick} comentou: ${body.data.slice(0, 80)}`, user.id, postId);
+  if (post.authorId !== user.id) await bumpStat(post.authorId, "comments");
   return { ok: true };
 }
 
