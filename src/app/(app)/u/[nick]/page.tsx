@@ -128,7 +128,7 @@ export default async function UserPage({ params, searchParams }: { params: Promi
               {!u.hideCity && u.city ? ` · ${u.city}/${u.state}` : u.state ? ` · ${u.state}` : ""}
               {top && <Link href="/destaques?aba=perfis" className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">🏆 Top {top.rank <= 3 ? top.rank : 10} da semana · {top.group}</Link>}
               {aff && !hidden && <a href="#curtem" title={affinityTier(aff.pct).label} className={`ml-1 rounded-full px-2 py-0.5 text-xs font-semibold ${affinityTier(aff.pct).cls}`} data-testid="afinidade">🔥 {aff.pct}% de afinidade</a>}
-              {!me && km != null && <span className="ml-1 rounded-full bg-pink-50 px-2 py-0.5 text-xs font-semibold text-wine">📍 {distanceLabel(km)}</span>}
+              {!me && km != null && <span className="ml-1 rounded-full bg-violet-50 px-2 py-0.5 text-xs font-semibold text-wine">📍 {distanceLabel(km)}</span>}
             </p>
             {isAfim(u) && !hidden && !me && (
               <div className="mt-1 rounded-lg bg-wine px-3 py-1.5 text-sm text-white" data-testid="afim-perfil">
@@ -264,7 +264,7 @@ export default async function UserPage({ params, searchParams }: { params: Promi
                   </Link>
                 ) : (
                   <span key={i} className="flex w-16 shrink-0 flex-col items-center gap-1" aria-hidden>
-                    <span className="h-[52px] w-[52px] rounded-full bg-gradient-to-br from-pink-200 to-wine/40 blur-[2px]" />
+                    <span className="h-[52px] w-[52px] rounded-full bg-gradient-to-br from-violet-200 to-wine/40 blur-[2px]" />
                     <span className="h-2.5 w-10 rounded bg-panel2" />
                   </span>
                 ),

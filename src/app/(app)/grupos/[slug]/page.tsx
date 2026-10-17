@@ -29,7 +29,7 @@ export default async function Grupo({ params, searchParams }: { params: Promise<
       <Link href="/grupos" className="text-sm text-mute hover:text-fg">← Grupos</Link>
       {g.archivedAt && <p className="rounded-xl bg-amber-50 px-4 py-2 text-sm text-amber-800">Grupo arquivado (visível só para a equipe).</p>}
       <div className="card flex flex-wrap items-start gap-3 p-5">
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-pink-50 text-3xl">{g.emoji}</span>
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-violet-50 text-3xl">{g.emoji}</span>
         <div className="min-w-0 flex-1 basis-48">
           <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold">{g.name}</h1>
           <p className="text-xs text-mute">{g._count.members} {g._count.members === 1 ? "membro" : "membros"}{g.audience === "COUPLES" && " · 💑 só casais"}</p>

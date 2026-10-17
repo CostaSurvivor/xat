@@ -25,7 +25,7 @@ import { afimUntilLabel, isAfim } from "@/lib/afim";
 export const metadata = { title: "Pessoas" };
 export const dynamic = "force-dynamic";
 
-type SP = { ordem?: string; tipo?: string; uf?: string; q?: string; on?: string; ver?: string; curte?: string; foto?: string; raio?: string; afim?: string; idmin?: string; idmax?: string };
+type SP = { ordem?: string; tipo?: string; uf?: string; q?: string; on?: string; ver?: string; curte?: string; foto?: string; raio?: string; afim?: string; idmin?: string; idmax?: string; vista?: string };
 
 export default async function Pessoas({ searchParams }: { searchParams: Promise<SP> }) {
   const viewer = await requireUser();
@@ -73,6 +73,22 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
       : inRange.slice(0, 60);
   const activeFilters = [sp.tipo, sp.uf, sp.curte, sp.afim, sp.on, sp.ver, sp.foto, ages.min ?? ages.max].filter((v) => v != null && v !== "").length;
   const styles = await stylesFor(users.map((u) => u.id));
+  // modo lista: as 3 fotos públicas mais recentes de cada perfil
+  const lista = sp.vista === "lista";
+  const lastPhotos = new Map<string, string[]>();
+  if (lista && users.length) {
+    const pm = await db.postMedia.findMany({
+      where: { post: { authorId: { in: users.map((u) => u.id) }, deletedAt: null, visibility: "PUBLIC", groupId: null }, media: { kind: "POST", status: "APPROVED" } },
+      orderBy: { post: { createdAt: "desc" } },
+      take: 400,
+      select: { mediaId: true, post: { select: { authorId: true } } },
+    });
+    for (const r of pm) {
+      const l = lastPhotos.get(r.post.authorId) ?? [];
+      if (l.length < 3) lastPhotos.set(r.post.authorId, [...l, r.mediaId]);
+    }
+  }
+  const vistaHref = (v: "grade" | "lista") => `/pessoas?${new URLSearchParams({ ...Object.fromEntries(Object.entries(sp).filter(([k, x]) => typeof x === "string" && k !== "vista")), ...(v === "lista" ? { vista: "lista" } : {}) } as Record<string, string>)}`;
   const confirmed = await import("@/server/testimonials").then((m) => m.confirmedIds(users.map((u) => u.id)));
   const coming = await visitors(viewer, todayBR());
   const alerts = await myAlerts(viewer.id);
@@ -142,9 +158,51 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
           <label className="flex items-center gap-1 text-sm text-mute"><input type="checkbox" name="foto" defaultChecked={!!sp.foto} /> com foto</label>
           {activeFilters > 0 && <Link href={`/pessoas?raio=${raio ?? "br"}`} className="self-center text-xs text-wine underline">limpar filtros</Link>}
         </FiltersToggle>
+        {lista && <input type="hidden" name="vista" value="lista" />}
         <button className="btn-wine w-full sm:w-auto">Buscar</button>
       </form>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="flex items-center justify-end gap-1 text-sm" data-testid="vista">
+        <span className="mr-1 text-xs text-mute">Ver em</span>
+        <Link href={vistaHref("grade")} aria-current={!lista ? "page" : undefined} className={`rounded-full px-3 py-1 ${!lista ? "bg-wine2 text-white" : "text-mute hover:bg-panel2"}`}>▦ Grade</Link>
+        <Link href={vistaHref("lista")} aria-current={lista ? "page" : undefined} className={`rounded-full px-3 py-1 ${lista ? "bg-wine2 text-white" : "text-mute hover:bg-panel2"}`}>☰ Lista</Link>
+      </div>
+      {lista && (
+        <ul className="space-y-2" data-testid="lista-pessoas">
+          {users.map((u) => {
+            const online = u.lastSeenAt && Date.now() - u.lastSeenAt.getTime() < 5 * 60_000;
+            const invisible = styles[u.id]?.powers.includes("INVISIBLE");
+            const photos = lastPhotos.get(u.id) ?? [];
+            return (
+              <li key={u.id} className="card p-3">
+                <Link href={`/u/${u.nick}`} className="flex gap-3">
+                  <div className="relative shrink-0">
+                    <Avatar mediaId={u.avatarId} nick={u.nick} size={64} style={styles[u.id]} />
+                    {online && !invisible && <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-panel bg-green-500" />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-semibold"><Nick nick={u.nick} style={styles[u.id]} link={false} />{u.ageVerification === "APPROVED" && <span className="ml-1 text-xs text-gold">✔</span>}</div>
+                    <div className="truncate text-xs text-mute">{PROFILE_TYPES[u.profileType].label}{u.persons.length > 0 && <> · <span className="text-fg/80">{personsLine(u.persons)}</span></>}</div>
+                    <div className="truncate text-xs text-mute">{!u.hideCity && u.city ? `${u.city}/` : ""}{u.state}{u.km != null && ` · 📍 ${distanceLabel(u.km)}`}{u.aff != null && u.aff >= 40 && ` · 🔥 ${u.aff}%`}</div>
+                    {!invisible && <div className={`text-[11px] ${online ? "font-semibold text-green-700" : "text-mute"}`}>{lastSeenLabel(u.lastSeenAt)}</div>}
+                    {isAfim(u) && <div className="mt-0.5 truncate text-[11px] font-semibold text-wine2">🔥 Afim hoje{u.afimNote ? ` · ${u.afimNote}` : ""}</div>}
+                  </div>
+                </Link>
+                {photos.length > 0 && (
+                  <div className="mt-2 grid grid-cols-3 gap-1.5" data-testid="ultimas-fotos">
+                    {photos.map((id) => (
+                      <Link key={id} href={`/u/${u.nick}#publicacoes`} className="block overflow-hidden rounded-lg">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={`/api/media/${id}?v=d`} alt="" className="protected-img aspect-square w-full object-cover" draggable={false} />
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <div className={`${lista ? "hidden" : "grid"} grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5`}>
         {users.map((u) => {
           const online = u.lastSeenAt && Date.now() - u.lastSeenAt.getTime() < 5 * 60_000;
           return (
@@ -161,7 +219,7 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
               {!styles[u.id]?.powers.includes("INVISIBLE") && <div className={`text-[11px] ${online ? "font-semibold text-green-700" : "text-mute"}`} data-testid="card-visto">{lastSeenLabel(u.lastSeenAt)}</div>}
               {isAfim(u) && <div title={u.afimNote ?? "Afim de sair hoje"} className="mt-1 max-w-full truncate rounded-full bg-wine px-2 py-0.5 text-[11px] font-semibold text-white" data-testid="afim-selo">🔥 Afim hoje{u.afimNote ? ` · ${u.afimNote}` : ""}</div>}
               <div className="mt-1 flex flex-wrap justify-center gap-1">
-                {u.km != null && <span className="rounded-full bg-pink-50 px-2 py-0.5 text-[11px] font-semibold text-wine">📍 {distanceLabel(u.km)}</span>}
+                {u.km != null && <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-semibold text-wine">📍 {distanceLabel(u.km)}</span>}
                 {u.aff != null && u.aff >= 40 && <span className="rounded-full bg-wine px-2 py-0.5 text-[11px] font-semibold text-white" title="Afinidade pelo que vocês curtem">🔥 {u.aff}%</span>}
               </div>
             </Link>

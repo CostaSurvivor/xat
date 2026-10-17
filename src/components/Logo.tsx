@@ -6,8 +6,8 @@ export function LogoMark({ size = 32 }: { size?: number }) {
     <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true">
       <defs>
         <linearGradient id="lg-bubble" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#c0264f" />
-          <stop offset="1" stopColor="#5c0d24" />
+          <stop offset="0" stopColor="#a21caf" />
+          <stop offset="1" stopColor="#4c1d95" />
         </linearGradient>
         <linearGradient id="lg-flame" x1="0" y1="1" x2="0" y2="0">
           <stop offset="0" stopColor="#b8871b" />
@@ -21,7 +21,7 @@ export function LogoMark({ size = 32 }: { size?: number }) {
   );
 }
 
-export function Logo({ size = 28, className = "" }: { size?: number; className?: string }) {
+export function Logo({ size = 28, className = "", light = false }: { size?: number; className?: string; light?: boolean }) {
   const m = /^(sex)(.+)$/i.exec(SITE_NAME);
   return (
     <span className={`inline-flex items-center gap-1.5 ${className}`}>
@@ -29,11 +29,11 @@ export function Logo({ size = 28, className = "" }: { size?: number; className?:
       <span className="font-[family-name:var(--font-display)] font-extrabold leading-none tracking-tight" style={{ fontSize: size * 0.8 }}>
         {m ? (
           <>
-            <span className="gold-text">{m[1]}</span>
-            <span className="text-fg">{m[2]}</span>
+            <span className={light ? "text-pink-200" : "gold-text"}>{m[1]}</span>
+            <span className={light ? "text-white" : "text-fg"}>{m[2]}</span>
           </>
         ) : (
-          <span className="gold-text">{SITE_NAME}</span>
+          <span className={light ? "text-white" : "gold-text"}>{SITE_NAME}</span>
         )}
       </span>
     </span>

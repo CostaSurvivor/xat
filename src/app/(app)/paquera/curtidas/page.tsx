@@ -21,7 +21,7 @@ export default async function Curtidas() {
       <PaqueraTabs active="curtidas" likes={list.length} />
       <p className="text-sm text-mute">{list.length} {list.length === 1 ? "perfil curtiu" : "perfis curtiram"} vocês.</p>
       {!vip && list.some((l) => !l.match) && (
-        <div className="card flex flex-wrap items-center gap-3 border-wine/30 bg-pink-50 p-4">
+        <div className="card flex flex-wrap items-center gap-3 border-wine/30 bg-violet-50 p-4">
           <p className="flex-1 text-sm">Veja <b>quem</b> curtiu vocês e curta de volta para dar match. Exclusivo para assinantes. Sem assinar, curtam na Paquera: se for recíproco, o match aparece na hora.</p>
           <Link href="/assinar" className="btn-gold">⭐ Assinar e ver</Link>
         </div>
@@ -42,7 +42,7 @@ export default async function Curtidas() {
               </Link>
             ) : (
               <div key={i} className="flex items-center gap-3 p-3" aria-hidden>
-                <span className="h-11 w-11 shrink-0 rounded-full bg-gradient-to-br from-pink-200 to-wine/40 blur-[2px]" />
+                <span className="h-11 w-11 shrink-0 rounded-full bg-gradient-to-br from-violet-200 to-wine/40 blur-[2px]" />
                 <div className="flex-1 space-y-1.5"><span className="block h-3 w-32 rounded bg-panel2" /><span className="block h-2.5 w-20 rounded bg-panel2" /></div>
                 <span className="text-xs text-mute">{timeAgo(u.at)}</span>
               </div>

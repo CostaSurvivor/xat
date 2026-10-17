@@ -72,7 +72,7 @@ export function Inbox({ initial }: { initial: InboxItem[] }) {
           <li key={c.id}>
             <Link
               href={`/mensagens/${encodeURIComponent(c.other.nick)}`}
-              className={`flex items-center gap-3 border-b border-line/60 px-3 py-2.5 hover:bg-black/5 ${c.other.nick === active ? "bg-pink-50" : ""} ${c.unread && c.priority ? "bg-gold/10" : ""}`}
+              className={`flex items-center gap-3 border-b border-line/60 px-3 py-2.5 hover:bg-black/5 ${c.other.nick === active ? "bg-violet-50" : ""} ${c.unread && c.priority ? "bg-gold/10" : ""}`}
             >
               <span className="relative">
                 <Avatar mediaId={c.other.avatarId} nick={c.other.nick} size={48} style={c.other.style} />

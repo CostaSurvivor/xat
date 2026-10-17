@@ -18,22 +18,22 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   ]);
   return (
     <div className="min-h-dvh pb-20 md:pb-0">
-      <header className="sticky top-0 z-30 border-b border-line bg-ink/90 backdrop-blur">
+      <header className="app-top sticky top-0 z-30 text-white shadow-md">
         <div className="mx-auto flex max-w-6xl items-center gap-2 px-3 py-2 sm:gap-3 sm:px-4">
-          <Link href="/feed" aria-label="Feed"><Logo size={28} /></Link>
+          <Link href="/feed" aria-label="Feed"><Logo size={28} light /></Link>
           <div className="min-w-0 flex-1"><AppNav variant="top" admin={user.role === "ADMIN" || user.role === "MODERATOR"} /></div>
           <InstallApp />
-          {!isSubscriber(user) && <Link href="/assinar" className="hidden whitespace-nowrap rounded-full bg-gradient-to-r from-gold to-gold2 px-3 py-1 text-xs font-bold text-white lg:inline">⭐ Assine</Link>}
-          <Link href="/loja" className="hidden whitespace-nowrap rounded-full border border-gold/40 px-3 py-1 text-sm text-gold hover:bg-gold/10 md:inline">{CURRENCY_ICON} {balance.toLocaleString("pt-BR")}</Link>
+          {!isSubscriber(user) && <Link href="/assinar" className="hidden whitespace-nowrap rounded-full bg-hot px-3 py-1 text-xs font-bold uppercase tracking-wide text-white shadow hover:brightness-110 sm:inline" data-testid="assine-topo">Assine</Link>}
+          <Link href="/loja" className="hidden whitespace-nowrap rounded-full border border-white/30 px-3 py-1 text-sm text-white hover:bg-white/10 md:inline">{CURRENCY_ICON} {balance.toLocaleString("pt-BR")}</Link>
           <HeaderIcons />
           <Link href={`/u/${encodeURIComponent(user.nick)}`} aria-label="Meu perfil"><Avatar mediaId={user.avatarId} nick={user.nick} size={34} /></Link>
         </div>
         {user.ageVerification !== "APPROVED" && (
-          <Link href="/verificacao" className="block bg-wine px-4 py-1.5 text-center text-xs text-white">
+          <Link href="/verificacao" className="block bg-black/25 px-4 py-1.5 text-center text-xs text-white">
             {user.ageVerification === "PENDING" ? "⏳ Verificação em análise: logo você libera fotos, PV com fotos e a loja." : "🔒 Verifique seu perfil com uma selfie para liberar fotos, PV com fotos e a loja →"}
           </Link>
         )}
-        {ann && <div className="bg-gold/15 px-4 py-1.5 text-center text-xs text-gold2">📢 {ann.body}</div>}
+        {ann && <div className="bg-amber-50 px-4 py-1.5 text-center text-xs text-gold2">📢 {ann.body}</div>}
       </header>
       <main className="mx-auto max-w-6xl px-3 py-4 sm:px-4">{children}</main>
       <QuickExitKeys />

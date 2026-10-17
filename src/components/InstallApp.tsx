@@ -36,7 +36,7 @@ export function InstallApp() {
           if (evt) { await evt.prompt(); const r = await evt.userChoice; if (r.outcome === "accepted") setHidden(true); setEvt(null); }
           else if (ios) setOpen(true);
         }}
-        className="flex h-9 w-9 items-center justify-center rounded-full border border-line text-sm text-mute hover:border-gold hover:text-fg xl:w-auto xl:px-3"
+        className="flex h-9 w-9 items-center justify-center rounded-full border border-white/30 text-sm text-white/85 hover:bg-white/10 hover:text-white xl:w-auto xl:px-3"
         title="Instalar o app"
         aria-label="Instalar o app"
       >

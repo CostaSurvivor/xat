@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { commentOnPost, deleteComment, deletePost, loadComments, reactToComment, reactToPost } from "@/app/actions/posts";
-import { PROFILE_TYPES, REACTIONS } from "@/lib/config";
+import { PROFILE_TYPES, REACTIONS, REACTION_LABELS } from "@/lib/config";
 import { timeAgo } from "@/lib/time";
 import type { FeedPost } from "@/server/feed";
 import { Avatar } from "./Avatar";
@@ -66,6 +66,7 @@ export function PostCard({ post, viewer }: { post: FeedPost; viewer: { nick: str
   const [replyTo, setReplyTo] = useState<{ id: string; nick: string } | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [idx, setIdx] = useState(0);
+  const [picker, setPicker] = useState(false);
   const [pending, start] = useTransition();
   const a = post.author;
 
@@ -75,6 +76,7 @@ export function PostCard({ post, viewer }: { post: FeedPost; viewer: { nick: str
     if (mine !== e) next[e] = (next[e] ?? 0) + 1;
     setReactions(next);
     setMine(mine === e ? null : e);
+    setPicker(false);
     start(() => reactToPost(post.id, e));
   }
   async function openComments() {
@@ -133,14 +135,24 @@ export function PostCard({ post, viewer }: { post: FeedPost; viewer: { nick: str
             </div>
           ) : null;
         })()}
-        <div className="flex flex-wrap items-center gap-1.5">
-          {REACTIONS.map((e) => (
-            <button key={e} onClick={() => react(e)} className={`rounded-full border px-2.5 py-1 text-sm transition ${mine === e ? "border-gold bg-gold/15" : "border-line hover:border-gold/50"}`}>
-              {e} {reactions[e] ? <span className="text-xs text-mute">{reactions[e]}</span> : null}
-            </button>
-          ))}
-          <div className="flex-1" />
-          <button onClick={openComments} className="text-sm text-mute hover:text-fg">💬 {count}</button>
+        <div className="relative flex items-center gap-1.5 border-t border-line pt-2">
+          {/* "Reagir": abre o seletor com nomes; tocar de novo na mesma reação desfaz */}
+          <button onClick={() => setPicker((v) => !v)} aria-expanded={picker} data-testid="reagir"
+            className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-sm font-semibold transition ${mine ? "text-wine2" : "text-mute hover:bg-panel2"}`}>
+            {mine ? <><span className="text-lg leading-none">{mine}</span>{REACTION_LABELS[mine] ?? "Reagiu"}</> : <><span className="text-lg leading-none">👍</span>Reagir</>}
+          </button>
+          <button onClick={openComments} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-sm font-semibold text-mute hover:bg-panel2">💬 Comentar{count > 0 ? ` (${count})` : ""}</button>
+          {picker && (
+            <div className="absolute bottom-full left-0 z-10 mb-1 flex gap-0.5 rounded-2xl border border-line bg-panel p-1.5 shadow-xl" role="menu" data-testid="seletor-reacoes">
+              {REACTIONS.map((e) => (
+                <button key={e} role="menuitem" onClick={() => react(e)} title={REACTION_LABELS[e]}
+                  className={`flex w-[52px] flex-col items-center rounded-xl py-1 transition hover:bg-panel2 ${mine === e ? "bg-violet-50" : ""}`}>
+                  <span className="text-2xl leading-7 transition hover:scale-125">{e}</span>
+                  <span className="text-[10px] text-mute">{REACTION_LABELS[e]}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         {comments && (
           <div className="space-y-3 border-t border-line pt-3">

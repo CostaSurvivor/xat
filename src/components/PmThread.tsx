@@ -88,7 +88,7 @@ export function PmThread({ nick, initial, canPhoto, audio: audioInit, audioVerif
         {msgs.length === 0 && <p className="mt-10 text-center text-sm text-mute">Diga oi! 👋 Seja gentil: respeito é a regra número um.</p>}
         {msgs.map((m) => (
           <div key={m.id} className={`group flex ${m.mine ? "justify-end" : "justify-start"}`}>
-            <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-[15px] ${m.mine ? "rounded-br-sm bg-pink-100" : "rounded-bl-sm border border-line bg-panel"}`}>
+            <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-[15px] ${m.mine ? "rounded-br-sm bg-violet-100" : "rounded-bl-sm border border-line bg-panel"}`}>
               {m.mediaId && m.audioSecs != null && <VoiceNote id={m.mediaId} secs={m.audioSecs} />}
               {m.mediaId && m.audioSecs == null && (
                 <ProtectedImage

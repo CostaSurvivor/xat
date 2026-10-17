@@ -30,7 +30,7 @@ export default async function Grupos() {
         {visible.map((g) => (
           <Link key={g.id} href={`/grupos/${g.slug}`} className={`card flex min-w-0 flex-col gap-2 p-4 transition hover:border-wine/50 ${mineSet.has(g.id) ? "border-wine/40" : ""}`}>
             <div className="flex items-center gap-3">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-pink-50 text-2xl">{g.emoji}</span>
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-violet-50 text-2xl">{g.emoji}</span>
               <div className="min-w-0">
                 <h2 className="truncate font-semibold">{g.name}</h2>
                 <p className="text-xs text-mute">
@@ -41,7 +41,7 @@ export default async function Grupos() {
               </div>
             </div>
             <p className="line-clamp-2 text-sm text-mute">{g.description}</p>
-            {mineSet.has(g.id) && <span className="self-start rounded-full bg-pink-50 px-2 py-0.5 text-xs font-semibold text-wine">✓ Você participa</span>}
+            {mineSet.has(g.id) && <span className="self-start rounded-full bg-violet-50 px-2 py-0.5 text-xs font-semibold text-wine">✓ Você participa</span>}
           </Link>
         ))}
       </div>

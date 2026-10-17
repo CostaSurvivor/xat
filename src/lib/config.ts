@@ -64,7 +64,9 @@ export const RESERVED_SLUGS = new Set([
   "ao-vivo", "live", "trocas", "suporte", "assinar", "geral", "lobby",
 ]);
 
-export const REACTIONS = ["🔥", "❤️", "😈", "😂", "👏", "😍"] as const;
+export const REACTIONS = ["👍", "😍", "🤤", "🔥", "😈", "❤️"] as const;
+/** Nome de cada reação (aparece no seletor e no botão "Reagir"). Reações antigas fora da lista continuam contando. */
+export const REACTION_LABELS: Record<string, string> = { "👍": "Gostei", "😍": "Gostoso(a)", "🤤": "Delícia", "🔥": "Tesão", "😈": "Safado(a)", "❤️": "Amei", "😂": "Haha", "👏": "Palmas" };
 
 /** Características opcionais de cada pessoa do perfil (sobre ela / sobre ele). */
 export const PERSON_FIELDS = {
