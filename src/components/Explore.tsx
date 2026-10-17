@@ -8,6 +8,7 @@ import { stylesFor } from "@/server/styles";
 import { topPhotos } from "@/server/ranking";
 import { liveList } from "@/server/live";
 import { Avatar } from "./Avatar";
+import { Watermark } from "./Watermark";
 
 /** Filtro do Explorar (tipo de perfil): vale para "Online agora" e "Últimas fotos". */
 export const EXPLORE_TYPES = {
@@ -55,9 +56,9 @@ export async function ExploreOnline({ user, tipo }: { user: CurrentUser; tipo: E
             const live = liveBy.get(u.id);
             return (
               <Link key={u.id} href={live ? `/ao-vivo/${live}` : `/u/${encodeURIComponent(u.nick)}`} className="flex w-[68px] shrink-0 flex-col items-center gap-1">
-                <span className={`relative rounded-full p-[2.5px] ${live ? "bg-red-600" : "bg-gradient-to-tr from-wine2 via-fuchsia-600 to-hot"}`}>
+                <span className={`relative rounded-full p-[2.5px] ${live ? "bg-green-500" : "bg-gradient-to-tr from-wine2 via-fuchsia-600 to-hot"}`}>
                   <span className="block rounded-full bg-panel p-[2px]"><Avatar mediaId={u.avatarId} nick={u.nick} size={56} style={styles[u.id]} /></span>
-                  {live && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded bg-red-600 px-1 text-[9px] font-bold uppercase text-white">Live</span>}
+                  {live && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded bg-green-600 px-1 text-[9px] font-bold uppercase text-white">Live</span>}
                 </span>
                 <span className="w-full truncate text-center text-[11px]">{u.nick}</span>
               </Link>
@@ -71,7 +72,7 @@ export async function ExploreOnline({ user, tipo }: { user: CurrentUser; tipo: E
 
 /** "Top da semana": mosaico com uma foto grande e quatro pequenas. */
 export async function ExploreTop({ user }: { user: CurrentUser }) {
-  const items = (await topPhotos(user, 7, undefined, 5)).slice(0, 5);
+  const items = (await topPhotos(user, 7, undefined, 4)).slice(0, 4);
   if (!items.length) return null;
   const photo = (p: (typeof items)[number]["post"]) => p.media.find((m) => !m.video)!;
   const [first, ...rest] = items;
@@ -81,37 +82,31 @@ export async function ExploreTop({ user }: { user: CurrentUser }) {
         <h2 className="font-semibold">🏆 Top da semana</h2>
         <Link href="/destaques" className="text-xs text-mute underline">como entrar no Top</Link>
       </div>
-      <div className="grid grid-cols-3 grid-rows-2 gap-1.5">
-        <Link href={`/post/${first.post.id}`} className="relative col-span-2 row-span-2 block overflow-hidden rounded-xl">
+      {/* mosaico: 1 foto grande + 3 pequenas */}
+      <div className="grid grid-cols-3 gap-1.5 md:grid-cols-4 md:grid-rows-3">
+        <Link href={`/post/${first.post.id}`} className="relative col-span-3 block overflow-hidden rounded-lg md:col-span-3 md:row-span-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`/api/media/${photo(first.post).id}?v=d`} alt="" className="protected-img h-full w-full object-cover" draggable={false} />
+          <img src={`/api/media/${photo(first.post).id}?v=d`} alt="" className="protected-img aspect-[4/3] h-full w-full object-cover md:aspect-auto" draggable={false} />
+          <Watermark />
           <span className="absolute left-2 top-2 rounded-full bg-hot px-2 py-0.5 text-[11px] font-bold text-white">#1</span>
           <span className="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/70 to-transparent px-2 pb-1.5 pt-6 text-xs text-white">@{first.post.author.nick}</span>
         </Link>
-        {rest.slice(0, 2).map(({ post }) => (
-          <Link key={post.id} href={`/post/${post.id}`} className="block overflow-hidden rounded-xl">
+        {rest.map(({ post }, i) => (
+          <Link key={post.id} href={`/post/${post.id}`} className="relative block overflow-hidden rounded-lg">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={`/api/media/${photo(post).id}?v=d`} alt="" className="protected-img aspect-square h-full w-full object-cover" draggable={false} />
+            <Watermark />
+            <span className="absolute left-1.5 top-1.5 rounded-full bg-black/55 px-1.5 text-[10px] font-bold text-white">#{i + 2}</span>
           </Link>
         ))}
       </div>
-      {rest.length > 2 && (
-        <div className="mt-1.5 grid grid-cols-2 gap-1.5">
-          {rest.slice(2).map(({ post }) => (
-            <Link key={post.id} href={`/post/${post.id}`} className="block overflow-hidden rounded-xl">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={`/api/media/${photo(post).id}?v=d`} alt="" className="protected-img aspect-[4/3] w-full object-cover" draggable={false} />
-            </Link>
-          ))}
-        </div>
-      )}
     </section>
   );
 }
 
 /** "Ao vivo agora": cartões com número de espectadores. */
 export async function ExploreLive() {
-  const lives = (await liveList()).slice(0, 6);
+  const lives = (await liveList()).slice(0, 12);
   return (
     <section className="card min-w-0 p-3" aria-label="Ao vivo" data-testid="explorar-live">
       <div className="mb-2 flex items-baseline justify-between px-1">
@@ -121,7 +116,7 @@ export async function ExploreLive() {
       {lives.length === 0 ? (
         <p className="px-1 text-sm text-mute">Ninguém transmitindo agora. <Link href="/ao-vivo" className="text-wine underline">Que tal começar?</Link></p>
       ) : (
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
           {lives.map((l) => (
             <Link key={l.id} href={`/ao-vivo/${l.id}`} className="relative flex aspect-[3/4] flex-col items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-wine to-fuchsia-800 text-white">
               <Avatar mediaId={l.host.avatarId} nick={l.host.nick} size={64} />
@@ -143,16 +138,17 @@ export async function ExploreLatestPhotos({ user, tipo }: { user: CurrentUser; t
   const items = posts
     .filter((p) => !types || types.includes(p.author.profileType))
     .flatMap((p) => p.media.filter((m) => !m.video).slice(0, 1).map((m) => ({ post: p, media: m })))
-    .slice(0, 12);
+    .slice(0, 18);
   if (!items.length) return null;
   return (
     <section className="card min-w-0 p-3" aria-label="Últimas fotos" data-testid="explorar-fotos">
       <h2 className="mb-2 px-1 font-semibold">📸 Últimas fotos</h2>
-      <div className="grid grid-cols-3 gap-1.5">
+      <div className="grid grid-cols-3 gap-1.5 lg:grid-cols-6">
         {items.map(({ post, media }) => (
           <Link key={post.id} href={`/post/${post.id}`} className="relative block overflow-hidden rounded-lg">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={`/api/media/${media.id}?v=d`} alt="" className="protected-img aspect-square w-full object-cover" draggable={false} />
+            <Watermark />
             <span className="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/60 to-transparent px-1.5 pb-1 pt-4 text-[10px] text-white">@{post.author.nick}</span>
           </Link>
         ))}

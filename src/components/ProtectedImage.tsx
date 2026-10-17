@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Watermark } from "./Watermark";
 
 /** Foto sem menu de contexto/arrastar; borrada até clicar quando `reveal`. */
 export function ProtectedImage({ id, reveal = false, className = "", onReveal, bust }: { id: string; reveal?: boolean; className?: string; onReveal?: () => Promise<void> | void; bust?: string }) {
@@ -12,6 +13,7 @@ export function ProtectedImage({ id, reveal = false, className = "", onReveal, b
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={src} alt="" draggable={false} className="protected-img pointer-events-none h-full w-full object-contain" loading="lazy" />
       <div className="absolute inset-0" />
+      {shown && <Watermark dense />}
       {!shown && (
         <button
           type="button"

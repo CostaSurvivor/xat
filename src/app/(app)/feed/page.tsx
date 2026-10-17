@@ -4,15 +4,12 @@ import { requireUser, isVerified, isSubscriber } from "@/server/auth";
 import { getFeed, type FeedTab } from "@/server/feed";
 import { Composer } from "@/components/Composer";
 import { PostCard } from "@/components/PostCard";
-import { OnlineRooms } from "@/components/OnlineRooms";
-import { HotPhotos } from "@/components/HotPhotos";
 import { liveList } from "@/server/live";
 import { StoryTray } from "@/components/StoryTray";
 import { OnboardingCard } from "@/components/OnboardingCard";
 import { DailyCard } from "@/components/DailyCard";
-import { FeaturedProfiles, HotContos, OnlineNow, SuggestedProfiles, VideoStrip } from "@/components/FeedSections";
 
-export const metadata = { title: "Feed" };
+export const metadata = { title: "Novidades" };
 
 export default async function Feed({ searchParams }: { searchParams: Promise<{ tab?: FeedTab; antes?: string; tag?: string }> }) {
   const user = await requireUser();
@@ -23,8 +20,8 @@ export default async function Feed({ searchParams }: { searchParams: Promise<{ t
   const [posts, lives] = await Promise.all([getFeed(user, { tab, before: antes, tag }), liveList()]);
   const tabs: [FeedTab, string][] = [["todos", "Todos"], ["seguindo", "Seguindo"], ["amigos", "Amigos e favoritos"], ["regiao", `Minha região${user.state ? ` (${user.state})` : ""}`]];
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-      <div className="mx-auto w-full min-w-0 max-w-xl space-y-4">
+    // Novidades: uma coluna estreita (680px), como uma rede social; vitrines ficam no Explorar
+    <div className="mx-auto w-full min-w-0 max-w-[680px] space-y-2">
         {lives.length > 0 && (
           <div className="flex gap-2 overflow-x-auto pb-1 lg:hidden">
             {lives.slice(0, 10).map((l) => (
@@ -37,17 +34,15 @@ export default async function Feed({ searchParams }: { searchParams: Promise<{ t
         <OnboardingCard user={user} />
         <DailyCard user={user} />
         <StoryTray viewer={user} />
-        <OnlineNow user={user} />
-        <FeaturedProfiles user={user} />
-        <SuggestedProfiles user={user} />
-        <div className="lg:hidden"><HotPhotos user={user} /></div>
-        <VideoStrip user={user} />
-        <HotContos user={user} />
         <Composer verified={isVerified(user)} />
-        <div className="flex flex-wrap gap-2">
-          {tabs.map(([k, l]) => (
-            <Link key={k} href={`/feed?tab=${k}${tag ? `&tag=${encodeURIComponent(tag)}` : ""}`} className={`rounded-full px-3 py-1 text-sm ${tab === k ? "bg-wine text-white" : "text-mute hover:text-fg"}`}>{l}</Link>
-          ))}
+        <div className="card overflow-hidden">
+          <h1 className="px-4 pt-3 text-lg font-bold">Novidades</h1>
+          <nav className="flex gap-1 overflow-x-auto px-2 [scrollbar-width:none]" aria-label="Abas do feed" data-testid="abas-feed">
+            {tabs.map(([k, l]) => (
+              <Link key={k} href={`/feed?tab=${k}${tag ? `&tag=${encodeURIComponent(tag)}` : ""}`} aria-current={tab === k ? "page" : undefined}
+                className={`shrink-0 border-b-2 px-3 py-2.5 text-sm font-semibold ${tab === k ? "border-wine2 text-wine2" : "border-transparent text-mute hover:text-fg"}`}>{l}</Link>
+            ))}
+          </nav>
         </div>
         {tag && (
           <div className="flex items-center gap-2 rounded-xl bg-violet-50 px-3 py-2 text-sm" data-testid="filtro-tag">
@@ -60,8 +55,6 @@ export default async function Feed({ searchParams }: { searchParams: Promise<{ t
         {posts.length === 15 && (
           <Link href={`/feed?tab=${tab}${tag ? `&tag=${encodeURIComponent(tag)}` : ""}&antes=${encodeURIComponent(posts[posts.length - 1].createdAt)}`} className="btn-ghost w-full">Carregar mais</Link>
         )}
-      </div>
-      <aside className="hidden space-y-4 lg:block"><HotPhotos user={user} /><OnlineRooms /></aside>
     </div>
   );
 }

@@ -1,12 +1,18 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { clearAfim, setAfim } from "@/app/actions/afim";
 import { AFIM, AFIM_SUGGESTIONS } from "@/lib/afim";
 
 /** Card para ligar/desligar o "🔥 Afim hoje" (em Pessoas e no próprio perfil). */
 export function AfimToggle({ active, untilLabel, note }: { active: boolean; untilLabel?: string; note?: string | null }) {
   const [state, action, pending] = useActionState(setAfim, undefined);
+  const router = useRouter();
+  // ligou: atualiza a tela na hora (o cartão vira "Você está afim hoje")
+  useEffect(() => {
+    if (state?.ok) router.refresh();
+  }, [state, router]);
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
 
