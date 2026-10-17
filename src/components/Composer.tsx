@@ -42,6 +42,7 @@ export function Composer({ verified, groupId, placeholder }: { verified: boolean
   }, [state]);
   return (
     <form
+      id="publicar"
       ref={formRef}
       action={(fd) => {
         if (poster) fd.set("poster", new File([poster], "poster.jpg", { type: "image/jpeg" }));
