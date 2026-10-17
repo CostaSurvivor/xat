@@ -9,7 +9,7 @@ import { liveList } from "@/server/live";
 import { StoryTray } from "@/components/StoryTray";
 import { OnboardingCard } from "@/components/OnboardingCard";
 import { DailyCard } from "@/components/DailyCard";
-import { FeaturedProfiles, HotContos, OnlineNow, VideoStrip } from "@/components/FeedSections";
+import { FeaturedProfiles, HotContos, OnlineNow, SuggestedProfiles, VideoStrip } from "@/components/FeedSections";
 
 export const metadata = { title: "Feed" };
 
@@ -20,7 +20,7 @@ export default async function Feed({ searchParams }: { searchParams: Promise<{ t
   const tabs: [FeedTab, string][] = [["todos", "Todos"], ["seguindo", "Seguindo"], ["regiao", `Minha região${user.state ? ` (${user.state})` : ""}`]];
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-      <div className="mx-auto w-full max-w-xl space-y-4">
+      <div className="mx-auto w-full min-w-0 max-w-xl space-y-4">
         {lives.length > 0 && (
           <div className="flex gap-2 overflow-x-auto pb-1 lg:hidden">
             {lives.slice(0, 10).map((l) => (
@@ -35,6 +35,7 @@ export default async function Feed({ searchParams }: { searchParams: Promise<{ t
         <StoryTray viewer={user} />
         <OnlineNow user={user} />
         <FeaturedProfiles user={user} />
+        <SuggestedProfiles user={user} />
         <div className="lg:hidden"><HotPhotos user={user} /></div>
         <VideoStrip user={user} />
         <HotContos user={user} />

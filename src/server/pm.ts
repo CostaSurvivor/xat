@@ -101,10 +101,17 @@ export async function inbox(user: CurrentUser) {
     include: { messages: { orderBy: { id: "desc" }, take: 1 } },
   });
   const otherIds = convs.map((c) => (c.userAId === user.id ? c.userBId : c.userAId));
-  const [users, styles] = await Promise.all([
-    db.user.findMany({ where: { id: { in: otherIds } }, select: { id: true, nick: true, avatarId: true, status: true, lastSeenAt: true } }),
+  const [users, styles, friends, favs, mine] = await Promise.all([
+    db.user.findMany({ where: { id: { in: otherIds } }, select: { id: true, nick: true, avatarId: true, status: true, lastSeenAt: true, ageVerification: true } }),
     stylesFor(otherIds),
+    import("./friends").then((f) => f.friendIds(user.id)),
+    db.favorite.findMany({ where: { ownerId: user.id, targetId: { in: otherIds } }, select: { targetId: true } }),
+    // conversas em que eu já escrevi (as outras são "novos contatos")
+    db.privateMessage.groupBy({ by: ["conversationId"], where: { conversationId: { in: convs.map((c) => c.id) }, senderId: user.id } }),
   ]);
+  const friendSet = new Set(friends);
+  const favSet = new Set(favs.map((f) => f.targetId));
+  const replied = new Set(mine.map((m) => m.conversationId));
   const byId = new Map(users.map((u) => [u.id, u]));
   const list = convs
     .map((c) => {
@@ -115,7 +122,11 @@ export async function inbox(user: CurrentUser) {
       return other && other.status === "ACTIVE"
         ? {
             id: c.id,
-            other: { id: other.id, nick: other.nick, avatarId: other.avatarId, style: styles[otherId], online: !!other.lastSeenAt && Date.now() - other.lastSeenAt.getTime() < 5 * 60_000 },
+            other: { id: other.id, nick: other.nick, avatarId: other.avatarId, style: styles[otherId], online: !styles[otherId]?.powers.includes("INVISIBLE") && !!other.lastSeenAt && Date.now() - other.lastSeenAt.getTime() < 5 * 60_000 },
+            friend: friendSet.has(otherId),
+            verified: other.ageVerification === "APPROVED",
+            favorite: favSet.has(otherId),
+            iReplied: replied.has(c.id),
             last: last ? (last.audioSecs != null ? `🎤 Áudio (${voiceClock(last.audioSecs)})` : last.mediaId ? "📷 Foto" : last.body ?? "") : "",
             lastMine: last?.senderId === user.id,
             lastAt: c.lastMessageAt.toISOString(),
