@@ -28,6 +28,7 @@ import { FavoriteBox } from "@/components/Favorite";
 import { InviteCard } from "@/components/InviteCard";
 import { Achievements } from "@/components/Achievements";
 import { AfimToggle } from "@/components/AfimToggle";
+import { completeness, lastSeenLabel, memberSince } from "@/lib/profileInfo";
 import { afimUntilLabel, isAfim } from "@/lib/afim";
 import { achievementsOf } from "@/server/achievements";
 import { referralStats } from "@/server/referral";
@@ -88,6 +89,13 @@ export default async function UserPage({ params, searchParams }: { params: Promi
     stylesFor([u.id]),
   ]);
   const st = styles[u.id];
+  const [visitsTotal, testimonialsOk, postsCount] = await Promise.all([
+    db.profileVisit.count({ where: { visitedId: u.id } }),
+    db.testimonial.count({ where: { profileId: u.id, status: "APPROVED", withdrawnAt: null } }),
+    me ? db.post.count({ where: { authorId: u.id, deletedAt: null } }) : Promise.resolve(0),
+  ]);
+  const seen = me || st?.powers.includes("INVISIBLE") ? null : lastSeenLabel(u.lastSeenAt);
+  const comp = me ? completeness({ ...u, posts: postsCount }) : null;
   const likes = (u.likes as string[] | null) ?? [];
   const aff = me ? null : affinity(viewer.likes, u.likes);
   const shared = new Set(aff?.common);
@@ -129,11 +137,24 @@ export default async function UserPage({ params, searchParams }: { params: Promi
               </div>
             )}
             {trip && !hidden && <Link href={me ? "/viagens" : `/viagens?uf=${trip.state}`} className="mt-1 inline-block rounded-full bg-sky-50 px-2 py-0.5 text-xs font-semibold text-sky-800" title={trip.note ?? undefined}>{tripLabel(trip, today)}</Link>}
-            <p className="mt-1 text-xs text-mute">
-              <Link href="?aba=amigos#rede" className="hover:text-wine"><b className="text-fg">{friends.length}</b> amigos</Link> ·{" "}
-              <Link href="?aba=seguidores#rede" className="hover:text-wine"><b className="text-fg">{followers}</b> seguidores</Link> ·{" "}
-              <Link href="?aba=seguindo#rede" className="hover:text-wine"><b className="text-fg">{following}</b> seguindo</Link>
-            </p>
+            {!hidden && (
+              <p className="mt-1 text-xs text-mute" data-testid="membro">
+                {memberSince(u.createdAt)}
+                {seen && <> · <span className={seen === "online agora" ? "font-semibold text-green-700" : ""}>{seen}</span></>}
+              </p>
+            )}
+            <div className="mt-2 grid max-w-sm grid-cols-4 gap-1 text-center" data-testid="contadores">
+              {[
+                { n: friends.length, label: "amigos", href: "?aba=amigos#rede" },
+                { n: followers, label: "seguidores", href: "?aba=seguidores#rede" },
+                { n: visitsTotal, label: "visitas", href: me ? "/visitas" : null },
+                { n: testimonialsOk, label: "depoimentos", href: "#depoimentos" },
+              ].map((c) => {
+                const inner = <><b className="block text-base leading-tight text-fg">{c.n.toLocaleString("pt-BR")}</b><span className="text-[11px] text-mute">{c.label}</span></>;
+                return c.href ? <Link key={c.label} href={c.href} className="rounded-lg py-1 hover:bg-panel2">{inner}</Link> : <div key={c.label} className="py-1">{inner}</div>;
+              })}
+            </div>
+            <p className="mt-1 text-[11px] text-mute"><Link href="?aba=seguindo#rede" className="hover:text-wine">seguindo {following}</Link></p>
             {!me && (
               <div className="mt-3 flex flex-wrap gap-2">
                 {!iBlocked && fStatus === "none" && <form action={sendFriendRequest.bind(null, u.id)}><button className="btn-gold">🤝 Adicionar amigo</button></form>}
@@ -162,6 +183,7 @@ export default async function UserPage({ params, searchParams }: { params: Promi
             )}
           </div>
         </div>
+        <span id="sobre" className="block scroll-mt-20" />
         {u.bio && !hidden && <p className="mt-4 whitespace-pre-wrap text-sm">{u.bio}</p>}
         {!hidden && u.persons.some((p) => p.heightCm || (Object.keys(PERSON_FIELDS) as (keyof typeof PERSON_FIELDS)[]).some((k) => p[k])) && (
           <div className={`mt-4 grid gap-3 ${u.persons.length > 1 ? "sm:grid-cols-2" : ""}`}>
@@ -199,6 +221,27 @@ export default async function UserPage({ params, searchParams }: { params: Promi
         )}
         {hidden && <p className="mt-4 text-sm text-mute">Este perfil só é visível para perfis verificados. <Link href="/verificacao" className="text-gold underline">Verificar agora</Link></p>}
       </section>
+
+      {comp && comp.pct < 100 && (
+        <Link href={comp.next!.href} className="card block px-4 py-3 text-sm hover:border-wine/50" data-testid="completo">
+          <div className="flex items-baseline justify-between gap-2"><b>Seu perfil está {comp.pct}% completo</b><span className="text-xs text-wine">completar →</span></div>
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-panel2"><div className="h-full rounded-full bg-gradient-to-r from-wine to-gold" style={{ width: `${comp.pct}%` }} /></div>
+          <p className="mt-1.5 text-xs text-mute">Próximo passo: {comp.next!.label}. Perfis completos recebem muito mais visitas e respostas.</p>
+        </Link>
+      )}
+
+      {!iBlocked && !hidden && (
+        <nav className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 text-sm [scrollbar-width:none]" aria-label="Seções do perfil" data-testid="secoes">
+          {[
+            { href: "#sobre", label: "Sobre", show: true },
+            { href: "#album", label: "Fotos", show: album.length > 0 },
+            { href: "#contos", label: "Contos", show: contos.total > 0 },
+            { href: "#depoimentos", label: "Depoimentos", show: true },
+            { href: "#publicacoes", label: "Publicações", show: posts.length > 0 },
+            { href: "#rede", label: "Amigos", show: true },
+          ].filter((c) => c.show).map((c) => <a key={c.href} href={c.href} className="shrink-0 rounded-full border border-line bg-panel px-3 py-1 hover:border-wine hover:text-wine">{c.label}</a>)}
+        </nav>
+      )}
 
       {me && <AfimToggle active={isAfim(u)} untilLabel={u.afimUntil ? afimUntilLabel(u.afimUntil) : undefined} note={u.afimNote} />}
 
@@ -283,7 +326,7 @@ export default async function UserPage({ params, searchParams }: { params: Promi
       )}
 
       {!iBlocked && !hidden && album.length > 0 && (
-        <section className="card p-4">
+        <section className="card scroll-mt-20 p-4" id="album">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="font-semibold text-gold">🔒 Álbum privado ({album.length})</h2>
             {!canSeeAlbum && (access ? <span className="text-xs text-mute">Pedido enviado</span> : <form action={requestAlbum.bind(null, u.id)}><button className="btn-wine text-xs">Pedir acesso</button></form>)}
@@ -298,7 +341,7 @@ export default async function UserPage({ params, searchParams }: { params: Promi
       {!iBlocked && !hidden && !me && <ThemedAlbumsViewer owner={{ id: u.id, nick: u.nick }} viewerId={viewer.id} viewerVerified={isVerified(viewer)} />}
 
       {!iBlocked && !hidden && contos.total > 0 && (
-        <section className="space-y-2" aria-label="Contos">
+        <section className="scroll-mt-20 space-y-2" id="contos" aria-label="Contos">
           <div className="flex items-baseline justify-between px-1">
             <h2 className="font-semibold">📖 Contos de @{u.nick} ({contos.total})</h2>
             {contos.total > 3 && <Link href={`/contos?autor=${encodeURIComponent(u.nick)}`} className="text-xs text-mute underline">ver todos</Link>}
@@ -308,6 +351,7 @@ export default async function UserPage({ params, searchParams }: { params: Promi
       )}
       {!iBlocked && !hidden && <TestimonialsSection profile={{ id: u.id, nick: u.nick }} viewer={viewer} />}
 
+      {!hidden && posts.length > 0 && <span id="publicacoes" className="block scroll-mt-20" />}
       {!hidden && posts.map((p) => <PostCard key={p.id} post={p} viewer={{ nick: viewer.nick, subscriber: isSubscriber(viewer) }} />)}
     </div>
   );
